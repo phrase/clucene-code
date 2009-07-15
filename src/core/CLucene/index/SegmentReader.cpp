@@ -31,8 +31,8 @@ CL_NS_DEF(index)
 	_this(r),
 	segment(seg),
   useSingleNormStream(_useSingleNormStream),
-	dirty(false),
 	in(instrm),
+	dirty(false),
 	bytes(NULL){
   //Func - Constructor
   //Pre  - instrm is a valid reference to an IndexInput
