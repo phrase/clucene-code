@@ -8,32 +8,31 @@
 #define CLUCENE_UTIL_ARRAYINPUTSTREAM_H
 
 #include "CLucene/_ApiHeader.h"
-#include "CLucene/util/CLStreams.h"
 #include "CLucene/util/Array.h"
 
 CL_NS_DEF(util)
 
-template<typename element>
-class CLUCENE_CONTRIBS_EXPORT ArrayInputStream : public CL_NS(util)::CLStream<element> {
+template<typename base>
+class CLUCENE_CONTRIBS_EXPORT ArrayInputStream : public base {
 public:
-	ArrayInputStream(ArrayBase<element> const* data);
-	int32_t read(const element*& start, int32_t min, int32_t max);
+	ArrayInputStream(ArrayBase<typename base::element_type> const* data);
+	int32_t read(const typename base::element_type*& start, int32_t min, int32_t max);
 	int64_t skip(int64_t ntoskip);
 	int64_t position();
 	size_t size();
 private:
-	ArrayBase<element> const* data;
+	ArrayBase<typename base::element_type> const* data;
 	int64_t current_position;
 };
 
-template<typename element>
-ArrayInputStream<element>::ArrayInputStream(ArrayBase<element> const* data) :
+template<typename base>
+ArrayInputStream<base>::ArrayInputStream(ArrayBase<typename base::element_type> const* data) :
 data(data),
 current_position(0) {
 }
 
-template<typename element>
-int32_t ArrayInputStream<element>::read(const element*& start, int32_t min, int32_t max) {
+template<typename base>
+int32_t ArrayInputStream<base>::read(const typename base::element_type*& start, int32_t min, int32_t max) {
 	int32_t to_read = min;
 	int32_t readable = data->length - current_position;
 	if (readable < to_read) {
@@ -44,8 +43,8 @@ int32_t ArrayInputStream<element>::read(const element*& start, int32_t min, int3
 	return to_read;
 }
 	
-template<typename element>
-int64_t ArrayInputStream<element>::skip(int64_t ntoskip) {
+template<typename base>
+int64_t ArrayInputStream<base>::skip(int64_t ntoskip) {
 	int64_t to_skip = ntoskip;
 	int64_t skippable = data->length - current_position;
 	if (skippable < to_skip) {
@@ -55,13 +54,13 @@ int64_t ArrayInputStream<element>::skip(int64_t ntoskip) {
 	return to_skip;
 }
 
-template<typename element>
-int64_t ArrayInputStream<element>::position() {
+template<typename base>
+int64_t ArrayInputStream<base>::position() {
 	return current_position;
 }
 	
-template<typename element>
-size_t ArrayInputStream<element>::size() {
+template<typename base>
+size_t ArrayInputStream<base>::size() {
 	return data->length;
 }
 CL_NS_END

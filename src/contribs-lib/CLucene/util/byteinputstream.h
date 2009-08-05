@@ -8,10 +8,11 @@
 #define CLUCENE_UTIL_BYTEINPUTSTREAM_H
 
 #include "arrayinputstream.h"
+#include "CLucene/util/CLStreams.h"
 
 CL_NS_DEF(util)
 
-typedef ArrayInputStream<signed char> ByteInputStream;
+typedef ArrayInputStream<InputStream> ByteInputStream;
 
 CL_NS_END
 #endif
