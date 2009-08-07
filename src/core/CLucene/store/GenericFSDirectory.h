@@ -13,6 +13,7 @@
 #include "IndexOutput.h"
 #include <string>
 #include <vector>
+#include <boost/shared_ptr.hpp>
 
 //#include "Lock.h"
 //#include "LockFactory.h"
@@ -249,7 +250,7 @@ CL_NS_USE(util)
 		* a read.
     * TODO: get rid of this and dup/fctnl or something like that...
 		*/
-		class SharedHandle: LUCENE_REFBASE{
+		class SharedHandle {
 		public:
 			int32_t fhandle;
 			int64_t _length;
@@ -259,9 +260,9 @@ CL_NS_USE(util)
 			SharedHandle(const char* path);
 			~SharedHandle();
 		};
-		SharedHandle* handle;
+		boost::shared_ptr<SharedHandle> handle;
 		int64_t _pos;
-		FSIndexInput(SharedHandle* handle, int32_t __bufferSize):
+		FSIndexInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize):
 			index_input_base(__bufferSize)
 		{
 			this->_pos = 0;
@@ -275,7 +276,7 @@ CL_NS_USE(util)
 
 		IndexInput* clone() const;
 		void close();
-		int64_t length() const { return handle->_length; }
+		int64_t length() const { return handle.get()->_length; }
 
 		const char* getDirectoryType() const{ return GenericFSDirectory<
 		        index_input_base,
@@ -332,19 +333,19 @@ CL_NS_USE(util)
 
 	  if ( __bufferSize == -1 )
 		  __bufferSize = index_output_base::BUFFER_SIZE;
-	  SharedHandle* handle = _CLNEW SharedHandle(path);
+	  boost::shared_ptr<SharedHandle> handle(_CLNEW SharedHandle(path));
 
 	  //Open the file
-	  handle->fhandle  = ::_cl_open(path, _O_BINARY | O_RDONLY | _O_RANDOM, _S_IREAD );
+	  handle.get()->fhandle  = ::_cl_open(path, _O_BINARY | O_RDONLY | _O_RANDOM, _S_IREAD );
 
 	  //Check if a valid handle was retrieved
-	  if (handle->fhandle >= 0){
+	  if (handle.get()->fhandle >= 0){
 		  //Store the file length
-		  handle->_length = fileSize(handle->fhandle);
-		  if ( handle->_length == -1 )
+		  handle.get()->_length = fileSize(handle.get()->fhandle);
+		  if ( handle.get()->_length == -1 )
 	  		error.set( CL_ERR_IO,"fileStat error" );
 		  else{
-			  handle->_fpos = 0;
+			  handle.get()->_fpos = 0;
 			  ret = _CLNEW FSIndexInput(handle, __bufferSize);
 			  return true;
 		  }
@@ -360,9 +361,8 @@ CL_NS_USE(util)
       	error.set(CL_ERR_IO, "Could not open file");
 	  }
 #ifndef _CL_DISABLE_MULTITHREADING
-    delete handle->THIS_LOCK;
+    delete handle.get()->THIS_LOCK;
 #endif
-	  _CLDECDELETE(handle);
 	  return false;
   }
 
@@ -378,12 +378,12 @@ CL_NS_USE(util)
   //       Uses clone for its initialization
   //Pre  - clone is a valide instance of FSIndexInput
   //Post - The instance has been created and initialized by clone
-	  if ( other.handle == NULL )
+	  if ( other.handle.get() == NULL )
 		  _CLTHROWA(CL_ERR_NullPointer, "other handle is null");
 
-	  SCOPED_LOCK_MUTEX(*other.handle->THIS_LOCK)
-	  handle = _CL_POINTER(other.handle);
-	  _pos = other.handle->_fpos; //note where we are currently...
+	  SCOPED_LOCK_MUTEX(*other.handle.get()->THIS_LOCK)
+	  handle = other.handle;
+	  _pos = other.handle.get()->_fpos; //note where we are currently...
   }
 
 	template<
@@ -459,31 +459,13 @@ CL_NS_USE(util)
 	>::FSIndexInput::close()  {
 	index_input_base::close();
 #ifndef _CL_DISABLE_MULTITHREADING
-	if ( handle != NULL ){
-		//here we have a bit of a problem... we need to lock the handle to ensure that we can
-		//safely delete the handle... but if we delete the handle, then the scoped unlock,
-		//won't be able to unlock the mutex...
-
-		//take a reference of the lock object...
-		_LUCENE_THREADMUTEX* mutex = handle->THIS_LOCK;
-		//lock the mutex
-		mutex->lock();
-
-		//determine if we are about to delete the handle...
-		bool dounlock = ( handle->__cl_refcount > 1 );
-
-    //decdelete (deletes if refcount is down to 0
-		_CLDECDELETE(handle);
-
-		//printf("handle=%d\n", handle->__cl_refcount);
-		if ( dounlock ){
-			mutex->unlock();
-		}else{
-			delete mutex;
-		}
+	if ( handle.get() != NULL ){
+		boost::shared_ptr<SharedHandle> for_locking = handle;
+		SCOPED_LOCK_MUTEX(*for_locking.get()->THIS_LOCK)
+		handle.reset();
 	}
 #else
-	_CLDECDELETE(handle);
+	handle.reset();
 #endif
   }
 
@@ -495,7 +477,7 @@ CL_NS_USE(util)
 		index_input_base,
 		index_output_base
 	>::FSIndexInput::seekInternal(const int64_t position)  {
-	CND_PRECONDITION(position>=0 &&position<handle->_length,"Seeking out of range")
+	CND_PRECONDITION(position>=0 &&position<handle.get()->_length,"Seeking out of range")
 	_pos = position;
   }
 
@@ -508,18 +490,18 @@ void GenericFSDirectory<
 		index_input_base,
 		index_output_base
 	>::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
-	CND_PRECONDITION(handle!=NULL,"shared file handle has closed");
-	CND_PRECONDITION(handle->fhandle>=0,"file is not open");
-	SCOPED_LOCK_MUTEX(*handle->THIS_LOCK)
+	CND_PRECONDITION(handle.get()!=NULL,"shared file handle has closed");
+	CND_PRECONDITION(handle.get()->fhandle>=0,"file is not open");
+	SCOPED_LOCK_MUTEX(*handle.get()->THIS_LOCK)
 
-	if ( handle->_fpos != _pos ){
-		if ( fileSeek(handle->fhandle,_pos,SEEK_SET) != _pos ){
+	if ( handle.get()->_fpos != _pos ){
+		if ( fileSeek(handle.get()->fhandle,_pos,SEEK_SET) != _pos ){
 			_CLTHROWA( CL_ERR_IO, "File IO Seek error");
 		}
-		handle->_fpos = _pos;
+		handle.get()->_fpos = _pos;
 	}
 
-	this->bufferLength = _read(handle->fhandle,b,len); // 2004.10.31:SF 1037836
+	this->bufferLength = _read(handle.get()->fhandle,b,len); // 2004.10.31:SF 1037836
 	if (this->bufferLength == 0){
 		_CLTHROWA(CL_ERR_IO, "read past EOF");
 	}
@@ -530,7 +512,7 @@ void GenericFSDirectory<
 		_CLTHROWA(CL_ERR_IO, "read error");
 	}
 	_pos+=this->bufferLength;
-	handle->_fpos=_pos;
+	handle.get()->_fpos=_pos;
 }
 
 	template<
