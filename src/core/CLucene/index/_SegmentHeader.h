@@ -25,6 +25,7 @@
 #include "DirectoryIndexReader.h"
 #include "_SkipListReader.h"
 #include "CLucene/util/_ThreadLocal.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 class SegmentReader;
@@ -58,9 +59,9 @@ public:
   SegmentTermDocs( const SegmentReader* Parent);
   virtual ~SegmentTermDocs();
 
-  virtual void seek(Term* term);
+  virtual void seek(boost::shared_ptr<Term> const& term);
   virtual void seek(TermEnum* termEnum);
-  virtual void seek(const TermInfo* ti,Term* term);
+  virtual void seek(const TermInfo* ti,boost::shared_ptr<Term> const& term);
 
   virtual void close();
   virtual int32_t doc()const;
@@ -105,7 +106,7 @@ public:
   ~SegmentTermPositions();
 
 private:
-  void seek(const TermInfo* ti, Term* term);
+  void seek(const TermInfo* ti, boost::shared_ptr<Term> const& term);
 
 public:
   void close();
@@ -152,7 +153,7 @@ private:
   virtual TermPositions* __asTermPositions();
 
   //resolve SegmentTermDocs/TermPositions ambiguity
-  void seek(Term* term){ SegmentTermDocs::seek(term); }
+  void seek(boost::shared_ptr<Term> const& term){ SegmentTermDocs::seek(term); }
   void seek(TermEnum* termEnum){ SegmentTermDocs::seek(termEnum); }
   int32_t doc() const{ return SegmentTermDocs::doc(); }
   int32_t freq() const{ return SegmentTermDocs::freq(); }
@@ -343,7 +344,7 @@ public:
   ///Returns an enumeration of all the Terms and TermInfos in the set.
   TermEnum* terms();
   ///Returns an enumeration of terms starting at or after the named term t
-  TermEnum* terms(const Term* t);
+  TermEnum* terms(boost::shared_ptr<const Term> const& t);
 
   ///Gets the document identified by n
   bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
@@ -357,7 +358,7 @@ public:
   TermPositions* termPositions();
 
   ///Returns the number of documents which contain the term t
-  int32_t docFreq(const Term* t);
+  int32_t docFreq(boost::shared_ptr<Term const> const& t);
 
   ///Returns the actual number of documents in the segment
   int32_t numDocs();

@@ -20,6 +20,7 @@
 #include "CLucene/util/BitSet.h"
 #include "FieldSortedHitQueue.h"
 #include "Explanation.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -159,7 +160,7 @@ CL_NS_DEF(search)
   }
 
   // inherit javadoc
-  int32_t IndexSearcher::docFreq(const Term* term) const{
+  int32_t IndexSearcher::docFreq(boost::shared_ptr<const Term> const& term) const{
   //Func - 
   //Pre  - reader != NULL
   //Post -

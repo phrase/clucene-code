@@ -17,6 +17,7 @@
 #include "IndexReader.h"
 #include "CLucene/store/FSDirectory.h"
 #include "CLucene/document/Document.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 CL_NS_USE(util)
@@ -111,7 +112,7 @@ void IndexModifier::addDocument(Document* doc, Analyzer* docAnalyzer) {
 		indexWriter->addDocument(doc);
 }
 
-int32_t IndexModifier::deleteDocuments(Term* term) {
+int32_t IndexModifier::deleteDocuments(boost::shared_ptr<Term> const& term) {
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
@@ -226,18 +227,18 @@ int64_t IndexModifier::getCurrentVersion() const{
 	return IndexReader::getCurrentVersion(directory);
 }
 
-TermDocs* IndexModifier::termDocs(Term* term){
+TermDocs* IndexModifier::termDocs(boost::shared_ptr<Term> const& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
 	return indexReader->termDocs(term);
 }
 
-TermEnum* IndexModifier::terms(Term* term){
+TermEnum* IndexModifier::terms(boost::shared_ptr<Term> const& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
-	if ( term != NULL )
+	if ( term.get() != NULL )
 		return indexReader->terms(term);
 	else
 		return indexReader->terms();

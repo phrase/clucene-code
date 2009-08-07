@@ -12,6 +12,7 @@
 #include "BooleanQuery.h"
 #include "BooleanClause.h"
 #include "TermQuery.h"
+#include <boost/shared_ptr.hpp>
 
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/util/PriorityQueue.h"
@@ -27,8 +28,8 @@ CL_NS_DEF(search)
 #define min3(a, b, c) __t = (a < b) ? a : b; __t = (__t < c) ? __t : c;
 
 
-	FuzzyTermEnum::FuzzyTermEnum(IndexReader* reader, Term* term, float_t minSimilarity, size_t _prefixLength):
-		FilteredTermEnum(),d(NULL),dLen(0),_similarity(0),_endEnum(false),searchTerm(_CL_POINTER(term)),
+	FuzzyTermEnum::FuzzyTermEnum(IndexReader* reader, boost::shared_ptr<Term> const& term, float_t minSimilarity, size_t _prefixLength):
+		FilteredTermEnum(),d(NULL),dLen(0),_similarity(0),_endEnum(false),searchTerm(term),
 		text(NULL),textLen(0),prefix(NULL)/* ISH: was STRDUP_TtoT(LUCENE_BLANK_STRING)*/,prefixLength(0),
 		minimumSimilarity(minSimilarity)
 	{
@@ -47,19 +48,18 @@ CL_NS_DEF(search)
 		const size_t fullSearchTermLength = searchTerm->textLength();
 		const size_t realPrefixLength = _prefixLength > fullSearchTermLength ? fullSearchTermLength : _prefixLength;
 
-		text = STRDUP_TtoT(searchTerm->text() + realPrefixLength);
+		text = STRDUP_TtoT(searchTerm.get()->text() + realPrefixLength);
 		textLen = fullSearchTermLength - realPrefixLength;
 
 		prefix = _CL_NEWARRAY(TCHAR,realPrefixLength+1);
-		_tcsncpy(prefix, searchTerm->text(), realPrefixLength);
+		_tcsncpy(prefix, searchTerm.get()->text(), realPrefixLength);
 		prefix[realPrefixLength]='\0';
         prefixLength = realPrefixLength;
 
 		initializeMaxDistances();
 
-		Term* trm = _CLNEW Term(searchTerm->field(), prefix); // _CLNEW Term(term, prefix); -- not intern'd?
+		boost::shared_ptr<Term> trm(_CLNEW Term(searchTerm.get()->field(), prefix)); // _CLNEW Term(term, prefix); -- not intern'd?
 		setEnum(reader->terms(trm));
-		_CLLDECDELETE(trm);
 
 
 		/* LEGACY:
@@ -96,9 +96,6 @@ CL_NS_DEF(search)
 
 		FilteredTermEnum::close();
 
-		//Finalize the searchTerm
-		_CLDECDELETE(searchTerm);
-
 		free(d);
 		d=NULL;
 
@@ -107,23 +104,23 @@ CL_NS_DEF(search)
 		_CLDELETE_CARRAY(prefix);
 	}
 
-	bool FuzzyTermEnum::termCompare(Term* term) {
+	bool FuzzyTermEnum::termCompare(boost::shared_ptr<Term> const& term) {
 		//Func - Compares term with the searchTerm using the Levenshtein distance.
 		//Pre  - term is NULL or term points to a Term
 		//Post - if pre(term) is NULL then false is returned otherwise
 		//       if the distance of the current term in the enumeration is bigger than the FUZZY_THRESHOLD
 		//       then true is returned
 
-		if (term == NULL){
+		if (term.get() == NULL){
 			return false;  //Note that endEnum is not set to true!
 		}
 
-		const TCHAR* termText = term->text();
-		const size_t termTextLen = term->textLength();
+		const TCHAR* termText = term.get()->text();
+		const size_t termTextLen = term.get()->textLength();
 
 		//Check if the field name of searchTerm of term match
 		//(we can use == because fields are interned)
-		if ( searchTerm->field() == term->field() &&
+		if ( searchTerm.get()->field() == term.get()->field() &&
 			(prefixLength==0 || _tcsncmp(termText,prefix,prefixLength)==0 )) {
 
 				const TCHAR* target = termText+prefixLength;
@@ -242,13 +239,12 @@ CL_NS_DEF(search)
 
   class FuzzyQuery::ScoreTerm {
   public:
-	  Term* term;
+	  boost::shared_ptr<Term> term;
 	  float_t score;
 
-	  ScoreTerm(Term* _term, float_t _score):term(_term),score(_score){
+	  ScoreTerm(boost::shared_ptr<Term> const& _term, float_t _score):term(_term),score(_score){
 	  }
 	  virtual ~ScoreTerm(){
-          _CLLDECDELETE(term);
 	  }
   };
 
@@ -263,14 +259,14 @@ CL_NS_DEF(search)
   protected:
 	  bool lessThan(ScoreTerm* termA, ScoreTerm* termB) {
 		  if (termA->score == termB->score)
-			  return termA->term->compareTo(termB->term) > 0;
+			  return termA->term.get()->compareTo(termB->term.get()) > 0;
 		  else
 			  return termA->score < termB->score;
 	  }
   };
 
 
-  FuzzyQuery::FuzzyQuery(Term* term, float_t _minimumSimilarity, size_t _prefixLength):
+  FuzzyQuery::FuzzyQuery(boost::shared_ptr<Term> const& term, float_t _minimumSimilarity, size_t _prefixLength):
     MultiTermQuery(term),
     minimumSimilarity(_minimumSimilarity),
     prefixLength(_prefixLength)
@@ -278,7 +274,7 @@ CL_NS_DEF(search)
 	  if ( minimumSimilarity < 0 )
 		  minimumSimilarity = defaultMinSimilarity;
 
-	  CND_PRECONDITION(term != NULL,"term is NULL");
+	  CND_PRECONDITION(term.get() != NULL,"term is NULL");
 
 	  if (minimumSimilarity >= 1.0f)
 		  _CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity >= 1");
@@ -302,12 +298,12 @@ CL_NS_DEF(search)
 
   TCHAR* FuzzyQuery::toString(const TCHAR* field) const{
 	  StringBuffer buffer(100); // TODO: Have a better estimation for the initial buffer length
-	  Term* term = getTerm(false); // no need to increase ref count
-	  if ( field==NULL || _tcscmp(term->field(),field)!=0 ) {
-		  buffer.append(term->field());
+	  boost::shared_ptr<Term> const& term = getTerm(); // no need to increase ref count
+	  if ( field==NULL || _tcscmp(term.get()->field(),field)!=0 ) {
+		  buffer.append(term.get()->field());
 		  buffer.appendChar( _T(':'));
 	  }
-	  buffer.append(term->text());
+	  buffer.append(term.get()->text());
 	  buffer.appendChar( _T('~') );
 	  buffer.appendFloat(minimumSimilarity,1);
 	  buffer.appendBoost(getBoost());
@@ -364,11 +360,11 @@ CL_NS_DEF(search)
 	  return (this->getBoost() == fq->getBoost())
 		  && this->minimumSimilarity == fq->getMinSimilarity()
 		  && this->prefixLength == fq->getPrefixLength()
-		  && getTerm()->equals(fq->getTerm());
+		  && getTerm().get()->equals(fq->getTerm().get());
   }
 
   FilteredTermEnum* FuzzyQuery::getEnum(IndexReader* reader){
-	  Term* term = getTerm(false);
+	  boost::shared_ptr<Term> const& term = getTerm();
 	  FuzzyTermEnum* ret = _CLNEW FuzzyTermEnum(reader, term, minimumSimilarity, prefixLength);
 	  return ret;
   }
@@ -382,8 +378,8 @@ CL_NS_DEF(search)
 	  try {
 		  do {
 			  float_t score = 0.0f;
-			  Term* t = enumerator->term();
-			  if (t != NULL) {
+			  boost::shared_ptr<Term> t = enumerator->term();
+			  if (t.get() != NULL) {
 				  score = enumerator->difference();
 				  if (reusableST == NULL) {
 					  reusableST = _CLNEW ScoreTerm(t, score);

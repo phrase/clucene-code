@@ -9,12 +9,13 @@
 #include "IndexReader.h"
 #include "CLucene/util/Array.h"
 #include "CLucene/util/PriorityQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 
 CL_NS_DEF(index)
 
-void MultipleTermPositions::seek(Term*) {
+void MultipleTermPositions::seek(boost::shared_ptr<Term> const&) {
 	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
 }
 
@@ -113,14 +114,14 @@ public:
 	}
 };
 
-MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<Term*>* terms) : _posList(_CLNEW IntQueue()){
+MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms) : _posList(_CLNEW IntQueue()){
 	CLLinkedList<TermPositions*> termPositions;
   for ( size_t i=0;i<terms->length;i++){
     termPositions.push_back( indexReader->termPositions(terms->values[i]));
 	}
 
 	TermPositions** tps = _CL_NEWARRAY(TermPositions*, terms->length+1); // i == tpsSize
-	termPositions.toArray(tps, true);
+	termPositions.toArray_nullTerminated(tps);
 
 	_termPositionsQueue = _CLNEW TermPositionsQueue(tps,terms->length);
 }

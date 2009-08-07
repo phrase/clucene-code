@@ -18,6 +18,7 @@ CL_CLASS_DEF(document,Document)
 
 #include "MergePolicy.h"
 #include "CLucene/LuceneThreads.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 class SegmentInfo;
@@ -701,7 +702,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void deleteDocuments(Term* term);
+  void deleteDocuments(boost::shared_ptr<Term> const& term);
 
   /**
    * Deletes the document(s) containing any of the
@@ -711,7 +712,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void deleteDocuments(const CL_NS(util)::ArrayBase<Term*>* terms);
+  void deleteDocuments(const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms);
 
   /**
    * Updates a document by first deleting the document(s)
@@ -725,7 +726,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void updateDocument(Term* term, CL_NS(document)::Document* doc);
+  void updateDocument(boost::shared_ptr<Term> const& term, CL_NS(document)::Document* doc);
 
   /**
    * Updates a document by first deleting the document(s)
@@ -740,7 +741,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void updateDocument(Term* term, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
+  void updateDocument(boost::shared_ptr<Term> const& term, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
   /**
    * Returns default write lock timeout for newly

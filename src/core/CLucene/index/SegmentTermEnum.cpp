@@ -13,6 +13,7 @@
 #include "Term.h"
 #include "_TermInfo.h"
 #include "_TermInfosWriter.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(store)
 CL_NS_DEF(index)
@@ -27,13 +28,12 @@ CL_NS_DEF(index)
 		input		 = i;
 		position     = -1;
 		//Instantiate a Term with empty field, empty text and which is interned (see term.h what interned means)
-	    _term         = _CLNEW Term;
+		_term.reset(_CLNEW Term);
 		isIndex      = isi;
 		termInfo     = _CLNEW TermInfo();
 		indexPointer = 0;
 		buffer       = NULL;
 		bufferLength = 0;
-		prev         = NULL;
 		formatM1SkipInterval = 0;
 		maxSkipLevels = 1;
 		
@@ -95,17 +95,18 @@ CL_NS_DEF(index)
 		//Copy the postion from the clone
 		position     = clone.position;
 
-        if ( clone._term != NULL ){
-			_term         = _CLNEW Term;
-			_term->set(clone._term,clone._term->text());
-		}else
-			_term = NULL;
+		if ( clone._term.get() != NULL ){
+			_term.reset(_CLNEW Term);
+			_term.get()->set(clone._term,clone._term.get()->text());
+		}
 		isIndex      = clone.isIndex;
 		termInfo     = _CLNEW TermInfo(clone.termInfo);
 		indexPointer = clone.indexPointer;
 		buffer       = clone.buffer==NULL?NULL:(TCHAR*)malloc(sizeof(TCHAR) * (clone.bufferLength+1));
 		bufferLength = clone.bufferLength;
-		prev         = clone.prev==NULL?NULL:_CLNEW Term(clone.prev->field(),clone.prev->text(),false);
+		if ( clone.prev.get() != NULL ) {
+			prev.reset(_CLNEW Term(clone.prev.get()->field(),clone.prev.get()->text(),false));
+		}
 		size         = clone.size;
 
       format       = clone.format;
@@ -130,11 +131,6 @@ CL_NS_DEF(index)
 
         //todo: revisit this... close() should clean up most of everything.
 
-		//Finalize prev
-		_CLDECDELETE(prev );
-		//Finalize term
-		_CLDECDELETE( _term );
-		
 
 		//Delete the buffer if necessary
 		if ( buffer != NULL ) free(buffer);
@@ -162,18 +158,16 @@ CL_NS_DEF(index)
 		//Increase position by and and check if the end has been reached
 		if (position++ >= size-1) {
 			//delete term
-			_CLDECDELETE(_term);
+			_term.reset();
 			return false;
 		}
 
 		//delete the previous enumerated term
-		Term* tmp=NULL;
-		if ( prev != NULL ){
-			int32_t usage = prev->__cl_refcount;
-			if ( usage > 1 ){
-				_CLDECDELETE(prev); //todo: tune other places try and delete its term 
-			}else
+		boost::shared_ptr<Term> tmp;
+		if ( prev.get() != NULL ){
+			if ( prev.unique() ){
 				tmp = prev; //we are going to re-use this term
+			}
 		}
 		//prev becomes the current enumerated term
 		prev = _term;
@@ -209,19 +203,16 @@ CL_NS_DEF(index)
 		return true;
 	}
 
-	Term* SegmentTermEnum::term(bool pointer) {
-		if ( pointer )
-			return _CL_POINTER(_term);
-		else
-			return _term;
+	boost::shared_ptr<Term> const& SegmentTermEnum::term() {
+		return _term;
 	}
 
-	void SegmentTermEnum::scanTo(const Term *term){
+	void SegmentTermEnum::scanTo(boost::shared_ptr<Term const> const& term){
 	//Func - Scan for Term without allocating new Terms
 	//Pre  - term != NULL
 	//Post - The iterator term has been moved to the position where Term is expected to be
 	//       in the enumeration
-		while ( term->compareTo(this->_term) > 0 && next()) 
+		while ( term.get()->compareTo(this->_term.get()) > 0 && next()) 
 		{
 		}
 	}
@@ -243,7 +234,7 @@ CL_NS_DEF(index)
 		return termInfo->docFreq;
 	}
 
-	void SegmentTermEnum::seek(const int64_t pointer, const int32_t p, Term* t, TermInfo* ti) {
+	void SegmentTermEnum::seek(const int64_t pointer, const int32_t p, boost::shared_ptr<Term> const& t, TermInfo* ti) {
 	//Func - Repositions term and termInfo within the enumeration
 	//Pre  - pointer >= 0
 	//       p >= 0 and contains the new position within the enumeration
@@ -258,24 +249,19 @@ CL_NS_DEF(index)
 		position = p;
 
 		//finalize the current term
-		if ( _term == NULL || _term->__cl_refcount > 1 ){
-			_CLDECDELETE(_term);
-			//Get a pointer from t and increase the reference counter of t
-			_term = _CLNEW Term; //cannot use reference, because TermInfosReader uses non ref-counted array
+		if ( _term.get() == NULL || !_term.unique() ){
+			_term.reset(_CLNEW Term);
 		}
-		_term->set(t,t->text());
-
-		//finalize prev
-		_CLDECDELETE(prev);
+		_term.get()->set(t,t.get()->text());
 
 		//Change the current termInfo so it matches the new current term
 		termInfo->set(ti);
 
 		//Have the buffer grown if needed
-		if ( bufferLength <= _term->textLength() )
-			growBuffer(_term->textLength(), true );		  // copy term text into buffer
+		if ( bufferLength <= _term.get()->textLength() )
+			growBuffer(_term.get()->textLength(), true );		  // copy term text into buffer
 		else
-			_tcsncpy(buffer,_term->text(),bufferLength); //just copy the buffer
+			_tcsncpy(buffer,_term.get()->text(),bufferLength); //just copy the buffer
 	}
 
 	TermInfo* SegmentTermEnum::getTermInfo()const {
@@ -323,7 +309,7 @@ CL_NS_DEF(index)
 		return _CLNEW SegmentTermEnum(*this);
 	}
 
-	Term* SegmentTermEnum::readTerm(Term* reuse) {
+	boost::shared_ptr<Term> const& SegmentTermEnum::readTerm(boost::shared_ptr<Term>& reuse) {
 	//Func - Reads the next term in the enumeration
 	//Pre  - true
 	//Post - The next Term in the enumeration has been read and returned
@@ -348,10 +334,10 @@ CL_NS_DEF(index)
 		//Return a new Term	
 		int32_t field = input->readVInt();
 		const TCHAR* fieldname = fieldInfos->fieldName(field);
-		if ( reuse == NULL )
-			reuse = _CLNEW Term;
+		if ( reuse.get() == NULL )
+			reuse.reset(_CLNEW Term);
 
-		reuse->set(fieldname, buffer, false);
+		reuse.get()->set(fieldname, buffer, false);
 		return reuse;
 	}
 

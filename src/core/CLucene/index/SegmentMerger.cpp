@@ -18,6 +18,7 @@
 #include "_CompoundFile.h"
 #include "_SkipListWriter.h"
 #include "CLucene/document/FieldSelector.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(document)
@@ -279,7 +280,7 @@ int32_t SegmentMerger::mergeFields() {
 	    tmp.clear(); reader->getFieldNames(IndexReader::UNINDEXED, tmp);
 	    if ( tmp.size() > 0 ){
 		    TCHAR** arr = _CL_NEWARRAY(TCHAR*,tmp.size()+1);
-		    tmp.toArray(arr, true);
+		    tmp.toArray_nullTerminated(arr);
 		    fieldInfos->add((const TCHAR**)arr, false);
 		    _CLDELETE_ARRAY(arr); //no need to delete the contents, since tmp is responsible for it
 	    }
@@ -530,7 +531,7 @@ void SegmentMerger::mergeTermInfos(){
       //Pop the first SegmentMergeInfo from the queue
       match[matchSize++] = queue->pop();
       //Get the Term of match[0]
-      Term* term = match[0]->term;
+      boost::shared_ptr<Term> term = match[0]->term;
 
       //Condition check to see if term points to a valid instance
       CND_CONDITION(term != NULL,"term is NULL")	;
@@ -540,7 +541,7 @@ void SegmentMerger::mergeTermInfos(){
 
       //For each SegmentMergInfo still in the queue
 		  //Check if term matches the term of the SegmentMergeInfo instances in the queue
-      while (top != NULL && term->equals(top->term) ){
+      while (top != NULL && term.get()->equals(top->term.get()) ){
         //A match has been found so add the matching SegmentMergeInfo to the match array
         match[matchSize++] = queue->pop();
         //Get the next SegmentMergeInfo

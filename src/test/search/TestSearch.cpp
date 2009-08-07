@@ -112,16 +112,13 @@
 
 		//test problem reported by Gary Mangum
 		BooleanQuery* bq = _CLNEW BooleanQuery();
-		Term* upper = _CLNEW Term(_T("contents"),_T("0105"));
-		Term* lower = _CLNEW Term(_T("contents"),_T("0105"));
+		boost::shared_ptr<Term> upper(_CLNEW Term(_T("contents"),_T("0105")));
+		boost::shared_ptr<Term> lower(_CLNEW Term(_T("contents"),_T("0105")));
 		RangeQuery* rq=_CLNEW RangeQuery(lower,upper,true);
 		bq->add(rq,true,true,false);
-		_CLDECDELETE(upper);
-		_CLDECDELETE(lower);
 
-		Term* prefix = _CLNEW Term(_T("contents"),_T("reuters21578"));
+		boost::shared_ptr<Term> prefix(_CLNEW Term(_T("contents"),_T("reuters21578")));
 		PrefixQuery* pq = _CLNEW PrefixQuery(prefix);
-		_CLDECDELETE(prefix);
 		bq->add(pq,true,true,false);
 
 		Hits* h = NULL;
@@ -292,11 +289,11 @@ void SearchTest(CuTest *tc, bool bram) {
   //test MultiPositionQuery...
   {
     MultiPhraseQuery* query = _CLNEW MultiPhraseQuery();
-    ValueArray<Term*> terms(3);
-    Term* termE = _CLNEW Term(_T("contents"), _T("e"));
-    terms[0] = _CLNEW Term(_T("contents"), _T("asdf"));
-    terms[1] = _CLNEW Term(_T("contents"), _T("asdg"));
-    terms[2] = _CLNEW Term(_T("contents"), _T("asef"));
+    ValueArray<boost::shared_ptr<Term> > terms(3);
+    boost::shared_ptr<Term> termE(_CLNEW Term(_T("contents"), _T("e")));
+    terms[0].reset(_CLNEW Term(_T("contents"), _T("asdf")));
+    terms[1].reset(_CLNEW Term(_T("contents"), _T("asdg")));
+    terms[2].reset(_CLNEW Term(_T("contents"), _T("asef")));
 
     query->add(termE);
     query->add(&terms);
@@ -379,9 +376,8 @@ void testSrchManyHits(CuTest *tc) {
 	IndexSearcher searcher(&ram);
 
 	BooleanQuery query;
-	Term* t = _CLNEW Term(_T("contents"), _T("a"));
+	boost::shared_ptr<Term> t(_CLNEW Term(_T("contents"), _T("a")));
 	query.add(_CLNEW TermQuery(t),true,false, false);
-	_CLDECDELETE(t);
 	Hits* hits = searcher.search(&query);
 	for ( size_t x=0;x<hits->length();x++ ){
 	      hits->doc(x);
@@ -433,9 +429,11 @@ void testSrchMulti(CuTest *tc) {
 
 	MultiSearcher searcher(searchers);
 
+	boost::shared_ptr<Term> a(_CLNEW Term(_T("contents"), _T("a")));
+	boost::shared_ptr<Term> c(_CLNEW Term(_T("contents"), _T("c")));
 	RangeQuery query(
-		_CLNEW Term(_T("contents"), _T("a")),
-		_CLNEW Term(_T("contents"), _T("c")),
+		a,
+		c,
 		true
 	);
 	Query* rewritten = searcher.rewrite(&query);

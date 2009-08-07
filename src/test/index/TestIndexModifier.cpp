@@ -45,12 +45,14 @@ void bulk_modification::modify_index(CuTest *tc, IndexModifier& ndx){
 		field.str(_T(""));
 		field << _T("fielddata") << i;
 
-		Term deleted(
-			_T("field0"),
-			field.str().c_str(),
-			true
+		boost::shared_ptr<Term> deleted(
+			_CLNEW Term(
+				_T("field0"),
+				field.str().c_str(),
+				true
+			)
 		);
-		CLUCENE_ASSERT(ndx.deleteDocuments(&deleted) > 0);
+		CLUCENE_ASSERT(ndx.deleteDocuments(deleted) > 0);
 	}
 }
 
@@ -71,12 +73,14 @@ void incremental_modification::modify_index(CuTest *tc, IndexModifier& ndx){
 		);
 		ndx.addDocument(&doc);
 		if ( 0 == i % 2 ) {
-			Term deleted(
-				_T("field0"),
-				field.str().c_str(),
-				true
+			boost::shared_ptr<Term> deleted(
+				_CLNEW Term(
+					_T("field0"),
+					field.str().c_str(),
+					true
+				)
 			);
-			CLUCENE_ASSERT(ndx.deleteDocuments(&deleted) > 0);
+			CLUCENE_ASSERT(ndx.deleteDocuments(deleted) > 0);
 		}
 	}
 }
@@ -103,16 +107,14 @@ void IMinsertDelete_tester<modification>::invoke(
 	//test the ram loading
 	RAMDirectory ram2(&storage);
 	IndexReader* reader2 = IndexReader::open(&ram2);
-	Term* term = _CLNEW Term(_T("field0"),_T("fielddata1"));
+	boost::shared_ptr<Term> term(_CLNEW Term(_T("field0"),_T("fielddata1")));
 	TermDocs* en = reader2->termDocs(term);
 	CLUCENE_ASSERT(en->next());
 	_CLDELETE(en);
-	_CLDECDELETE(term);
-	term = _CLNEW Term(_T("field0"),_T("fielddata0"));
+	term.reset(_CLNEW Term(_T("field0"),_T("fielddata0")));
 	en = reader2->termDocs(term);
 	CLUCENE_ASSERT(!en->next());
 	_CLDELETE(en);
-	_CLDECDELETE(term);
 	_CLDELETE(reader2);
 }
 

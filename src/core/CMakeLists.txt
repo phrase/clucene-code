@@ -151,9 +151,11 @@ ENDIF ( USE_SHARED_OBJECT_FILES )
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-core_SOURCE_DIR}/*.h)
 
+FIND_PACKAGE(Boost)
 
 #create the libraries
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 add_library(clucene-core SHARED
 	${clucene_core_Files} ${clucene_shared_Files} ${HEADERS}

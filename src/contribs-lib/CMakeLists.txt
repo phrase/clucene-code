@@ -1,5 +1,7 @@
 PROJECT(clucene-contribs-lib)
 
+FIND_PACKAGE(Boost)
+
 INCLUDE (DefineOptions)
 DEFINE_OPTIONS(EXTRA_OPTIONS EXTRA_LIBS)
 ADD_DEFINITIONS(${EXTRA_OPTIONS} -DMAKE_CLUCENE_CONTRIBS_LIB)
@@ -93,8 +95,10 @@ IF ( USE_SHARED_OBJECT_FILES )
 ENDIF ( USE_SHARED_OBJECT_FILES )
 
 #create the libraries
+
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/contribs-lib )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 add_library(clucene-contribs-lib SHARED
 	${clucene_contribs_Files} ${clucene_shared_Files} ${HEADERS}

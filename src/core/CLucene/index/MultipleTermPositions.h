@@ -9,6 +9,7 @@
 
 #include "Terms.h"
 #include "CLucene/util/Array.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -31,7 +32,7 @@ public:
 	* 
 	* @exception IOException
 	*/ 
-  MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<Term*>* terms);
+  MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms);
 	virtual ~MultipleTermPositions(){}
 
 	bool next();
@@ -50,7 +51,7 @@ public:
 	* Not implemented.
 	* @throws UnsupportedOperationException
 	*/
-	void seek(Term*);
+	void seek(boost::shared_ptr<Term> const&);
 
 	/**
 	* Not implemented.

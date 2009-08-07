@@ -12,6 +12,7 @@ CL_CLASS_DEF(index,Term)
 #include "MultiTermQuery.h"
 #include "Filter.h"
 //#include "WildcardTermEnum.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 
@@ -29,7 +30,7 @@ protected:
   FilteredTermEnum* getEnum(CL_NS(index)::IndexReader* reader);
   WildcardQuery(const WildcardQuery& clone);
 public:
-  WildcardQuery(CL_NS(index)::Term* term);
+  WildcardQuery(boost::shared_ptr<CL_NS(index)::Term> const& term);
   ~WildcardQuery();
 
   const char* getObjectName() const;
@@ -49,12 +50,12 @@ private:
 class CLUCENE_EXPORT WildcardFilter: public Filter 
 {
 private:
-	CL_NS(index)::Term* term;
+	boost::shared_ptr<CL_NS(index)::Term> term;
 protected:
 	WildcardFilter( const WildcardFilter& copy );
 	
 public:
-	WildcardFilter(CL_NS(index)::Term* term);
+	WildcardFilter(boost::shared_ptr<CL_NS(index)::Term> const& term);
 	~WildcardFilter();
 
 	/** Returns a BitSet with true for documents which should be permitted in

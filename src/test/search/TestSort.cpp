@@ -74,23 +74,19 @@ void testSortSetup(CuTest *tc) {
 	sort_searchX = sort_getIndex (true, false);
 	sort_searchY = sort_getIndex (false, true);
 
-    Term* tmp;
+    boost::shared_ptr<Term> tmp;
 
-    tmp = _CLNEW Term (_T("contents"), _T("x"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("x")));
 	sort_queryX = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
-    tmp = _CLNEW Term (_T("contents"), _T("y"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("y")));
 	sort_queryY = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
-    tmp = _CLNEW Term (_T("contents"), _T("a"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("a")));
 	sort_queryA = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
-    tmp = _CLNEW Term (_T("contents"), _T("f"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("f")));
 	sort_queryF = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
 	_sort   = _CLNEW Sort();
 }

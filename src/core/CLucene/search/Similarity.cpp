@@ -10,6 +10,7 @@
 #include "CLucene/index/Term.h"
 #include "SearchHeader.h"
 #include "Searchable.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_DEF(search)
@@ -180,15 +181,15 @@ CL_NS_DEF(search)
    }
 
 
-   float_t Similarity::idf(Term* term, Searcher* searcher) {
+   float_t Similarity::idf(boost::shared_ptr<Term> const& term, Searcher* searcher) {
       return idf(searcher->docFreq(term), searcher->maxDoc());
    }
 
 
-   float_t Similarity::idf(CL_NS(util)::CLVector<Term*>* terms, Searcher* searcher) {
+   float_t Similarity::idf(CL_NS(util)::CLVector<boost::shared_ptr<Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >* terms, Searcher* searcher) {
       float_t _idf = 0.0f;
-      for (CL_NS(util)::CLVector<Term*>::iterator i = terms->begin(); i != terms->end(); i++ ) {
-         _idf += idf((Term*)*i, searcher);
+      for (CL_NS(util)::CLVector<boost::shared_ptr<Term> >::iterator i = terms->begin(); i != terms->end(); i++ ) {
+         _idf += idf(*i, searcher);
       }
       return _idf;
    }

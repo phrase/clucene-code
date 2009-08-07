@@ -8,16 +8,17 @@
 #include "WildcardTermEnum.h"
 #include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_DEF(search)
 
-    bool WildcardTermEnum::termCompare(Term* term) {
-        if ( term!=NULL && __term->field() == term->field() ) {
-            const TCHAR* searchText = term->text();
-            const TCHAR* patternText = __term->text();
+    bool WildcardTermEnum::termCompare(boost::shared_ptr<Term> const& term) {
+        if ( term.get()!=NULL && __term.get()->field() == term.get()->field() ) {
+            const TCHAR* searchText = term.get()->text();
+            const TCHAR* patternText = __term.get()->text();
 			if ( _tcsncmp( searchText, pre, preLen ) == 0 ){
-               return wildcardEquals(patternText+preLen, __term->textLength()-preLen, 0, searchText, term->textLength(), preLen);
+               return wildcardEquals(patternText+preLen, __term.get()->textLength()-preLen, 0, searchText, term.get()->textLength(), preLen);
 			}
         }
         _endEnum = true;
@@ -25,14 +26,14 @@ CL_NS_DEF(search)
     }
 
     /** Creates new WildcardTermEnum */
-    WildcardTermEnum::WildcardTermEnum(IndexReader* reader, Term* term):
+    WildcardTermEnum::WildcardTermEnum(IndexReader* reader, boost::shared_ptr<Term> const& term):
 	    FilteredTermEnum(),
-		__term(_CL_POINTER(term)),
+		__term(term),
 		fieldMatch(false),
 		_endEnum(false)
     {
        
-		pre = stringDuplicate(term->text());
+		pre = stringDuplicate(term.get()->text());
 
 		const TCHAR* sidx = _tcschr( pre, LUCENE_WILDCARDTERMENUM_WILDCARD_STRING );
 		const TCHAR* cidx = _tcschr( pre, LUCENE_WILDCARDTERMENUM_WILDCARD_CHAR );
@@ -47,9 +48,8 @@ CL_NS_DEF(search)
 		CND_PRECONDITION(preLen<term->textLength(), "preLen >= term->textLength()");
 		pre[preLen]=0; //trim end
 
-		Term* t = _CLNEW Term(__term, pre);
+		boost::shared_ptr<Term> t(_CLNEW Term(__term, pre));
 		setEnum( reader->terms(t) );
-		_CLDECDELETE(t);
   }
 
     void WildcardTermEnum::close()
@@ -57,8 +57,7 @@ CL_NS_DEF(search)
        if ( __term != NULL ){
          FilteredTermEnum::close();
 
-         _CLDECDELETE(__term);
-         __term = NULL;
+         __term.reset();
 
          _CLDELETE_CARRAY( pre );
        }
