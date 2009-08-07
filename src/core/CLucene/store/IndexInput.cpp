@@ -162,9 +162,9 @@ BufferedIndexInput::BufferedIndexInput(int32_t _bufferSize):
     /* DSR: Does the fact that sometime clone.buffer is not NULL even when
     ** clone.bufferLength is zero indicate memory corruption/leakage?
     **   if ( clone.buffer != NULL) { */
-    if (other.bufferLength != 0 && other.buffer != NULL) {
-      buffer = _CL_NEWARRAY(uint8_t,bufferLength);
-      memcpy(buffer,other.buffer,bufferLength * sizeof(uint8_t));
+    if (other.bufferSize != 0 && other.buffer != NULL) {
+      buffer = _CL_NEWARRAY(uint8_t,bufferSize);
+      memcpy(buffer,other.buffer,bufferSize * sizeof(uint8_t));
     }
   }
 
