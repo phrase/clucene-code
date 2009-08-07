@@ -12,12 +12,13 @@
 #include "IndexInput.h"
 #include "IndexOutput.h"
 
-   CL_NS_DEF(store)
+CL_NS_DEF(store)
 
-   typedef GenericFSDirectory<
-      BufferedIndexInput,
-      BufferedIndexOutput
-   > FSDirectory;
+class CLUCENE_EXPORT FSDirectory : public GenericFSDirectory<
+    BufferedIndexInput,
+    BufferedIndexOutput
+> {
+};
 
 CL_NS_END
 #endif

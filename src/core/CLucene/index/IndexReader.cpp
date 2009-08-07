@@ -452,7 +452,7 @@ bool IndexReader::hasNorms(const TCHAR* field) {
 }
 
 void IndexReader::unlock(const char* path){
-	FSDirectory* dir = FSDirectory::getDirectory(path);
+	Directory* dir = FSDirectory::getDirectory(path);
 	unlock(dir);
 	dir->close();
 	_CLDECDELETE(dir);

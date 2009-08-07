@@ -12,7 +12,7 @@ void testIWmergePhraseSegments(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	sprintf(fsdir,"%s/%s",cl_tempDir, "test.indexwriter");
 	SimpleAnalyzer a;
-  Directory* dir = FSDirectory::getDirectory(fsdir, true);
+	Directory* dir = FSDirectory::getDirectory(fsdir, true);
 
 	IndexWriter ndx2(dir,&a,true);
 	ndx2.setUseCompoundFile(false);
@@ -109,7 +109,7 @@ void testIWmergeSegments2(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	sprintf(fsdir,"%s/%s",cl_tempDir, "test.indexwriter");
 	SimpleAnalyzer a;
-  Directory* dir = FSDirectory::getDirectory(fsdir, true);
+	Directory* dir = FSDirectory::getDirectory(fsdir, true);
 
 	IndexWriter ndx2(dir,&a,true);
 	ndx2.setUseCompoundFile(false);
@@ -348,7 +348,7 @@ void testIWlargeScaleCorrectness(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	sprintf(fsdir,"%s/%s",cl_tempDir, "test.search");
 	RAMDirectory ram;
-	FSDirectory* disk = FSDirectory::getDirectory(fsdir, true);
+	Directory* disk = FSDirectory::getDirectory(fsdir, true);
 	IWlargeScaleCorrectness_tester().invoke(ram, tc);
 	IWlargeScaleCorrectness_tester().invoke(*disk, tc);
 	disk->close();

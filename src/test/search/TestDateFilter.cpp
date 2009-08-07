@@ -11,7 +11,7 @@
 		char fsdir[CL_MAX_PATH];
 		sprintf(fsdir,"%s/%s",cl_tempDir, "dfindex");
 		
-		FSDirectory* indexStore = FSDirectory::getDirectory( fsdir,true);
+		Directory* indexStore = FSDirectory::getDirectory( fsdir,true);
 		Analyzer* a = _CLNEW SimpleAnalyzer();
 		IndexWriter* writer = _CLNEW IndexWriter(indexStore, a, true);
      	int64_t now = Misc::currentTimeMillis()/1000;
