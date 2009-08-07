@@ -77,7 +77,7 @@ public:
 	* @param length the number of characters in the sequence
 	* @see IndexInput#readChars(char[],int32_t,int32_t)
 	*/
-	void writeChars(const TCHAR* s, const int32_t length);
+	virtual void writeChars(const TCHAR* s, const int32_t length);
 
 	/** Closes this stream to further operations. */
 	virtual void close() = 0;

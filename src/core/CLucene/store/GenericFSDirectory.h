@@ -4,6 +4,169 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+#ifndef _lucene_store_GenericFSDirectory_
+#define _lucene_store_GenericFSDirectory_
+
+
+#include "Directory.h"
+#include "IndexInput.h"
+#include "IndexOutput.h"
+#include <string>
+#include <vector>
+
+//#include "Lock.h"
+//#include "LockFactory.h"
+#include "CLucene/util/VoidMap.h"
+CL_CLASS_DEF(util,StringBuffer)
+
+   CL_NS_DEF(store)
+
+   /**
+   * Straightforward implementation of {@link lucene::store::Directory} as a directory of files.
+   * <p>If the system property 'disableLuceneLocks' has the String value of
+   * "true", lock creation will be disabled.
+   *
+   * @see Directory
+   */
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	class CLUCENE_EXPORT GenericFSDirectory:public Directory{
+	private:
+		class FSIndexOutput;
+		class FSIndexInput;
+		friend class GenericFSDirectory<
+		      index_input_base,
+		      index_output_base
+		  >::FSIndexOutput;
+		friend class GenericFSDirectory<
+		      index_input_base,
+		      index_output_base
+		  >::FSIndexInput;
+
+	protected:
+		GenericFSDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL);
+	private:
+    std::string directory;
+		int refCount;
+		void create();
+
+		static const char* LOCK_DIR;
+		static const char* getLockDir();
+		char* getLockPrefix() const;
+		static bool disableLocks;
+
+		void priv_getFN(char* buffer, const char* name) const;
+		bool useMMap;
+
+	protected:
+		/// Removes an existing file in the directory.
+		bool doDeleteFile(const char* name);
+
+	public:
+	  ///Destructor - only call this if you are sure the directory
+	  ///is not being used anymore. Otherwise use the ref-counting
+	  ///facilities of _CLDECDELETE
+		~GenericFSDirectory();
+
+		/// Get a list of strings, one for each file in the directory.
+		bool list(std::vector<std::string>* names) const;
+
+		/// Returns true iff a file with the given name exists.
+		bool fileExists(const char* name) const;
+
+      /// Returns the text name of the directory
+		const char* getDirName() const; ///<returns reference
+
+
+    /**
+    Returns the directory instance for the named location.
+
+    Do not delete this instance, only use close, otherwise other instances
+    will lose this instance.
+
+    <p>Directories are cached, so that, for a given canonical path, the same
+    GenericFSDirectory instance will always be returned.  This permits
+    synchronization on directories.
+
+    @param file the path to the directory.
+    @param create if true, create, or erase any existing contents.
+    @return the GenericFSDirectory for the named file.
+    */
+		static GenericFSDirectory<
+		      index_input_base,
+		      index_output_base
+		  >* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL);
+
+		/// Returns the time the named file was last modified.
+		int64_t fileModified(const char* name) const;
+
+		//static
+		/// Returns the time the named file was last modified.
+		static int64_t fileModified(const char* dir, const char* name);
+
+		//static
+		/// Returns the length in bytes of a file in the directory.
+		int64_t fileLength(const char* name) const;
+
+		/// Returns a stream reading an existing file.
+		bool openInput(const char* name, IndexInput*& ret, CLuceneError& err, int32_t bufferSize=-1);
+
+		IndexInput* openMMapFile(const char* name, int32_t bufferSize=LUCENE_STREAM_BUFFER_SIZE);
+
+		/// Renames an existing file in the directory.
+		void renameFile(const char* from, const char* to);
+
+      	/** Set the modified time of an existing file to now. */
+      	void touchFile(const char* name);
+
+		/// Creates a new, empty file in the directory with the given name.
+		///	Returns a stream writing this file.
+		IndexOutput* createOutput(const char* name);
+
+		  ///Decrease the ref-count to the directory by one. If
+		  ///the object is no longer needed, then the object is
+		  ///removed from the directory pool.
+      void close();
+
+	  /**
+	  * If MMap is available, this can disable use of
+	  * mmap reading.
+	  */
+	  void setUseMMap(bool value);
+	  /**
+	  * Gets whether the directory is using MMap for inputstreams.
+	  */
+	  bool getUseMMap() const;
+
+	  std::string toString() const;
+
+		static const char* getClassName();
+		const char* getObjectName() const;
+
+	  /**
+	  * Set whether Lucene's use of lock files is disabled. By default,
+	  * lock files are enabled. They should only be disabled if the index
+	  * is on a read-only medium like a CD-ROM.
+	  */
+	  static void setDisableLocks(bool doDisableLocks);
+
+	  /**
+	  * Returns whether Lucene's use of lock files is disabled.
+	  * @return true if locks are disabled, false if locks are enabled.
+	  */
+	  static bool getDisableLocks();
+
+	static CL_NS(util)::CLHashMap<const char*,GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> DIRECTORIES;
+	STATIC_DEFINE_MUTEX(DIRECTORIES_LOCK)
+
+  };
+
+CL_NS_END
 #include "CLucene/_ApiHeader.h"
 
 #include <fcntl.h>
@@ -21,7 +184,6 @@
 #endif
 #include <errno.h>
 
-#include "FSDirectory.h"
 #include "LockFactory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/IndexWriter.h"
@@ -39,13 +201,47 @@ CL_NS_USE(util)
    * instance per path, so that synchronization on the Directory can be used to
    * synchronize access between readers and writers.
    */
-	static CL_NS(util)::CLHashMap<const char*,FSDirectory*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> DIRECTORIES(false,false);
-	STATIC_DEFINE_MUTEX(DIRECTORIES_LOCK)
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	CL_NS(util)::CLHashMap<const char*,GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> GenericFSDirectory<
+                index_input_base,
+                index_output_base
+        >::DIRECTORIES(false,false);
 
-	bool FSDirectory::disableLocks=false;
+#ifndef _CL_DISABLE_MULTITHREADING
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	_LUCENE_THREADMUTEX GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::DIRECTORIES_LOCK;
+#endif
+
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::disableLocks=false;
 
 
-	class FSDirectory::FSIndexInput:public BufferedIndexInput {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	class GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput:public index_input_base {
 		/**
 		* We used a shared handle between all the fsindexinput clones.
 		* This reduces number of file handles we need, and it means
@@ -66,7 +262,7 @@ CL_NS_USE(util)
 		SharedHandle* handle;
 		int64_t _pos;
 		FSIndexInput(SharedHandle* handle, int32_t __bufferSize):
-			BufferedIndexInput(__bufferSize)
+			index_input_base(__bufferSize)
 		{
 			this->_pos = 0;
 			this->handle = handle;
@@ -81,7 +277,10 @@ CL_NS_USE(util)
 		void close();
 		int64_t length() const { return handle->_length; }
 
-		const char* getDirectoryType() const{ return FSDirectory::getClassName(); }
+		const char* getDirectoryType() const{ return GenericFSDirectory<
+		        index_input_base,
+		        index_output_base
+		    >::getClassName(); }
     const char* getObjectName() const{ return getClassName(); }
     static const char* getClassName() { return "FSIndexInput"; }
 	protected:
@@ -91,7 +290,14 @@ CL_NS_USE(util)
 		void readInternal(uint8_t* b, const int32_t len);
 	};
 
-	class FSDirectory::FSIndexOutput: public BufferedIndexOutput {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	class GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput: public index_output_base {
 	private:
 		int32_t fhandle;
 	protected:
@@ -109,7 +315,14 @@ CL_NS_USE(util)
 		int64_t length() const;
 	};
 
-	bool FSDirectory::FSIndexInput::open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t __bufferSize )    {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t __bufferSize )    {
 	//Func - Constructor.
 	//       Opens the file named path
 	//Pre  - path != NULL
@@ -118,7 +331,7 @@ CL_NS_USE(util)
 	  CND_PRECONDITION(path != NULL, "path is NULL");
 
 	  if ( __bufferSize == -1 )
-		  __bufferSize = CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE;
+		  __bufferSize = index_output_base::BUFFER_SIZE;
 	  SharedHandle* handle = _CLNEW SharedHandle(path);
 
 	  //Open the file
@@ -153,7 +366,14 @@ CL_NS_USE(util)
 	  return false;
   }
 
-  FSDirectory::FSIndexInput::FSIndexInput(const FSIndexInput& other): BufferedIndexInput(other){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::FSIndexInput(const FSIndexInput& other): index_input_base(other){
   //Func - Constructor
   //       Uses clone for its initialization
   //Pre  - clone is a valide instance of FSIndexInput
@@ -166,7 +386,14 @@ CL_NS_USE(util)
 	  _pos = other.handle->_fpos; //note where we are currently...
   }
 
-  FSDirectory::FSIndexInput::SharedHandle::SharedHandle(const char* path){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::SharedHandle::SharedHandle(const char* path){
   	fhandle = 0;
     _length = 0;
     _fpos = 0;
@@ -176,7 +403,14 @@ CL_NS_USE(util)
 	  THIS_LOCK = new _LUCENE_THREADMUTEX;
 #endif
   }
-  FSDirectory::FSIndexInput::SharedHandle::~SharedHandle() {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::SharedHandle::~SharedHandle() {
     if ( fhandle >= 0 ){
       if ( ::_close(fhandle) != 0 )
         _CLTHROWA(CL_ERR_IO, "File IO Close error");
@@ -185,7 +419,14 @@ CL_NS_USE(util)
     }
   }
 
-  FSDirectory::FSIndexInput::~FSIndexInput(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::~FSIndexInput(){
   //Func - Destructor
   //Pre  - True
   //Post - The file for which this instance is responsible has been closed.
@@ -194,12 +435,29 @@ CL_NS_USE(util)
 	  FSIndexInput::close();
   }
 
-  IndexInput* FSDirectory::FSIndexInput::clone() const
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  IndexInput* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::clone() const
   {
-    return _CLNEW FSDirectory::FSIndexInput(*this);
+    return _CLNEW typename GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput(*this);
   }
-  void FSDirectory::FSIndexInput::close()  {
-	BufferedIndexInput::close();
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::close()  {
+	index_input_base::close();
 #ifndef _CL_DISABLE_MULTITHREADING
 	if ( handle != NULL ){
 		//here we have a bit of a problem... we need to lock the handle to ensure that we can
@@ -229,13 +487,27 @@ CL_NS_USE(util)
 #endif
   }
 
-  void FSDirectory::FSIndexInput::seekInternal(const int64_t position)  {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::seekInternal(const int64_t position)  {
 	CND_PRECONDITION(position>=0 &&position<handle->_length,"Seeking out of range")
 	_pos = position;
   }
 
 /** IndexInput methods */
-void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	CND_PRECONDITION(handle!=NULL,"shared file handle has closed");
 	CND_PRECONDITION(handle->fhandle>=0,"file is not open");
 	SCOPED_LOCK_MUTEX(*handle->THIS_LOCK)
@@ -247,21 +519,28 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 		handle->_fpos = _pos;
 	}
 
-	bufferLength = _read(handle->fhandle,b,len); // 2004.10.31:SF 1037836
-	if (bufferLength == 0){
+	this->bufferLength = _read(handle->fhandle,b,len); // 2004.10.31:SF 1037836
+	if (this->bufferLength == 0){
 		_CLTHROWA(CL_ERR_IO, "read past EOF");
 	}
-	if (bufferLength == -1){
+	if (this->bufferLength == -1){
 		//if (EINTR == errno) we could do something else... but we have
 		//to guarantee some return, or throw EOF
 
 		_CLTHROWA(CL_ERR_IO, "read error");
 	}
-	_pos+=bufferLength;
+	_pos+=this->bufferLength;
 	handle->_fpos=_pos;
 }
 
-  FSDirectory::FSIndexOutput::FSIndexOutput(const char* path){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput::FSIndexOutput(const char* path){
 	//O_BINARY - Opens file in binary (untranslated) mode
 	//O_CREAT - Creates and opens new file for writing. Has no effect if file specified by filename exists
 	//O_RANDOM - Specifies that caching is optimized for, but not restricted to, random access from disk.
@@ -281,7 +560,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
           _CLTHROWA(CL_ERR_IO, "Too many open files");
     }
   }
-  FSDirectory::FSIndexOutput::~FSIndexOutput(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput::~FSIndexOutput(){
 	if ( fhandle >= 0 ){
 	  try {
         FSIndexOutput::close();
@@ -294,14 +580,28 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
   }
 
   /** output methods: */
-  void FSDirectory::FSIndexOutput::flushBuffer(const uint8_t* b, const int32_t size) {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput::flushBuffer(const uint8_t* b, const int32_t size) {
 	  CND_PRECONDITION(fhandle>=0,"file is not open");
       if ( size > 0 && _write(fhandle,b,size) != size )
         _CLTHROWA(CL_ERR_IO, "File IO Write error");
   }
-  void FSDirectory::FSIndexOutput::close() {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput::close() {
     try{
-      BufferedIndexOutput::close();
+      index_output_base::close();
     }catch(CLuceneError& err){
 	    //ignore IO errors...
 	    if ( err.number() != CL_ERR_IO )
@@ -314,22 +614,50 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
       fhandle = -1; //-1 now indicates closed
   }
 
-  void FSDirectory::FSIndexOutput::seek(const int64_t pos) {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput::seek(const int64_t pos) {
     CND_PRECONDITION(fhandle>=0,"file is not open");
-    BufferedIndexOutput::seek(pos);
+    index_output_base::seek(pos);
 	int64_t ret = fileSeek(fhandle,pos,SEEK_SET);
 	if ( ret != pos ){
       _CLTHROWA(CL_ERR_IO, "File IO Seek error");
 	}
   }
-  int64_t FSDirectory::FSIndexOutput::length() const {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  int64_t GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::FSIndexOutput::length() const {
 	  CND_PRECONDITION(fhandle>=0,"file is not open");
 	  return fileSize(fhandle);
   }
 
 
-	const char* FSDirectory::LOCK_DIR=NULL;
-	const char* FSDirectory::getLockDir(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	const char* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::LOCK_DIR=NULL;
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	const char* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getLockDir(){
 		#ifdef LUCENE_LOCK_DIR
 		LOCK_DIR = LUCENE_LOCK_DIR;
 		#else
@@ -352,7 +680,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 		return LOCK_DIR;
 	}
 
-  FSDirectory::FSDirectory(const char* _path, const bool createDir, LockFactory* lockFactory):
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::GenericFSDirectory(const char* _path, const bool createDir, LockFactory* lockFactory):
    Directory(),
    refCount(0),
    useMMap(LUCENE_USE_MMAP)
@@ -389,7 +724,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
   }
 
 
-  void FSDirectory::create(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::create(){
     SCOPED_LOCK_MUTEX(THIS_LOCK)
     struct cl_stat_t fstat;
     if ( fileStat(directory.c_str(),&fstat) != 0 ) {
@@ -424,50 +766,140 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 
   }
 
-  void FSDirectory::priv_getFN(char* buffer, const char* name) const{
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::priv_getFN(char* buffer, const char* name) const{
       buffer[0] = 0;
       strcpy(buffer,directory.c_str());
       strcat(buffer, PATH_DELIMITERA );
       strcat(buffer,name);
   }
 
-  FSDirectory::~FSDirectory(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::~GenericFSDirectory(){
 	  _CLDELETE( lockFactory );
   }
 
 
-    void FSDirectory::setUseMMap(bool value){ useMMap = value; }
-    bool FSDirectory::getUseMMap() const{ return useMMap; }
-    const char* FSDirectory::getClassName(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+    void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::setUseMMap(bool value){ useMMap = value; }
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+    bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getUseMMap() const{ return useMMap; }
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+    const char* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getClassName(){
       return "FSDirectory";
     }
-    const char* FSDirectory::getObjectName() const{
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+    const char* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getObjectName() const{
       return getClassName();
     }
 
-    void FSDirectory::setDisableLocks(bool doDisableLocks) { disableLocks = doDisableLocks; }
-    bool FSDirectory::getDisableLocks() { return disableLocks; }
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+    void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::setDisableLocks(bool doDisableLocks) { disableLocks = doDisableLocks; }
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+    bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getDisableLocks() { return disableLocks; }
 
 
-  bool FSDirectory::list(vector<string>* names) const{ //todo: fix this, ugly!!!
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::list(vector<string>* names) const{ //todo: fix this, ugly!!!
     CND_PRECONDITION(!directory.empty(),"directory is not open");
     return Misc::listFiles(directory.c_str(), *names, false);
   }
 
-  bool FSDirectory::fileExists(const char* name) const {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::fileExists(const char* name) const {
 	  CND_PRECONDITION(directory[0]!=0,"directory is not open");
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
     return Misc::dir_Exists( fl );
   }
 
-  const char* FSDirectory::getDirName() const{
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  const char* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getDirName() const{
     return directory.c_str();
   }
 
   //static
-  FSDirectory* FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory){
-    FSDirectory* dir = NULL;
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getDirectory(const char* file, const bool _create, LockFactory* lockFactory){
+    GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>* dir = NULL;
 	{
 		if ( !file || !*file )
 			_CLTHROWA(CL_ERR_IO,"Invalid directory");
@@ -482,7 +914,10 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 		SCOPED_LOCK_MUTEX(DIRECTORIES_LOCK)
 		dir = DIRECTORIES.get(tmpdirectory);
 		if ( dir == NULL  ){
-			dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory);
+			dir = _CLNEW GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>(tmpdirectory,_create,lockFactory);
 			DIRECTORIES.put( dir->directory.c_str(), dir);
 		} else if ( _create ) {
 	    	dir->create();
@@ -501,7 +936,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
     return _CL_POINTER(dir);
   }
 
-  int64_t FSDirectory::fileModified(const char* name) const {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  int64_t GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::fileModified(const char* name) const {
 	CND_PRECONDITION(directory[0]!=0,"directory is not open");
     struct cl_stat_t buf;
     char buffer[CL_MAX_DIR];
@@ -513,7 +955,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
   }
 
   //static
-  int64_t FSDirectory::fileModified(const char* dir, const char* name){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  int64_t GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::fileModified(const char* dir, const char* name){
     struct cl_stat_t buf;
     char buffer[CL_MAX_DIR];
 	_snprintf(buffer,CL_MAX_DIR,"%s%s%s",dir,PATH_DELIMITERA,name);
@@ -521,7 +970,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
     return buf.st_mtime;
   }
 
-  void FSDirectory::touchFile(const char* name){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::touchFile(const char* name){
 	  CND_PRECONDITION(directory[0]!=0,"directory is not open");
     char buffer[CL_MAX_DIR];
     _snprintf(buffer,CL_MAX_DIR,"%s%s%s",directory.c_str(),PATH_DELIMITERA,name);
@@ -532,7 +988,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	::_close(r);
   }
 
-  int64_t FSDirectory::fileLength(const char* name) const {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  int64_t GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::fileLength(const char* name) const {
 	  CND_PRECONDITION(directory[0]!=0,"directory is not open");
     struct cl_stat_t buf;
     char buffer[CL_MAX_DIR];
@@ -543,7 +1006,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
       return buf.st_size;
   }
 
-  IndexInput* FSDirectory::openMMapFile(const char* name, int32_t bufferSize){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  IndexInput* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::openMMapFile(const char* name, int32_t bufferSize){
 #ifdef LUCENE_FS_MMAP
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
@@ -556,7 +1026,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 #endif
   }
 
-  bool FSDirectory::openInput(const char * name, IndexInput *& ret, CLuceneError& error, int32_t bufferSize)
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::openInput(const char * name, IndexInput *& ret, CLuceneError& error, int32_t bufferSize)
   {
 	CND_PRECONDITION(directory[0]!=0,"directory is not open")
     char fl[CL_MAX_DIR];
@@ -572,7 +1049,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	return FSIndexInput::open( fl, ret, error, bufferSize );
   }
 
-  void FSDirectory::close(){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::close(){
     SCOPED_LOCK_MUTEX(DIRECTORIES_LOCK)
     {
 	    SCOPED_LOCK_MUTEX(THIS_LOCK)
@@ -582,7 +1066,7 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	    if (--refCount <= 0 ) {//refcount starts at 1
 	        Directory* dir = DIRECTORIES.get(getDirName());
 	        if(dir){
-	            DIRECTORIES.remove( getDirName() ); //this will be removed in ~FSDirectory
+	            DIRECTORIES.remove( getDirName() ); //this will be removed in ~GenericFSDirectory
 	            _CLDECDELETE(dir);
 	        }
 	    }
@@ -592,10 +1076,17 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
    /**
    * So we can do some byte-to-hexchar conversion below
    */
-	char HEX_DIGITS[] =
+	const char HEX_DIGITS[] =
 	{'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
 
-	char* FSDirectory::getLockPrefix() const{
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+	char* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::getLockPrefix() const{
 		char dirName[CL_MAX_PATH]; // name to be hashed
 		if ( _realpath(directory.c_str(),dirName) == NULL ){
 			_CLTHROWA(CL_ERR_Runtime,"Invalid directory path");
@@ -616,14 +1107,28 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	    return ret;
   }
 
-  bool FSDirectory::doDeleteFile(const char* name)  {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  bool GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::doDeleteFile(const char* name)  {
 	CND_PRECONDITION(directory[0]!=0,"directory is not open");
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
 	return _unlink(fl) != -1;
   }
 
-  void FSDirectory::renameFile(const char* from, const char* to){
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  void GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::renameFile(const char* from, const char* to){
 	CND_PRECONDITION(directory[0]!=0,"directory is not open");
     SCOPED_LOCK_MUTEX(THIS_LOCK)
     char old[CL_MAX_DIR];
@@ -671,7 +1176,14 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
     }
   }
 
-  IndexOutput* FSDirectory::createOutput(const char* name) {
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  IndexOutput* GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::createOutput(const char* name) {
 	CND_PRECONDITION(directory[0]!=0,"directory is not open");
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
@@ -686,8 +1198,17 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
     return _CLNEW FSIndexOutput( fl );
   }
 
-  string FSDirectory::toString() const{
+	template<
+		typename index_input_base,
+		typename index_output_base
+	>
+  string GenericFSDirectory<
+		index_input_base,
+		index_output_base
+	>::toString() const{
 	  return string("FSDirectory@") + this->directory;
   }
 
 CL_NS_END
+
+#endif
