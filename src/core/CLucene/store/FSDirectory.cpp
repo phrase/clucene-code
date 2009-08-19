@@ -163,7 +163,7 @@ CL_NS_USE(util)
 
 	  SCOPED_LOCK_MUTEX(*other.handle->THIS_LOCK)
 	  handle = _CL_POINTER(other.handle);
-	  _pos = other.handle->_fpos; //note where we are currently...
+	  _pos = other.getFilePointer(); //note where we are currently...
   }
 
   FSDirectory::FSIndexInput::SharedHandle::SharedHandle(const char* path){
