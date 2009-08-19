@@ -12,6 +12,8 @@ CL_NS_DEF(util)
 template <typename T>
 class CLUCENE_EXPORT CLStream{
 public:
+	typedef T element_type;
+
 	virtual ~CLStream(){}
 
 	inline int read(){
@@ -151,7 +153,10 @@ public:
 	~BufferedReader(){}
 	BufferedReader* __asBufferedReader(){ return this; }
 };
-typedef CLStream<signed char> InputStream;
+class CLUCENE_EXPORT InputStream: public CLStream<signed char>{
+public:
+	~InputStream(){}
+};
 class CLUCENE_EXPORT BufferedInputStream: public InputStream, public BufferedStream<signed char>{
 public:
 	virtual ~BufferedInputStream(){}
