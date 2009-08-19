@@ -22,8 +22,8 @@ CL_NS_DEF(search)
 		coord(0.0),
 		lastDoc(-1)
 	{
-    this->scorers = _CLNEW CL_NS(util)::ValueArray<Scorer*>(_scorers->size());
-    _scorers->toArray(this->scorers->values, false);
+    this->scorers = _CLNEW CL_NS(util)::ObjectArray<Scorer>(_scorers->size());
+    _scorers->toArray(this->scorers->values,false);
     coord = getSimilarity()->coord(this->scorers->length, this->scorers->length);
   }
   ConjunctionScorer::ConjunctionScorer(Similarity* similarity, const CL_NS(util)::ArrayBase<Scorer*>* _scorers):
@@ -33,7 +33,7 @@ CL_NS_DEF(search)
 		coord(0.0),
 		lastDoc(-1)
 	{
-    this->scorers = _CLNEW CL_NS(util)::ValueArray<Scorer*>(_scorers->length);
+    this->scorers = _CLNEW CL_NS(util)::ObjectArray<Scorer>(_scorers->length);
     memcpy(this->scorers->values, _scorers->values, _scorers->length * sizeof(Scorer*));
     coord = getSimilarity()->coord(this->scorers->length, this->scorers->length);
   }
