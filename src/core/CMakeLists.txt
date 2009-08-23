@@ -55,7 +55,9 @@ SET(clucene_core_Files
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
+	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
+	#./CLucene/store/RAWDirectory.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp
