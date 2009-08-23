@@ -26,9 +26,11 @@ CL_NS_DEF(store)
 	protected:
 		RAWDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL);
 	public:
-	  ///Destructor - only call this if you are sure the directory
-	  ///is not being used anymore. Otherwise use the ref-counting
-	  ///facilities of _CLDECDELETE
+	  /**
+    * Destructor - only call this if you are sure the directory
+	  * is not being used anymore. Otherwise use the ref-counting
+	  * facilities of _CLDECDELETE
+    */
 		virtual ~RAWDirectory();
 
     /**
@@ -47,11 +49,15 @@ CL_NS_DEF(store)
     */
 		static RAWDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL);
 
-		/// Returns a stream reading an existing file.
+		/**
+    * Returns a stream reading an existing file.
+    */
 		virtual bool openInput(const char* name, IndexInput*& ret, CLuceneError& err, int32_t bufferSize=-1);
 
-		/// Creates a new, empty file in the directory with the given name.
-		///	Returns a stream writing this file.
+		/**
+    * Creates a new, empty file in the directory with the given name.
+		*	Returns a stream writing this file.
+    */
 		virtual IndexOutput* createOutput(const char* name);
 	};
 CL_NS_END
