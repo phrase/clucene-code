@@ -7,9 +7,13 @@
 #ifndef _lucene_store_FSIndexInput_
 #define _lucene_store_FSIndexInput_
 
-#include "CLucene/store/IndexInput.h"
-#include "CLucene/store/FSDirectory.h"
+#include "IndexInput.h"
+#include "FSDirectory.h"
+#include "_SharedHandle.h"
+#include "IOFactory.h"
 #include <boost/shared_ptr.hpp>
+
+CL_CLASS_DEF(store,FSIOFactory)
 
 CL_NS_DEF(store)
 
@@ -19,35 +23,19 @@ CL_NS_DEF(store)
    * @see IndexInput
    */
 	class CLUCENE_EXPORT FSIndexInput:public BufferedIndexInput {
-		/**
-		* We used a shared handle between all the fsindexinput clones.
-		* This reduces number of file handles we need, and it means
-		* we dont have to use file tell (which is slow) before doing
-		* a read.
-    * TODO: get rid of this and dup/fctnl or something like that...
-		*/
-		class SharedHandle {
-		public:
-			int32_t fhandle;
-			int64_t _length;
-			int64_t _fpos;
-			DEFINE_MUTEX(*THIS_LOCK)
-			char path[CL_MAX_DIR]; //todo: this is only used for cloning, better to get information from the fhandle
-			SharedHandle(const char* path);
-			~SharedHandle();
-		};
+		friend class FSIOFactory;
 		boost::shared_ptr<SharedHandle> handle;
 		int64_t _pos;
+	protected:
 		FSIndexInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize):
 			BufferedIndexInput(__bufferSize)
 		{
 			this->_pos = 0;
 			this->handle = handle;
 		};
-	protected:
 		FSIndexInput(const FSIndexInput& clone);
 	public:
-		static bool open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1);
+		static bool open(IOFactory* ioFactory, const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1);
 		~FSIndexInput();
 
 		IndexInput* clone() const;

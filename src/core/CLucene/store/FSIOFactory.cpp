@@ -9,12 +9,17 @@
 #include "FSIOFactory.h"
 #include "FSIndexInput.h"
 #include "FSIndexOutput.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(store)
 
 
 bool FSIOFactory::openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize) {
-    return FSIndexInput::open(path, ret, error, bufferSize);
+    return FSIndexInput::open(this, path, ret, error, bufferSize);
+}
+
+IndexInput* FSIOFactory::newInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize) {
+    return _CLNEW FSIndexInput(handle, __bufferSize);
 }
 
 IndexOutput* FSIOFactory::newOutput(const char* path) {

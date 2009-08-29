@@ -17,6 +17,21 @@
 	#include <winerror.h>
 #endif
 
+#include <fcntl.h>
+#ifdef _CL_HAVE_IO_H
+        #include <io.h>
+#endif
+#ifdef _CL_HAVE_SYS_STAT_H
+        #include <sys/stat.h>
+#endif
+#ifdef _CL_HAVE_UNISTD_H
+        #include <unistd.h>
+#endif  
+#ifdef _CL_HAVE_DIRECT_H
+        #include <direct.h>
+#endif
+#include <errno.h>
+
 #if defined(_CL_HAVE_FUNCTION_MAPVIEWOFFILE)
 	typedef int HANDLE;
 	

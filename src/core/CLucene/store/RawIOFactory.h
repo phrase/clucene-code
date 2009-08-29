@@ -4,16 +4,15 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or 
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
-#ifndef _lucene_store_FSIOFactory_
-#define _lucene_store_FSIOFactory_
+#ifndef _lucene_store_RawIOFactory_
+#define _lucene_store_RawIOFactory_
 
-#include "CLucene/store/IOFactory.h"
+#include "CLucene/store/FSIOFactory.h"
 
 CL_NS_DEF(store)
 
-class CLUCENE_EXPORT FSIOFactory : public IOFactory {
+class CLUCENE_EXPORT RawIOFactory : public FSIOFactory {
 public:
-	bool openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1);
 	IndexInput* newInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize);
 	IndexOutput* newOutput(const char* path);
 };

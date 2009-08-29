@@ -7,8 +7,10 @@
 #ifndef _lucene_store_IOFactory_
 #define _lucene_store_IOFactory_
 
-#include "CLucene/store/IndexInput.h"
-#include "CLucene/store/IndexOutput.h"
+#include "IndexInput.h"
+#include "IndexOutput.h"
+#include "_SharedHandle.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(store)
 
@@ -20,6 +22,7 @@ CL_NS_DEF(store)
 class CLUCENE_EXPORT IOFactory {
 public:
 	virtual bool openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1) = 0;
+	virtual IndexInput* newInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize) = 0;
 	virtual IndexOutput* newOutput(const char* path) = 0;
 };
 CL_NS_END

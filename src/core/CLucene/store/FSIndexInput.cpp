@@ -27,7 +27,7 @@
 CL_NS_DEF(store)
 CL_NS_USE(util)
 
-	bool FSIndexInput::open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t __bufferSize )    {
+	bool FSIndexInput::open(IOFactory* ioFactory, const char* path, IndexInput*& ret, CLuceneError& error, int32_t __bufferSize )    {
 	//Func - Constructor.
 	//       Opens the file named path
 	//Pre  - path != NULL
@@ -50,7 +50,7 @@ CL_NS_USE(util)
 	  		error.set( CL_ERR_IO,"fileStat error" );
 		  else{
 			  handle.get()->_fpos = 0;
-			  ret = _CLNEW FSIndexInput(handle, __bufferSize);
+			  ret = ioFactory->newInput(handle, __bufferSize);
 			  return true;
 		  }
 	  }else{
@@ -81,25 +81,6 @@ CL_NS_USE(util)
 	  SCOPED_LOCK_MUTEX(*other.handle.get()->THIS_LOCK)
 	  handle = other.handle;
 	  _pos = other.handle.get()->_fpos; //note where we are currently...
-  }
-
-  FSIndexInput::SharedHandle::SharedHandle(const char* path){
-  	fhandle = 0;
-    _length = 0;
-    _fpos = 0;
-    strcpy(this->path,path);
-
-#ifndef _CL_DISABLE_MULTITHREADING
-	  THIS_LOCK = new _LUCENE_THREADMUTEX;
-#endif
-  }
-  FSIndexInput::SharedHandle::~SharedHandle() {
-    if ( fhandle >= 0 ){
-      if ( ::_close(fhandle) != 0 )
-        _CLTHROWA(CL_ERR_IO, "File IO Close error");
-      else
-        fhandle = -1;
-    }
   }
 
   FSIndexInput::~FSIndexInput(){

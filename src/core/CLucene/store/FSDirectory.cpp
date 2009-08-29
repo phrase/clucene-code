@@ -182,7 +182,7 @@ CL_NS_USE(util)
   }
 
   //static
-  FSDirectory* FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory){
+  FSDirectory* FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory, IOFactory* ioFactory){
     FSDirectory* dir = NULL;
 	{
 		if ( !file || !*file )
@@ -201,7 +201,7 @@ CL_NS_USE(util)
       if ( getUseMMap() ){
         dir = _CLNEW MMapDirectory(tmpdirectory,_create,lockFactory);
       }else{
-			  dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory);
+			  dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory,ioFactory);
       }
 			DIRECTORIES.put( dir->directory.c_str(), dir);
 		} else if ( _create ) {

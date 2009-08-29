@@ -9,6 +9,7 @@
 
 #include "CLucene/util/VoidMap.h"
 #include "FSDirectory.h"
+#include "RawIOFactory.h"
 
 CL_NS_DEF(store)
 
@@ -19,20 +20,16 @@ CL_NS_DEF(store)
   * decoding needs to be done.
   * NOTE: There is no detection of format, so if you write with this,
   * then opening with a normal FSDirectory may have unpredictable results
-  * (and vice-versa)
+  * (and vice-versa). Same goes for opening with instances using different
+  * TCHAR definitions
 	*
 	*/
 	class CLUCENE_EXPORT RAWDirectory:public FSDirectory{
+	private:
+		static RawIOFactory defaultIOFactory;
 	protected:
-		RAWDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL);
+		RAWDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
 	public:
-	  /**
-    * Destructor - only call this if you are sure the directory
-	  * is not being used anymore. Otherwise use the ref-counting
-	  * facilities of _CLDECDELETE
-    */
-		virtual ~RAWDirectory();
-
     /**
     Returns the directory instance for the named location.
 
@@ -47,18 +44,8 @@ CL_NS_DEF(store)
     @param create if true, create, or erase any existing contents.
     @return the FSDirectory for the named file.
     */
-		static RAWDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL);
+		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
 
-		/**
-    * Returns a stream reading an existing file.
-    */
-		virtual bool openInput(const char* name, IndexInput*& ret, CLuceneError& err, int32_t bufferSize=-1);
-
-		/**
-    * Creates a new, empty file in the directory with the given name.
-		*	Returns a stream writing this file.
-    */
-		virtual IndexOutput* createOutput(const char* name);
 	};
 CL_NS_END
 #endif
