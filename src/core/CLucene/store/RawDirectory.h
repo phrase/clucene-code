@@ -4,8 +4,8 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
-#ifndef _lucene_store_RAWDirectory_
-#define _lucene_store_RAWDirectory_
+#ifndef _lucene_store_RawDirectory_
+#define _lucene_store_RawDirectory_
 
 #include "CLucene/util/VoidMap.h"
 #include "FSDirectory.h"
@@ -24,11 +24,11 @@ CL_NS_DEF(store)
   * TCHAR definitions
 	*
 	*/
-	class CLUCENE_EXPORT RAWDirectory:public FSDirectory{
+	class CLUCENE_EXPORT RawDirectory:public FSDirectory{
 	private:
 		static RawIOFactory defaultIOFactory;
 	protected:
-		RAWDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
+		RawDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
 	public:
     /**
     Returns the directory instance for the named location.

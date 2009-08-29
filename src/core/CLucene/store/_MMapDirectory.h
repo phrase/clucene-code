@@ -4,8 +4,8 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
-#ifndef _lucene_store_RAWDirectory_
-#define _lucene_store_RAWDirectory_
+#ifndef _lucene_store_MMapDirectory_
+#define _lucene_store_MMapDirectory_
 
 #include "CLucene/util/VoidMap.h"
 #include "FSDirectory.h"

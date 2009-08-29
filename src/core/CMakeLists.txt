@@ -60,7 +60,7 @@ SET(clucene_core_Files
 	./CLucene/store/FSIndexOutput.cpp
 	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
-	./CLucene/store/RAWDirectory.cpp
+	./CLucene/store/RawDirectory.cpp
 	./CLucene/store/RawIOFactory.cpp
 	./CLucene/store/RawIndexInput.cpp
 	./CLucene/store/RawIndexOutput.cpp
