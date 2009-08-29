@@ -49,6 +49,7 @@ ${TYPE_UINT64_T}
 
 ${TYPE_FLOAT_T}
 ${TYPE__CL_DWORD_T}
+${TYPE__CL_WORD_T}
 ${TYPE_SIZE_T}
 
 /* tchar & _T definitions... */

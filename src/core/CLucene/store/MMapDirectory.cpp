@@ -34,19 +34,40 @@
       bool bInheritHandle;
   }	SECURITY_ATTRIBUTES;
 
+  typedef struct _SYSTEM_INFO {
+    union {
+      _cl_dword_t dwOemId;
+      struct {
+        _cl_word_t wProcessorArchitecture;
+        _cl_word_t wReserved;
+      } ;
+    } ;
+    _cl_dword_t     dwPageSize;
+    void*    lpMinimumApplicationAddress;
+    void*    lpMaximumApplicationAddress;
+    _cl_dword_t* dwActiveProcessorMask;
+    _cl_dword_t     dwNumberOfProcessors;
+    _cl_dword_t     dwProcessorType;
+    _cl_dword_t     dwAllocationGranularity;
+    _cl_word_t      wProcessorLevel;
+    _cl_word_t      wProcessorRevision;
+  } SYSTEM_INFO;
+
+  extern "C" __declspec(dllimport) void __stdcall GetSystemInfo(SYSTEM_INFO* lpSystemInfo);
+
   extern "C" __declspec(dllimport) _cl_dword_t __stdcall GetFileSize( HANDLE hFile, _cl_dword_t* lpFileSizeHigh );
-    
+
   extern "C" __declspec(dllimport) bool __stdcall UnmapViewOfFile( void* lpBaseAddress );
 
   extern "C" __declspec(dllimport) bool __stdcall CloseHandle( HANDLE hObject );
   extern "C" __declspec(dllimport) HANDLE __stdcall CreateFileA(
 	const char* lpFileName,
-	_cl_dword_t dwDesiredAccess,
-	_cl_dword_t dwShareMode,
-	SECURITY_ATTRIBUTES* lpSecurityAttributes,
-	_cl_dword_t dwCreationDisposition,
-	_cl_dword_t dwFlagsAndAttributes,
-	HANDLE hTemplateFile
+	  _cl_dword_t dwDesiredAccess,
+	  _cl_dword_t dwShareMode,
+	  SECURITY_ATTRIBUTES* lpSecurityAttributes,
+	  _cl_dword_t dwCreationDisposition,
+	  _cl_dword_t dwFlagsAndAttributes,
+	  HANDLE hTemplateFile
   );
   extern "C" __declspec(dllimport) HANDLE __stdcall CreateFileMappingA(
       HANDLE hFile,
@@ -89,28 +110,31 @@ void MMapMapping_Close(MMapMapping& mmap){
 		if ( ! UnmapViewOfFile(mmap.data) ){
 			CND_PRECONDITION( false, "UnmapViewOfFile(data) failed"); //todo: change to rich error
 		}
+    mmap.data = NULL;
 	}
 
 	if ( mmap.mmaphandle != NULL ){
 		if ( ! CloseHandle(mmap.mmaphandle) ){
 			CND_PRECONDITION( false, "CloseHandle(mmaphandle) failed");
 		}
+	  mmap.mmaphandle = NULL;
 	}
 	if ( mmap.fhandle != NULL ){
 		if ( !CloseHandle(mmap.fhandle) ){
 			CND_PRECONDITION( false, "CloseHandle(fhandle) failed");
 		}
+	  mmap.fhandle = NULL;
 	}
-	mmap.mmaphandle = NULL;
-	mmap.fhandle = NULL;
 #else
-	if ( mmap.data != NULL )
-  		::munmap(mmap.data, mmap.length);
-  	if ( mmap.fhandle > 0 )
-  		::close(mmap.fhandle);
-  	mmap.fhandle = 0;
-#endif
+  if ( mmap.data != NULL ){
+  	::munmap(mmap.data, mmap.length);
 	  mmap.data = NULL;
+  }
+  if ( mmap.fhandle > 0 ){
+		::close(mmap.fhandle);
+    mmap.fhandle = 0;
+  }
+#endif
 }
 void MMapMapping_Clone(MMapMapping& to, const MMapMapping& clone){
 	#if defined(_CL_HAVE_FUNCTION_MAPVIEWOFFILE)
@@ -146,10 +170,11 @@ void MMapMapping_Create(MMapMapping& mmap, const char* path, int64_t offset = 0,
 
   _cl_dword_t dummy=0;
   
+  int64_t fileLength = GetFileSize(mmap.fhandle, &dummy);
   if ( length < 0 ){
-    mmap.length = GetFileSize(mmap.fhandle, &dummy);
+    mmap.length = (int32_t)fileLength;
   }else{
-    mmap.length = length;
+    mmap.length = (int32_t)cl_min(length, fileLength-offset);
   }
 
   if ( mmap.length > 0 ){
@@ -169,12 +194,9 @@ void MMapMapping_Create(MMapMapping& mmap, const char* path, int64_t offset = 0,
 		int errnum = GetLastError(); 
 		CloseHandle(mmap.mmaphandle);
 
-		char* lpMsgBuf=strerror(errnum);
-		size_t len = strlen(lpMsgBuf)+80;
-		char* errstr = _CL_NEWARRAY(char, len); 
-		cl_sprintf(errstr, len, "MMapIndexInput::MMapIndexInput failed with error %d: %s", len, errnum, lpMsgBuf); 
-
-		_CLTHROWA_DEL(CL_ERR_IO,errstr);
+		string lpMsgBuf=string(strerror(errnum));
+    string err = string("MMapIndexInput::MMapIndexInput failed with error ") + Misc::toString(errnum) + string(": ") + lpMsgBuf;
+		_CLTHROWA(CL_ERR_IO,err.c_str());
   }
 
 #else //_CL_HAVE_FUNCTION_MAPVIEWOFFILE
@@ -294,11 +316,12 @@ public:
 	  _internal->pos = 0;
   }
 
-/*
+
   class MMapDirectory::MultiMMapIndexInput::Internal{
   public:
     ValueArray<MMapMapping*> buffers;
   	const int64_t length;
+    bool isClone;
   
     int32_t curBufIndex;
     const int32_t maxBufSize;
@@ -307,42 +330,40 @@ public:
     int32_t curBufPosition;
     int32_t curAvail; // redundant for speed: (bufSizes[curBufIndex] - curBuf.position())
 
-    Internal(int64_t _length, const int32_t _maxBufSize):
+    Internal(int64_t _length, const int32_t _maxBufSize, bool _isClone):
       length(_length),
+      isClone(_isClone),
       maxBufSize(_maxBufSize)
     {
     }
     ~Internal(){
-      for ( size_t i=0;i<buffers.length;i++ ){
-        MMapMapping_Close(*buffers.values[i]);
-        _CLDELETE(buffers.values[i]);
+      if ( !isClone ){
+        for ( size_t i=0;i<buffers.length;i++ ){
+          MMapMapping_Close(*buffers.values[i]);
+          _CLDELETE(buffers.values[i]);
+        }
       }
     }
   };
 
   MMapDirectory::MultiMMapIndexInput::MultiMMapIndexInput(const MultiMMapIndexInput& copy):
     IndexInput(copy),
-    _internal(_CLNEW Internal(copy._internal->length, copy._internal->maxBufSize))
+    _internal(_CLNEW Internal(copy._internal->length, copy._internal->maxBufSize, true))
   {
     _internal->buffers.resize(copy._internal->buffers.length);
-xx
+
     // No need to clone bufSizes.
     // Since most clones will use only one buffer, duplicate() could also be
     // done lazy in clones, eg. when adapting curBuf.
-    for (int32_t bufNr = 0; bufNr < _internal->buffers.length; bufNr++) {
+    for (size_t bufNr = 0; bufNr < _internal->buffers.length; bufNr++) {
       _internal->buffers[bufNr] = copy._internal->buffers[bufNr]; //duplicate
     }
-    try {
-      this->seek(copy.getFilePointer());
-    } catch(IOException ioe) {
-      RuntimeException newException = new RuntimeException(ioe);
-      newException.initCause(ioe);
-      throw newException;
-    };
+
+    this->seek(copy.getFilePointer());
   }
 
   MMapDirectory::MultiMMapIndexInput::MultiMMapIndexInput(const char* path, int32_t maxBufSize):
-    _internal(_CLNEW Internal(Misc::file_Size(path), maxBufSize))
+    _internal(_CLNEW Internal(Misc::file_Size(path), maxBufSize, false))
   {
     if (maxBufSize <= 0)
       _CLTHROWA(CL_ERR_IllegalArgument, (string("Non positive maxBufSize: ") + Misc::toString(maxBufSize)).c_str() );
@@ -351,7 +372,7 @@ xx
       _CLTHROWA(CL_ERR_IllegalArgument, (string("RandomAccessFile too big for maximum buffer size: ")
          + string(path)).c_str());
     
-    int32_t nrBuffers = (_internal->length / _internal->maxBufSize);
+    int32_t nrBuffers = (int32_t)(_internal->length / _internal->maxBufSize);
     if ((nrBuffers * _internal->maxBufSize) < _internal->length) nrBuffers++;
     
     _internal->buffers.resize(nrBuffers);
@@ -431,8 +452,6 @@ xx
 
   void MMapDirectory::MultiMMapIndexInput::close(){
   }
-*/
-
 
 
 
@@ -445,8 +464,27 @@ xx
   MMapDirectory::~MMapDirectory(){
   }
 
-  //todo: would this be bigger on 64bit systems?. i suppose it would be...test first
-  #define MAX_MMAP_BUF LUCENE_INT32_MAX_SHOULDBE
+  static int32_t LUCENE_AllocationGranuality = -1;
+  static int32_t getLuceneAllocationGranuality(){
+    if ( LUCENE_AllocationGranuality == -1 ){
+#ifdef _CL_HAVE_FUNCTION_MAPVIEWOFFILE
+      SYSTEM_INFO info;
+      GetSystemInfo(&info);
+      LUCENE_AllocationGranuality = info.dwAllocationGranularity;
+#else
+      LUCENE_AllocationGranuality = 4096;
+#endif
+    }
+    return LUCENE_AllocationGranuality;
+  }
+  static int32_t _LUCENE_MAX_MMAP_BUF = -1;
+  static int32_t LUCENE_MAX_MMAP_BUF(){
+    if ( _LUCENE_MAX_MMAP_BUF == -1 ){
+      _LUCENE_MAX_MMAP_BUF = (LUCENE_INT32_MAX_SHOULDBE / getLuceneAllocationGranuality() ) * getLuceneAllocationGranuality();
+      assert(_LUCENE_MAX_MMAP_BUF > 0);
+    }
+    return _LUCENE_MAX_MMAP_BUF;
+  }
 
 	/// Returns a stream reading an existing file.
   bool MMapDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t bufferSize){
@@ -458,13 +496,13 @@ xx
       return false;
     }
     try{
+      int32_t MAX_MMAP_BUF = LUCENE_MAX_MMAP_BUF();
       if ( len < MAX_MMAP_BUF ){
 		    ret = _CLNEW MMapIndexInput( fl );
         return true;
       }else{
-		  //  ret = _CLNEW MultiMMapIndexInput( fl, MAX_MMAP_BUF );
-        error.set(0,"Not implemented");
-        return false;
+		    ret = _CLNEW MultiMMapIndexInput( fl, MAX_MMAP_BUF );
+        return true;
       }
     }catch(CLuceneError& err){
       error.set(err.number(), err.what());
