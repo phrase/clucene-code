@@ -7,7 +7,6 @@
 #ifndef _lucene_store_FSDirectory_
 #define _lucene_store_FSDirectory_
 
-
 #include "Directory.h"
 #include "IndexInput.h"
 #include "IndexOutput.h"
@@ -15,9 +14,6 @@
 #include <string>
 #include <vector>
 
-//#include "Lock.h"
-//#include "LockFactory.h"
-//#include "CLucene/util/VoidMap.h"
 CL_CLASS_DEF(util,StringBuffer)
 
    CL_NS_DEF(store)
@@ -39,6 +35,7 @@ CL_CLASS_DEF(util,StringBuffer)
 		IOFactory* ioFactory;
 
 	protected:
+		void priv_getFN(char* buffer, const char* name) const;
 		FSDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
 	private:
     std::string directory;
@@ -50,8 +47,7 @@ CL_CLASS_DEF(util,StringBuffer)
 		char* getLockPrefix() const;
 		static bool disableLocks;
 
-		void priv_getFN(char* buffer, const char* name) const;
-		bool useMMap;
+		static bool useMMap;
 
 	protected:
 		/// Removes an existing file in the directory.
@@ -61,7 +57,7 @@ CL_CLASS_DEF(util,StringBuffer)
 	  ///Destructor - only call this if you are sure the directory
 	  ///is not being used anymore. Otherwise use the ref-counting
 	  ///facilities of _CLDECDELETE
-		~FSDirectory();
+		virtual ~FSDirectory();
 
 		/// Get a list of strings, one for each file in the directory.
 		bool list(std::vector<std::string>* names) const;
@@ -101,34 +97,31 @@ CL_CLASS_DEF(util,StringBuffer)
 		int64_t fileLength(const char* name) const;
 
 		/// Returns a stream reading an existing file.
-		bool openInput(const char* name, IndexInput*& ret, CLuceneError& err, int32_t bufferSize=-1);
-
-		IndexInput* openMMapFile(const char* name, int32_t bufferSize=LUCENE_STREAM_BUFFER_SIZE);
+		virtual bool openInput(const char* name, IndexInput*& ret, CLuceneError& err, int32_t bufferSize=-1);
 
 		/// Renames an existing file in the directory.
 		void renameFile(const char* from, const char* to);
 
-      	/** Set the modified time of an existing file to now. */
-      	void touchFile(const char* name);
+  	/** Set the modified time of an existing file to now. */
+  	void touchFile(const char* name);
 
 		/// Creates a new, empty file in the directory with the given name.
 		///	Returns a stream writing this file.
-		IndexOutput* createOutput(const char* name);
+		virtual IndexOutput* createOutput(const char* name);
 
-		  ///Decrease the ref-count to the directory by one. If
-		  ///the object is no longer needed, then the object is
-		  ///removed from the directory pool.
-      void close();
+	  ///Decrease the ref-count to the directory by one. If
+	  ///the object is no longer needed, then the object is
+	  ///removed from the directory pool.
+    void close();
 
 	  /**
-	  * If MMap is available, this can disable use of
-	  * mmap reading.
+	  * Enable use of mmap reading.
 	  */
-	  void setUseMMap(bool value);
+	  static void setUseMMap(bool value);
 	  /**
-	  * Gets whether the directory is using MMap for inputstreams.
+	  * Gets whether the getDirectory() will return an MMap backed directory.
 	  */
-	  bool getUseMMap() const;
+	  static bool getUseMMap();
 
 	  std::string toString() const;
 
