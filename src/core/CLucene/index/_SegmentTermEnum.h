@@ -11,6 +11,7 @@
 //#include "Terms.h"
 //#include "FieldInfos.h"
 //#include "TermInfo.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -19,35 +20,35 @@ CL_NS_DEF(index)
  */
 class SegmentTermEnum:public TermEnum{
 private:
-	Term* _term;            ///points to the current Term in the enumeration
+	boost::shared_ptr<Term> _term;            ///points to the current Term in the enumeration
 	TermInfo* termInfo;     ///points to the TermInfo matching the current Term in the enumeration
 
 	bool isIndex;           ///Indicates if the Segment is a an index
 	bool isClone;           ///Indicates if SegmentTermEnum is an orignal instance or
 	                        ///a clone of another SegmentTermEnum
-	
+
 	TCHAR* buffer;			///The buffer that contains the data read from the Term Infos File
 	uint32_t bufferLength;	///Length of the buffer
 
 	int32_t format;
 	int32_t formatM1SkipInterval;
-	
+
 	CL_NS(store)::IndexInput* input;    ///The IndexInput that reads from the Term Infos File
 	FieldInfos* fieldInfos;	///contains the Field Infos for the segment
 	int64_t size;			///The size of the enumeration
 	int64_t position;		///The position of the current (term) in the enumeration
 	int64_t indexPointer;
-	Term* prev;				///The previous current 
+	boost::shared_ptr<Term> prev;				///The previous current
 	int32_t indexInterval;
 	int32_t skipInterval;
 	int32_t maxSkipLevels;
-	
+
 	friend class TermInfosReader;
 	friend class SegmentTermDocs;
 protected:
-	
+
 	/**
-	 * Constructor. 
+	 * Constructor.
 	 * The instance is created by cloning all properties of clone
 	 */
 	SegmentTermEnum( const SegmentTermEnum& clone);
@@ -55,7 +56,7 @@ protected:
 public:
 	///Constructor
 	SegmentTermEnum(CL_NS(store)::IndexInput* i, FieldInfos* fis, const bool isi );
-	
+
 	///Destructor
 	~SegmentTermEnum();
 
@@ -65,21 +66,17 @@ public:
 	bool next();
 
 	/**
-	 * Returns a pointer to the current term. 
-	 */
-	Term* term();
-	/**
 	 * Returns the current term. 
 	 */
-	Term* term(bool pointer);
+	boost::shared_ptr<Term> const& term();
 
     /**
 	 * Scan for Term term without allocating new Terms
 	 */
-	void scanTo(const Term *term);
+	void scanTo(boost::shared_ptr<Term const> const& term);
 
-	/** 
-	 * Closes the enumeration to further activity, freeing resources. 
+	/**
+	 * Closes the enumeration to further activity, freeing resources.
 	 */
 	void close();
 
@@ -91,7 +88,7 @@ public:
 	/**
 	 * Repositions term and termInfo within the enumeration
 	 */
-	void seek(const int64_t pointer, const int32_t p, Term* t, TermInfo* ti);
+	void seek(const int64_t pointer, const int32_t p, boost::shared_ptr<Term> const& t, TermInfo* ti);
 	
 	/**
 	 * Returns a clone of the current termInfo
@@ -125,7 +122,7 @@ private:
 	/**
 	 * Reads the next term in the enumeration
 	 */
-	Term* readTerm(Term* reuse);
+	boost::shared_ptr<Term> const& readTerm(boost::shared_ptr<Term>& reuse);
    /** 
 	 * Instantiate a buffer of length length+1
    * TODO: deprecate this...

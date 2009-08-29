@@ -8,6 +8,7 @@
 #define _lucene_store_IndexInput_
 
 #include "CLucene/LuceneThreads.h"
+#include "CLucene/util/Equators.h"
 
 CL_NS_DEF(store)
 
@@ -103,9 +104,9 @@ CL_NS_DEF(store)
 		* @param length the number of characters to read
 		* @see IndexOutput#writeChars(String,int32_t,int32_t)
 		*/
-		void readChars( TCHAR* buffer, const int32_t start, const int32_t len);
+		virtual void readChars( TCHAR* buffer, const int32_t start, const int32_t len);
 
-		void skipChars( const int32_t count);
+		virtual void skipChars( const int32_t count);
 
 		/** Closes the stream to futher operations. */
 		virtual void close() =0;
@@ -173,8 +174,8 @@ CL_NS_DEF(store)
 
 		void setBufferSize( int32_t newSize );
 
-		const char* getObjectName(){ return getClassName(); }
-		static const char* getClassName(){ return "BufferedIndexInput"; }
+		const char* getObjectName();
+		static const char* getClassName();
 
 	protected:
       /** Expert: implements buffer refill.  Reads bytes from the current position

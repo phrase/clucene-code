@@ -7,24 +7,21 @@
 #include "CLucene/_ApiHeader.h"
 #include "Terms.h"
 #include "Term.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
-Term* TermEnum::term(bool pointer){
-	Term* ret = term();
-	if ( !pointer )
-		ret->__cl_decref();
-	return ret;
+TermDocs::~TermDocs(){
 }
 
 TermEnum::~TermEnum(){
 }
 
-bool TermEnum::skipTo(Term* target){
+bool TermEnum::skipTo(boost::shared_ptr<Term> const& target){
 	do {
 		if (!next())
 			return false;
-	} while (target->compareTo(term(false)) > 0);
+	} while (target.get()->compareTo(term().get()) > 0);
 	return true;
 }
 

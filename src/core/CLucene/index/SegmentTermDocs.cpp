@@ -10,6 +10,7 @@
 #include "CLucene/store/IndexInput.h"
 #include "Term.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -29,7 +30,7 @@ CL_NS_DEF(index)
 	  return NULL;
   }
 
-  void SegmentTermDocs::seek(Term* term) {
+  void SegmentTermDocs::seek(boost::shared_ptr<Term> const& term) {
     TermInfo* ti = parent->tis->get(term);
     seek(ti, term);
     _CLDELETE(ti);
@@ -37,23 +38,23 @@ CL_NS_DEF(index)
 
   void SegmentTermDocs::seek(TermEnum* termEnum){
     TermInfo* ti=NULL;
-    Term* term = NULL;
+    boost::shared_ptr<Term> term;
 
       // use comparison of fieldinfos to verify that termEnum belongs to the same segment as this SegmentTermDocs
     if ( termEnum->getObjectName() == SegmentTermEnum::getClassName() &&
         ((SegmentTermEnum*)termEnum)->fieldInfos == parent->_fieldInfos ){
       SegmentTermEnum* segmentTermEnum = (SegmentTermEnum*) termEnum;
-      term = segmentTermEnum->term(false);
+      term = segmentTermEnum->term();
       ti = segmentTermEnum->getTermInfo();
     }else{
-      term = termEnum->term(false);
+      term = termEnum->term();
       ti = parent->tis->get(term);
     }
     
     seek(ti,term);
     _CLDELETE(ti);
   }
-  void SegmentTermDocs::seek(const TermInfo* ti,Term* term) {
+  void SegmentTermDocs::seek(const TermInfo* ti,boost::shared_ptr<Term> const& term) {
 	  count = 0;
 	  FieldInfo* fi = parent->_fieldInfos->fieldInfo(term->field());
 	  currentFieldStoresPayloads = (fi != NULL) ? fi->storePayloads : false;

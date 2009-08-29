@@ -13,6 +13,7 @@
 CL_CLASS_DEF(document,Document)
 //#include "Terms.h"
 #include "_SegmentHeader.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 class SegmentMergeQueue;
@@ -98,10 +99,10 @@ public:
 	void norms(const TCHAR* field, uint8_t* result);
 
 	TermEnum* terms();
-	TermEnum* terms(const Term* term);
+	TermEnum* terms(boost::shared_ptr<Term const> const& term);
 
 	//Returns the document frequency of the current term in the set
-	int32_t docFreq(const Term* t=NULL);
+	int32_t docFreq(boost::shared_ptr<Term const> const& t=boost::shared_ptr<Term const>());
 	TermDocs* termDocs();
 	TermPositions* termPositions();
 
@@ -128,7 +129,7 @@ protected:
 
   CL_NS(util)::ArrayBase<IndexReader*>* subReaders;
   const int32_t* starts;
-  Term* term;
+  boost::shared_ptr<Term> term;
 
   int32_t base;
   size_t pointer;
@@ -146,7 +147,7 @@ public:
   int32_t freq() const;
 
   void seek(TermEnum* termEnum);
-  void seek(Term* tterm);
+  void seek(boost::shared_ptr<Term> const& tterm);
   bool next();
 
   /** Optimized implementation. */
@@ -166,12 +167,12 @@ class MultiTermEnum:public TermEnum {
 private:
   SegmentMergeQueue* queue;
 
-  Term* _term;
+  boost::shared_ptr<Term> _term;
   int32_t _docFreq;
 public:
   //Constructor
   //Opens all enumerations of all readers
-  MultiTermEnum(CL_NS(util)::ArrayBase<IndexReader*>* subReaders, const int32_t* starts, const Term* t);
+  MultiTermEnum(CL_NS(util)::ArrayBase<IndexReader*>* subReaders, const int32_t* starts, boost::shared_ptr<Term const> const& t);
 
   //Destructor
   ~MultiTermEnum();
@@ -180,8 +181,7 @@ public:
   bool next();
 
   //Returns a pointer to the current term of the set of enumerations
-  Term* term();
-  Term* term(bool pointer);
+  boost::shared_ptr<Term> const& term();
 
   //Returns the document frequency of the current term in the set
   int32_t docFreq() const;
@@ -195,7 +195,7 @@ public:
 };
 
 
-#if _MSC_VER
+#ifdef _MSC_VER
     #pragma warning(disable : 4250)
 #endif
 class MultiTermPositions:public MultiTermDocs,public TermPositions {

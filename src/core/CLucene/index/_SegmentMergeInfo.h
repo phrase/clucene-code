@@ -11,6 +11,7 @@
 //#include "SegmentTermEnum.h"
 //#include "SegmentHeader.h"
 #include "Terms.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 class IndexReader;
@@ -21,7 +22,7 @@ private:
 	TermPositions* postings;
 public:
 	TermEnum* termEnum;
-	Term* term;
+	boost::shared_ptr<Term> term;
 	int32_t base;
 	IndexReader* reader;
      

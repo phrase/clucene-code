@@ -14,6 +14,7 @@
 #include "_FieldInfos.h"
 #include "_TermInfosWriter.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -94,14 +95,14 @@ CL_NS_DEF(index)
 		close();
 	}
 
-  void TermInfosWriter::add(Term* term, TermInfo* ti){
+  void TermInfosWriter::add(boost::shared_ptr<Term> const& term, TermInfo* ti){
     const size_t length = term->textLength();
     if ( termTextBuffer.values == NULL || termTextBuffer.length < length ){
       termTextBuffer.resize( (int32_t)(length*1.25) );
     }
     _tcsncpy(termTextBuffer.values, term->text(), length);
 
-    add(fieldInfos->fieldNumber(term->field()), termTextBuffer.values, length, ti);
+    add(fieldInfos->fieldNumber(term.get()->field()), termTextBuffer.values, length, ti);
   }
 
   // Currently used only by assert statement
@@ -175,7 +176,7 @@ CL_NS_DEF(index)
 			lastIndexPointer = other->output->getFilePointer(); // write pointer
 		}
     if (lastTermText.length < termTextLength || lastTermText.length == 0){
-      lastTermText.resize( cl_max(10,termTextLength*1.25) );
+      lastTermText.resize( (int32_t)cl_max(10.0,termTextLength*1.25) );
     }
     if ( termText != NULL )
       _tcsncpy(lastTermText.values,termText,termTextLength);

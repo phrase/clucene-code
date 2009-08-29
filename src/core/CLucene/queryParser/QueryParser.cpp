@@ -31,6 +31,7 @@
 
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/util/StringBuffer.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(index)
@@ -77,6 +78,17 @@ const TCHAR* QueryParserConstants::tokenImage[] = {
 
 const int32_t QueryParser::jj_la1_0[] = {0x180,0x180,0xe00,0xe00,0x1f69f80,0x48000,0x10000,0x1f69000,0x1348000,0x80000,0x80000,0x10000,0x18000000,0x2000000,0x18000000,0x10000,0x80000000,0x20000000,0x80000000,0x10000,0x80000,0x10000,0x1f68000};
 const int32_t QueryParser::jj_la1_1[] = {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1,0x0,0x1,0x0,0x0,0x0,0x0};
+
+struct QueryParser::JJCalls {
+public:
+    int32_t gen;
+    QueryToken* first;
+    int32_t arg;
+    JJCalls* next;
+
+    JJCalls();
+    ~JJCalls();
+};
 
 QueryParser::QueryParser(const TCHAR* f, Analyzer* a) : _operator(OR_OPERATOR),
   lowercaseExpandedTerms(true),useOldRangeQuery(false),allowLeadingWildcard(false),enablePositionIncrements(false),
@@ -235,7 +247,7 @@ CL_NS(document)::DateTools::Resolution QueryParser::getDateResolution(const TCHA
   }
 
   CL_NS(document)::DateTools::Resolution resolution = fieldToDateResolution->get(fieldName);
-  if (resolution == NULL) {
+  if (resolution == CL_NS(document)::DateTools::NO_RESOLUTION) {
     // no date resolutions set for the given field; return default date resolution instead
     resolution = dateResolution;
   }
@@ -332,9 +344,8 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
   if (v.size() == 0)
     return NULL;
   else if (v.size() == 1) {
-    Term* tm = _CLNEW Term(_field, v.at(0)->termBuffer());
+    boost::shared_ptr<Term> tm(_CLNEW Term(_field, v.at(0)->termBuffer()));
     Query* ret = _CLNEW TermQuery( tm );
-    _CLDECDELETE(tm);
     return ret;
   } else {
     if (severalTokensAtSamePosition) {
@@ -342,21 +353,20 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
         // no phrase query:
         BooleanQuery* q = _CLNEW BooleanQuery(true);
         for(size_t i=0; i<v.size(); i++ ){
-          Term* tm = _CLNEW Term(_field, v.at(i)->termBuffer());
+          boost::shared_ptr<Term> tm(_CLNEW Term(_field, v.at(i)->termBuffer()));
           q->add(_CLNEW TermQuery(tm),BooleanClause::SHOULD);
-          _CLDECDELETE(tm);
         }
         return q;
       }else {
 		    MultiPhraseQuery* mpq = _CLNEW MultiPhraseQuery();
 		    mpq->setSlop(phraseSlop);
-		    CLArrayList<Term*> multiTerms;
+		    CLArrayList<boost::shared_ptr<Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> > multiTerms;
 		    int32_t position = -1;
 		    for (size_t i = 0; i < v.size(); i++) {
 			    t = v.at(i);
 			    if (t->getPositionIncrement() > 0 && multiTerms.size() > 0) {
-            ValueArray<Term*> termsArray(multiTerms.size());
-            multiTerms.toArray(termsArray.values, false);
+            ValueArray<boost::shared_ptr<Term> > termsArray(multiTerms.size());
+            multiTerms.toArray(termsArray.values);
 				    if (enablePositionIncrements) {
 					    mpq->add(&termsArray,position);
 				    } else {
@@ -365,10 +375,11 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
 				    multiTerms.clear();
 			    }
 			    position += t->getPositionIncrement();
-			    multiTerms.push_back(_CLNEW Term(field, t->termBuffer()));
+                            boost::shared_ptr<Term> added(_CLNEW Term(field, t->termBuffer()));
+			    multiTerms.push_back(added);
 		    }
-        ValueArray<Term*> termsArray(multiTerms.size());
-        multiTerms.toArray(termsArray.values, false);
+        ValueArray<boost::shared_ptr<Term> > termsArray(multiTerms.size());
+        multiTerms.toArray(termsArray.values);
 		    if (enablePositionIncrements) {
 			    mpq->add(&termsArray,position);
 		    } else {
@@ -383,14 +394,13 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
 
       for (size_t i = 0; i < v.size(); i++) {
         t = v.at(i);
-        Term* tm = _CLNEW Term(_field, t->termBuffer());
+        boost::shared_ptr<Term> tm(_CLNEW Term(_field, t->termBuffer()));
         if (enablePositionIncrements) {
           position += t->getPositionIncrement();
           pq->add(tm,position);
         } else {
           pq->add(tm);
         }
-        _CLDECDELETE(tm);
       }
       return pq;
     }
@@ -452,11 +462,9 @@ Query* QueryParser::getRangeQuery(const TCHAR* _field, TCHAR* part1, TCHAR* part
 
   //if(useOldRangeQuery)
   //{
-  Term* t1 = _CLNEW Term(_field,part1);
-  Term* t2 = _CLNEW Term(_field,part2);
+  boost::shared_ptr<Term> t1(_CLNEW Term(_field,part1));
+  boost::shared_ptr<Term> t2(_CLNEW Term(_field,part2));
   Query* ret = _CLNEW RangeQuery(t1, t2, inclusive);
-  _CLDECDELETE(t1);
-  _CLDECDELETE(t2);
   return ret;
   /*}
   else
@@ -493,9 +501,8 @@ Query* QueryParser::getWildcardQuery(const TCHAR* _field, TCHAR* termStr)
     _tcslwr(termStr);
   }
 
-  Term* t = _CLNEW Term(_field, termStr);
+  boost::shared_ptr<Term> t(_CLNEW Term(_field, termStr));
   Query* q = _CLNEW WildcardQuery(t);
-  _CLDECDELETE(t);
 
   return q;
 }
@@ -509,9 +516,8 @@ Query* QueryParser::getPrefixQuery(const TCHAR* _field, TCHAR* _termStr)
   if (lowercaseExpandedTerms) {
     _tcslwr(_termStr);
   }
-  Term* t = _CLNEW Term(_field, _termStr);
+  boost::shared_ptr<Term> t(_CLNEW Term(_field, _termStr));
   Query *q = _CLNEW PrefixQuery(t);
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -521,9 +527,8 @@ Query* QueryParser::getFuzzyQuery(const TCHAR* _field, TCHAR* termStr, const flo
     _tcslwr(termStr);
   }
 
-  Term* t = _CLNEW Term(_field, termStr);
+  boost::shared_ptr<Term> t(_CLNEW Term(_field, termStr));
   Query *q = _CLNEW FuzzyQuery(t, minSimilarity, fuzzyPrefixLength);
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -837,7 +842,7 @@ Query* QueryParser::fTerm(const TCHAR* _field) {
   bool prefix = false;
   bool wildcard = false;
   bool fuzzy = false;
-  bool rangein = false;
+  //bool rangein = false;
   Query* q = NULL;
   switch ((jj_ntk==-1)?f_jj_ntk():jj_ntk)
   {
@@ -969,11 +974,11 @@ Query* QueryParser::fTerm(const TCHAR* _field) {
 	  // TODO: Allow analysis::Term to accept ownership on a TCHAR* and save on extra dup's
       if (goop1->kind == RANGEIN_QUOTED) {
         _tcscpy(goop1->image, goop1->image+1);
-		goop1->image[_tcslen(goop1->image)-1]=NULL;
+		goop1->image[_tcslen(goop1->image)-1]='\0';
       }
       if (goop2->kind == RANGEIN_QUOTED) {
         _tcscpy(goop2->image, goop2->image+1);
-		goop2->image[_tcslen(goop2->image)-1]=NULL;
+		goop2->image[_tcslen(goop2->image)-1]='\0';
       }
       TCHAR* t1 = discardEscapeChar(goop1->image);
       TCHAR* t2 = discardEscapeChar(goop2->image);
@@ -1065,7 +1070,7 @@ Query* QueryParser::fTerm(const TCHAR* _field) {
       }
 	  // TODO: Make sure this hack, save an extra dup, is legal and not harmful
 	  const size_t st = _tcslen(term->image);
-	  term->image[st-1]=NULL;
+	  term->image[st-1]='\0';
       TCHAR* tmp = discardEscapeChar(term->image+1);
       q = getFieldQuery(_field, tmp, s);
       _CLDELETE_LCARRAY(tmp);
@@ -1355,7 +1360,7 @@ void QueryParser::jj_rescan_token() {
   jj_rescan = false;
 }
 
-void QueryParser::jj_save(const int32_t index, int32_t xla) {
+void QueryParser::jj_save(const int32_t /*index*/, int32_t xla) {
   JJCalls* p = jj_2_rtns;
   while (p->gen > jj_gen) {
     if (p->next == NULL) { p = p->next = new JJCalls(); break; }

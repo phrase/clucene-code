@@ -14,6 +14,7 @@ CL_CLASS_DEF(index,Term)
 //#include "CLucene/index/IndexReader.h"
 //#include "CLucene/util/BitSet.h"
 #include "Filter.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 
@@ -29,8 +30,8 @@ CL_NS_DEF(search)
  */
   class CLUCENE_EXPORT DateFilter: public Filter {
   private:
-	CL_NS(index)::Term* start;
-    CL_NS(index)::Term* end;
+	boost::shared_ptr<CL_NS(index)::Term> start;
+	boost::shared_ptr<CL_NS(index)::Term> end;
 
   protected:
     DateFilter(const DateFilter& copy);

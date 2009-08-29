@@ -49,13 +49,12 @@ SET(clucene_core_Files
 	./CLucene/analysis/Analyzers.cpp
 	./CLucene/analysis/AnalysisHeader.cpp
 	./CLucene/store/MMapInput.cpp
-	#./CLucene/store/TransactionalRAMDirectory.cpp
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
-	./CLucene/store/FSDirectory.cpp
+	#./CLucene/store/FSDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
@@ -152,9 +151,11 @@ ENDIF ( USE_SHARED_OBJECT_FILES )
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-core_SOURCE_DIR}/*.h)
 
+FIND_PACKAGE(Boost)
 
 #create the libraries
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )
+INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 add_library(clucene-core SHARED
 	${clucene_core_Files} ${clucene_shared_Files} ${HEADERS}

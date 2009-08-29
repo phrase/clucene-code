@@ -20,7 +20,6 @@ CL_NS_USE(document)
 
 CL_NS_DEF(search)
 
-
     class MultiHitCollector: public HitCollector{
     private:
       HitCollector* results;
@@ -53,6 +52,12 @@ CL_NS_DEF(search)
     _CLDELETE_ARRAY(starts);
   }
 
+	int32_t* MultiSearcher::getStarts() {
+		return starts;
+	}
+	int32_t MultiSearcher::getLength() {
+		return searchablesLen;
+	}
 
   // inherit javadoc
   void MultiSearcher::close() {
@@ -62,7 +67,7 @@ CL_NS_DEF(search)
      }
   }
 
-  int32_t MultiSearcher::docFreq(const Term* term) const {
+  int32_t MultiSearcher::docFreq(boost::shared_ptr<const Term> const& term) const {
     int32_t docFreq = 0;
 	for (int32_t i = 0; i < searchablesLen; ++i)
       docFreq += searchables[i]->docFreq(term);

@@ -13,6 +13,7 @@ CL_CLASS_DEF(store,Directory)
 //#include "FieldInfos.h"
 //#include "TermInfo.h"
 //#include "Term.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 class FieldInfos;
@@ -81,7 +82,7 @@ class TermInfo;
 		~TermInfosWriter();
 
 
-    void add(Term* term, TermInfo* ti);
+    void add(boost::shared_ptr<Term> const& term, TermInfo* ti);
 
     /** Adds a new <<fieldNumber, termText>, TermInfo> pair to the set.
     Term must be lexicographically greater than all previous Terms added.

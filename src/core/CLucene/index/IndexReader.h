@@ -11,6 +11,7 @@
 #include "CLucene/util/Array.h"
 #include "CLucene/util/VoidList.h"
 #include "CLucene/LuceneThreads.h"
+#include <boost/shared_ptr.hpp>
 
 CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,LuceneLock)
@@ -54,7 +55,6 @@ class TermVectorMapper;
 */
 class CLUCENE_EXPORT IndexReader: public CL_NS(util)::NamedObject{
   bool closed;
-  mutable int refCount;
 protected:
   bool hasChanges;
 
@@ -94,21 +94,6 @@ protected:
   * @throws AlreadyClosedException if this IndexReader is closed
   */
   virtual void ensureOpen();
-
-  /**
-   * Increments the refCount of this IndexReader instance. RefCounts are used to determine
-   * when a reader can be closed safely, i. e. as soon as no other IndexReader is referencing
-   * it anymore.
-   */
-  virtual void incRef();
-
-  /**
-   * Decreases the refCount of this IndexReader instance. If the refCount drops
-   * to 0, then pending changes are committed to the index and this reader is closed.
-   *
-   * @throws IOException in case an IOException occurs in commit() or doClose()
-   */
-  virtual void decRef();
 
   /** Does nothing by default. Subclasses that require a write lock for
    *  index modifications must implement this method. */
@@ -558,12 +543,12 @@ public:
   * @throws IOException if there is a low-level IO error
 	* @memory Caller must clean up
 	*/
-	virtual TermEnum* terms(const Term* t) = 0;
+	virtual TermEnum* terms(boost::shared_ptr<Term const> const& t) = 0;
 
   /** Returns the number of documents containing the term <code>t</code>.
    * @throws IOException if there is a low-level IO error
    */
-	virtual int32_t docFreq(const Term* t) = 0;
+	virtual int32_t docFreq(boost::shared_ptr<Term const> const& t) = 0;
 
 	/* Returns an unpositioned TermPositions enumerator.
    * @throws IOException if there is a low-level IO error
@@ -589,7 +574,7 @@ public:
   * @throws IOException if there is a low-level IO error
   * @memory Caller must clean up
 	*/
-	TermPositions* termPositions(Term* term);
+	TermPositions* termPositions(boost::shared_ptr<Term> const& term);
 
 	/** Returns an unpositioned {@link TermDocs} enumerator.
    * @throws IOException if there is a low-level IO error
@@ -607,7 +592,7 @@ public:
   * @throws IOException if there is a low-level IO error
   * @memory Caller must clean up
 	*/
-	TermDocs* termDocs(Term* term);
+	TermDocs* termDocs(boost::shared_ptr<Term> const& term);
 
 	/** Deletes the document numbered <code>docNum</code>.  Once a document is
 	* deleted it will not appear in TermDocs or TermPostitions enumerations.
@@ -644,10 +629,10 @@ public:
   *  be obtained)
   * @throws IOException if there is a low-level IO error
 	*/
-	int32_t deleteDocuments(Term* term);
+	int32_t deleteDocuments(boost::shared_ptr<Term> const& term);
 
 	///@deprecated. Use deleteDocuments instead.
-	_CL_DEPRECATED( deleteDocuments ) int32_t deleteTerm(Term* term);
+	_CL_DEPRECATED( deleteDocuments ) int32_t deleteTerm(boost::shared_ptr<Term> const& term);
 
 	/**
 	* Closes files associated with this index and also saves any new deletions to disk.

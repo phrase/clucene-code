@@ -7,6 +7,8 @@
 #ifndef _lucene_index_Term_
 #define _lucene_index_Term_
 
+#include <boost/shared_ptr.hpp>
+
 CL_NS_DEF(index)
 
 /**
@@ -17,19 +19,13 @@ the field that the text occured in, an interned string.
 Note that terms may represent more than words from text fields, but also
 things like dates, email addresses, urls, etc.  
 
-IMPORTANT NOTE:
-Term inherits from the template class LUCENE_REFBASE which tries to do
-some garbage collection by counting the references an instance has. As a result
-of this construction you MUST use _CLDECDELETE(obj) when you want to delete an 
-of Term!
-
 ABOUT intrn 
 
 intrn indicates if field and text are interned or not. Interning of Strings is the process of
 converting duplicated strings to shared ones. 
 
 */
-class CLUCENE_EXPORT Term:LUCENE_REFBASE {
+class CLUCENE_EXPORT Term {
 private:
   size_t cachedHashCode;
 	const TCHAR* _field;
@@ -50,7 +46,7 @@ public:
    * <p>Note that a null field or null text value results in undefined
    * behavior for most Lucene APIs that accept a Term parameter.
   */
-	Term(const Term* fieldTerm, const TCHAR* txt);
+	Term(boost::shared_ptr<const Term> const& fieldTerm, const TCHAR* txt);
 		
 	/** Constructs a blank term */
 	Term();
@@ -91,7 +87,7 @@ public:
 	* - avoids field.intern() overhead
 	* @param text The text of the new term (field is implicitly same as this Term instance)
 	*/
-	void set(const Term* term, const TCHAR* txt);
+	void set(boost::shared_ptr<const Term> const& term, const TCHAR* txt);
 
 	void set(const TCHAR* fld, const TCHAR* txt, const bool internField);
 

@@ -12,6 +12,7 @@
 #include "BooleanQuery.h"
 #include "BooleanClause.h"
 #include "TermQuery.h"
+#include <boost/shared_ptr.hpp>
 
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/util/PriorityQueue.h"
@@ -27,8 +28,8 @@ CL_NS_DEF(search)
 #define min3(a, b, c) __t = (a < b) ? a : b; __t = (__t < c) ? __t : c;
 
 
-	FuzzyTermEnum::FuzzyTermEnum(IndexReader* reader, Term* term, float_t minSimilarity, size_t _prefixLength):
-		FilteredTermEnum(),d(NULL),dLen(0),_similarity(0),_endEnum(false),searchTerm(_CL_POINTER(term)),
+	FuzzyTermEnum::FuzzyTermEnum(IndexReader* reader, boost::shared_ptr<Term> const& term, float_t minSimilarity, size_t _prefixLength):
+		FilteredTermEnum(),d(NULL),dLen(0),_similarity(0),_endEnum(false),searchTerm(term),
 		text(NULL),textLen(0),prefix(NULL)/* ISH: was STRDUP_TtoT(LUCENE_BLANK_STRING)*/,prefixLength(0),
 		minimumSimilarity(minSimilarity)
 	{
@@ -38,8 +39,6 @@ CL_NS_DEF(search)
 			_CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity cannot be greater than or equal to 1");
 		else if (minSimilarity < 0.0f)
 			_CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity cannot be less than 0");
-		if(_prefixLength < 0)
-			_CLTHROWA(CL_ERR_IllegalArgument,"prefixLength cannot be less than 0");
 
 		scale_factor = 1.0f / (1.0f - minimumSimilarity); // only now we are safe from a division by zero
 		//TODO: this.field = searchTerm.field();
@@ -49,19 +48,18 @@ CL_NS_DEF(search)
 		const size_t fullSearchTermLength = searchTerm->textLength();
 		const size_t realPrefixLength = _prefixLength > fullSearchTermLength ? fullSearchTermLength : _prefixLength;
 
-		text = STRDUP_TtoT(searchTerm->text() + realPrefixLength);
+		text = STRDUP_TtoT(searchTerm.get()->text() + realPrefixLength);
 		textLen = fullSearchTermLength - realPrefixLength;
 
 		prefix = _CL_NEWARRAY(TCHAR,realPrefixLength+1);
-		_tcsncpy(prefix, searchTerm->text(), realPrefixLength);
+		_tcsncpy(prefix, searchTerm.get()->text(), realPrefixLength);
 		prefix[realPrefixLength]='\0';
         prefixLength = realPrefixLength;
 
 		initializeMaxDistances();
 
-		Term* trm = _CLNEW Term(searchTerm->field(), prefix); // _CLNEW Term(term, prefix); -- not intern'd?
+		boost::shared_ptr<Term> trm(_CLNEW Term(searchTerm.get()->field(), prefix)); // _CLNEW Term(term, prefix); -- not intern'd?
 		setEnum(reader->terms(trm));
-		_CLLDECDELETE(trm);
 
 
 		/* LEGACY:
@@ -98,9 +96,6 @@ CL_NS_DEF(search)
 
 		FilteredTermEnum::close();
 
-		//Finalize the searchTerm
-		_CLDECDELETE(searchTerm);
-
 		free(d);
 		d=NULL;
 
@@ -109,23 +104,23 @@ CL_NS_DEF(search)
 		_CLDELETE_CARRAY(prefix);
 	}
 
-	bool FuzzyTermEnum::termCompare(Term* term) {
+	bool FuzzyTermEnum::termCompare(boost::shared_ptr<Term> const& term) {
 		//Func - Compares term with the searchTerm using the Levenshtein distance.
 		//Pre  - term is NULL or term points to a Term
 		//Post - if pre(term) is NULL then false is returned otherwise
 		//       if the distance of the current term in the enumeration is bigger than the FUZZY_THRESHOLD
 		//       then true is returned
 
-		if (term == NULL){
+		if (term.get() == NULL){
 			return false;  //Note that endEnum is not set to true!
 		}
 
-		const TCHAR* termText = term->text();
-		const size_t termTextLen = term->textLength();
+		const TCHAR* termText = term.get()->text();
+		const size_t termTextLen = term.get()->textLength();
 
 		//Check if the field name of searchTerm of term match
 		//(we can use == because fields are interned)
-		if ( searchTerm->field() == term->field() &&
+		if ( searchTerm.get()->field() == term.get()->field() &&
 			(prefixLength==0 || _tcsncmp(termText,prefix,prefixLength)==0 )) {
 
 				const TCHAR* target = termText+prefixLength;
@@ -153,7 +148,7 @@ CL_NS_DEF(search)
 			return prefixLength == 0 ? 0.0f : 1.0f - ((float_t) n / prefixLength);
 		}
 
-		const int32_t maxDistance = getMaxDistance(m);
+		const uint32_t maxDistance = getMaxDistance(m);
 
 		if (maxDistance < abs((int32_t)(m-n))) {
 			//just adding the characters of m to n or vice-versa results in
@@ -195,7 +190,7 @@ CL_NS_DEF(search)
 		// start computing edit distance
 		TCHAR s_i; // ith character of s
 		for (i = 1; i <= n; i++) {
-			int32_t bestPossibleEditDistance = m;
+			size_t bestPossibleEditDistance = m;
 			s_i = text[i - 1];
 			for (j = 1; j <= m; j++) {
 				if (s_i != target[j-1]) {
@@ -244,13 +239,12 @@ CL_NS_DEF(search)
 
   class FuzzyQuery::ScoreTerm {
   public:
-	  Term* term;
+	  boost::shared_ptr<Term> term;
 	  float_t score;
 
-	  ScoreTerm(Term* _term, float_t _score):term(_term),score(_score){
+	  ScoreTerm(boost::shared_ptr<Term> const& _term, float_t _score):term(_term),score(_score){
 	  }
 	  virtual ~ScoreTerm(){
-          _CLLDECDELETE(term);
 	  }
   };
 
@@ -265,33 +259,27 @@ CL_NS_DEF(search)
   protected:
 	  bool lessThan(ScoreTerm* termA, ScoreTerm* termB) {
 		  if (termA->score == termB->score)
-			  return termA->term->compareTo(termB->term) > 0;
+			  return termA->term.get()->compareTo(termB->term.get()) > 0;
 		  else
 			  return termA->score < termB->score;
 	  }
   };
 
 
-  FuzzyQuery::FuzzyQuery(Term* term, float_t _minimumSimilarity, size_t _prefixLength):
-  MultiTermQuery(term),minimumSimilarity(_minimumSimilarity),prefixLength(_prefixLength)
+  FuzzyQuery::FuzzyQuery(boost::shared_ptr<Term> const& term, float_t _minimumSimilarity, size_t _prefixLength):
+    MultiTermQuery(term),
+    minimumSimilarity(_minimumSimilarity),
+    prefixLength(_prefixLength)
   {
 	  if ( minimumSimilarity < 0 )
 		  minimumSimilarity = defaultMinSimilarity;
 
-	  CND_PRECONDITION(term != NULL,"term is NULL");
+	  CND_PRECONDITION(term.get() != NULL,"term is NULL");
 
 	  if (minimumSimilarity >= 1.0f)
 		  _CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity >= 1");
 	  else if (minimumSimilarity < 0.0f)
 		  _CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity < 0");
-	  if (prefixLength < 0)
-		  _CLTHROWA(CL_ERR_IllegalArgument,"prefixLength < 0");
-
-	  /*
-	  TODO: Not in original Java version
-	  if(prefixLength >= term->textLength())
-	  _CLTHROWA(CL_ERR_IllegalArgument,"prefixLength >= term.textLength()");
-	  */
   }
 
   float_t FuzzyQuery::defaultMinSimilarity = 0.5f;
@@ -310,12 +298,12 @@ CL_NS_DEF(search)
 
   TCHAR* FuzzyQuery::toString(const TCHAR* field) const{
 	  StringBuffer buffer(100); // TODO: Have a better estimation for the initial buffer length
-	  Term* term = getTerm(false); // no need to increase ref count
-	  if ( field==NULL || _tcscmp(term->field(),field)!=0 ) {
-		  buffer.append(term->field());
+	  boost::shared_ptr<Term> const& term = getTerm(); // no need to increase ref count
+	  if ( field==NULL || _tcscmp(term.get()->field(),field)!=0 ) {
+		  buffer.append(term.get()->field());
 		  buffer.appendChar( _T(':'));
 	  }
-	  buffer.append(term->text());
+	  buffer.append(term.get()->text());
 	  buffer.appendChar( _T('~') );
 	  buffer.appendFloat(minimumSimilarity,1);
 	  buffer.appendBoost(getBoost());
@@ -372,11 +360,11 @@ CL_NS_DEF(search)
 	  return (this->getBoost() == fq->getBoost())
 		  && this->minimumSimilarity == fq->getMinSimilarity()
 		  && this->prefixLength == fq->getPrefixLength()
-		  && getTerm()->equals(fq->getTerm());
+		  && getTerm().get()->equals(fq->getTerm().get());
   }
 
   FilteredTermEnum* FuzzyQuery::getEnum(IndexReader* reader){
-	  Term* term = getTerm(false);
+	  boost::shared_ptr<Term> const& term = getTerm();
 	  FuzzyTermEnum* ret = _CLNEW FuzzyTermEnum(reader, term, minimumSimilarity, prefixLength);
 	  return ret;
   }
@@ -390,8 +378,8 @@ CL_NS_DEF(search)
 	  try {
 		  do {
 			  float_t score = 0.0f;
-			  Term* t = enumerator->term();
-			  if (t != NULL) {
+			  boost::shared_ptr<Term> t = enumerator->term();
+			  if (t.get() != NULL) {
 				  score = enumerator->difference();
 				  if (reusableST == NULL) {
 					  reusableST = _CLNEW ScoreTerm(t, score);

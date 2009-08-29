@@ -79,9 +79,10 @@ AbortException::AbortException(CLuceneError& _err, DocumentsWriter* docWriter):
 }
 
 DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory* directory, IndexWriter* writer):
-  bufferedDeleteTerms(_CLNEW CL_NS(util)::CLHashMap<Term*,Num*, Term_Compare,Term_Equals>),
-	waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) ),
-  freeByteBlocks(FreeByteBlocksType(true)), freeCharBlocks(FreeCharBlocksType(true))
+  bufferedDeleteTerms(_CLNEW TermNumMapType(true, true)),
+  freeCharBlocks(FreeCharBlocksType(true)),
+  freeByteBlocks(FreeByteBlocksType(true)),
+  waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) )
 {
   numBytesAlloc = 0;
   numBytesUsed = 0;
@@ -831,7 +832,7 @@ void DocumentsWriter::close() {
   CONDITION_NOTIFYALL(THIS_WAIT_CONDITION)
 }
 
-DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Term* delTerm) {
+DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, boost::shared_ptr<Term> const& delTerm) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
 
   // First, find a thread state.  If this thread already
@@ -878,7 +879,7 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
     bool success = false;
     try {
       state->init(doc, nextDocID);
-      if (delTerm != NULL) {
+      if (delTerm.get() != NULL) {
         addDeleteTerm(delTerm, state->docID);
         state->doFlushAfter = timeToFlushDeletes();
       }
@@ -915,14 +916,15 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
 }
 
 bool DocumentsWriter::addDocument(Document* doc, Analyzer* analyzer){
-  return updateDocument(doc, analyzer, NULL);
+  boost::shared_ptr<Term> null;
+  return updateDocument(doc, analyzer, null);
 }
 
-bool DocumentsWriter::updateDocument(Term* t, Document* doc, Analyzer* analyzer){
+bool DocumentsWriter::updateDocument(boost::shared_ptr<Term> const& t, Document* doc, Analyzer* analyzer){
   return updateDocument(doc, analyzer, t);
 }
 
-bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term* delTerm) {
+bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, boost::shared_ptr<Term> const& delTerm) {
 
   // This call is synchronized but fast
   ThreadState* state = getThreadState(doc, delTerm);
@@ -983,9 +985,8 @@ void DocumentsWriter::clearBufferedDeletes() {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   DocumentsWriter::TermNumMapType::iterator term = bufferedDeleteTerms->begin();
   while ( term != bufferedDeleteTerms->end() ){
-    Term* t = term->first;
+    boost::shared_ptr<Term> t = term->first;
     bufferedDeleteTerms->erase(term);
-    _CLDECDELETE(t);
     term = bufferedDeleteTerms->begin();
   }
   bufferedDeleteDocIDs.clear();
@@ -994,7 +995,7 @@ void DocumentsWriter::clearBufferedDeletes() {
     resetPostingsData();
 }
 
-bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<Term*>* terms) {
+bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<boost::shared_ptr<Term> >* terms) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)
@@ -1004,7 +1005,7 @@ bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<Term*>* terms) {
   return timeToFlushDeletes();
 }
 
-bool DocumentsWriter::bufferDeleteTerm(Term* term) {
+bool DocumentsWriter::bufferDeleteTerm(boost::shared_ptr<Term> const& term) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)
@@ -1038,13 +1039,13 @@ bool DocumentsWriter::hasDeletes() {
 // current number of documents buffered in ram so that the
 // delete term will be applied to those documents as well
 // as the disk segments.
-void DocumentsWriter::addDeleteTerm(Term* term, int32_t docCount) {
+void DocumentsWriter::addDeleteTerm(boost::shared_ptr<Term> const& term, int32_t docCount) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   Num* num = bufferedDeleteTerms->get(term);
   if (num == NULL) {
-    bufferedDeleteTerms->put(_CL_POINTER(term), new Num(docCount));
+    bufferedDeleteTerms->put(term, new Num(docCount));
     // This is coarse approximation of actual bytes used:
-    numBytesUsed += ( _tcslen(term->field()) + term->textLength()) * BYTES_PER_CHAR
+    numBytesUsed += ( _tcslen(term.get()->field()) + term.get()->textLength()) * BYTES_PER_CHAR
         + 4 + 5 * OBJECT_HEADER_BYTES + 5 * OBJECT_POINTER_BYTES;
     if (ramBufferSize != IndexWriter::DISABLE_AUTO_FLUSH
         && numBytesUsed > ramBufferSize) {
@@ -1211,7 +1212,7 @@ uint8_t* DocumentsWriter::getByteBlock(bool trackAllocations) {
     b = _CL_NEWARRAY(uint8_t, BYTE_BLOCK_SIZE);
     memset(b,0,sizeof(uint8_t) * BYTE_BLOCK_SIZE);
   } else {
-    b = *freeByteBlocks.begin();    
+    b = *freeByteBlocks.begin();
     freeByteBlocks.remove(freeByteBlocks.begin(),true);
   }
   if (trackAllocations)
@@ -1322,7 +1323,7 @@ void DocumentsWriter::balanceRAM() {
           numToFree = postingsFreeChunk;
         else
           numToFree = this->postingsFreeCountDW;
-        for ( size_t i = this->postingsFreeCountDW-numToFree;i< this->postingsFreeListDW.length; i++ ){
+        for ( size_t i = this->postingsFreeCountDW-numToFree;i< this->postingsFreeCountDW-numToFree; i++ ){
           _CLDELETE(this->postingsFreeListDW.values[i]);
         }
         this->postingsFreeCountDW -= numToFree;
@@ -1561,7 +1562,7 @@ void DocumentsWriter::ByteSliceReader::readBytes(uint8_t* b, int32_t len) {
 
 int64_t DocumentsWriter::ByteSliceReader::getFilePointer() const{_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 int64_t DocumentsWriter::ByteSliceReader::length() const{_CLTHROWA(CL_ERR_Runtime,"not implemented");}
-void DocumentsWriter::ByteSliceReader::seek(const int64_t pos) {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
+void DocumentsWriter::ByteSliceReader::seek(const int64_t /*pos*/) {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 void DocumentsWriter::ByteSliceReader::close() {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 
 DocumentsWriter::ByteBlockPool::ByteBlockPool( bool _trackAllocations, DocumentsWriter* _parent):

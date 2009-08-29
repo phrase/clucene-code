@@ -10,6 +10,7 @@
 
 CL_CLASS_DEF(index,Term)
 #include "CLucene/index/Terms.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 /** Abstract class for enumerating a subset of all terms. 
@@ -35,15 +36,14 @@ public:
 
 	/** Returns the current Term in the enumeration.
 	* Returns null if no Term matches or all terms have been enumerated. */
-	CL_NS(index)::Term* term(bool pointer);
-	CL_NS(index)::Term* term();
+	boost::shared_ptr<CL_NS(index)::Term> const& term();
 
 	/** Closes the enumeration to further activity, freeing resources.  */
 	void close();
 
 protected:
 	/** Equality compare on the term */
-	virtual bool termCompare(CL_NS(index)::Term* term) = 0;
+	virtual bool termCompare(boost::shared_ptr<CL_NS(index)::Term> const& term) = 0;
 
 	/** Indicates the end of the enumeration has been reached */
 	virtual bool endEnum() = 0;
@@ -51,7 +51,7 @@ protected:
 	void setEnum(CL_NS(index)::TermEnum* actualEnum) ;
 
 private:
-	CL_NS(index)::Term* currentTerm;
+	boost::shared_ptr<CL_NS(index)::Term> currentTerm;
 	CL_NS(index)::TermEnum* actualEnum;
 
 };

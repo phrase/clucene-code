@@ -19,6 +19,7 @@
 #include "MultiReader.h"
 #include "Terms.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -43,7 +44,7 @@ CL_NS_DEF(index)
 		bool operator()( IndexReader::CloseCallback t1, IndexReader::CloseCallback t2 ) const{
 			return t1 > t2;
 		}
-		static void doDelete(IndexReader::CloseCallback dummy){
+		static void doDelete(IndexReader::CloseCallback /*dummy*/){
 		}
 	};
 
@@ -67,7 +68,6 @@ CL_NS_DEF(index)
         this->directory = _CL_POINTER(directory);
       else
         this->directory = NULL;
-      _this->refCount = 1;
       _this->closed = false;
       _this->hasChanges = false;
     }
@@ -142,30 +142,11 @@ CL_NS_DEF(index)
   }
 
   void IndexReader::ensureOpen(){
-    if (refCount <= 0) {
-      _CLTHROWA(CL_ERR_AlreadyClosed, "this IndexReader is closed");
-    }
-  }
-
-  void IndexReader::incRef() {
-    SCOPED_LOCK_MUTEX(THIS_LOCK)
-    assert (refCount > 0);
-    refCount++;
   }
 
   void IndexReader::acquireWriteLock(){
     SCOPED_LOCK_MUTEX(THIS_LOCK)
     /* NOOP */
-  }
-
-  void IndexReader::decRef(){
-    SCOPED_LOCK_MUTEX(THIS_LOCK)
-    assert (refCount > 0);
-    if (refCount == 1) {
-      commit();
-      doClose();
-    }
-    refCount--;
   }
 
   CL_NS(document)::Document* IndexReader::document(const int32_t n){
@@ -203,7 +184,7 @@ CL_NS_DEF(index)
           _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support this method.");
     }
 
-  void IndexReader::setTermInfosIndexDivisor(int32_t indexDivisor) {
+  void IndexReader::setTermInfosIndexDivisor(int32_t /*indexDivisor*/) {
     _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support this method.");
   }
 
@@ -264,7 +245,7 @@ CL_NS_DEF(index)
     return SegmentInfos::getCurrentSegmentGeneration(directory) != -1;
   }
 
-  TermDocs* IndexReader::termDocs(Term* term) {
+  TermDocs* IndexReader::termDocs(boost::shared_ptr<Term> const& term) {
   //Func - Returns an enumeration of all the documents which contain
   //       term. For each document, the document number, the frequency of
   //       the term in that document is also provided, for use in search scoring.
@@ -277,7 +258,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermDocs containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated TermDocs instance
@@ -288,7 +269,7 @@ CL_NS_DEF(index)
       return _termDocs;
   }
 
-  TermPositions* IndexReader::termPositions(Term* term){
+  TermPositions* IndexReader::termPositions(boost::shared_ptr<Term> const& term){
   //Func - Returns an enumeration of all the documents which contain  term. For each
   //       document, in addition to the document number and frequency of the term in
   //       that document, a list of all of the ordinal positions of the term in the document
@@ -303,7 +284,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermPositions containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated termPositions instance
@@ -325,7 +306,7 @@ CL_NS_DEF(index)
   void IndexReader::deleteDoc(const int32_t docNum){
     deleteDocument(docNum);
   }
-  int32_t IndexReader::deleteTerm(Term* term){
+  int32_t IndexReader::deleteTerm(boost::shared_ptr<Term> const& term){
     return deleteDocuments(term);
   }
 
@@ -373,7 +354,7 @@ CL_NS_DEF(index)
     doUndeleteAll();
   }
 
-  int32_t IndexReader::deleteDocuments(Term* term) {
+  int32_t IndexReader::deleteDocuments(boost::shared_ptr<Term> const& term) {
   //Func - Deletes all documents containing term. This is useful if one uses a
   //       document field to hold a unique ID string for the document.  Then to delete such
   //       a document, one merely constructs a term with the appropriate field and the unique
@@ -382,7 +363,7 @@ CL_NS_DEF(index)
   //Post - All documents containing term have been deleted. The number of deleted documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
       ensureOpen();
 
 	  //Search for the documents contain term
@@ -422,16 +403,16 @@ CL_NS_DEF(index)
   //Post - All files associated with this index have been deleted and new deletions have been
   //       saved to disk
     SCOPED_LOCK_MUTEX(THIS_LOCK)
-
-    Internal::CloseCallbackMap::iterator iter = _internal->closeCallbacks.begin();
-    for ( ;iter!=_internal->closeCallbacks.end();iter++){
-      CloseCallback callback = *iter->first;
-      callback(this,iter->second);
+    if ( !closed ){
+      Internal::CloseCallbackMap::iterator iter = _internal->closeCallbacks.begin();
+      for ( ;iter!=_internal->closeCallbacks.end();iter++){
+        CloseCallback callback = *iter->first;
+        callback(this,iter->second);
+      }
+      commit();
+      doClose();
     }
-	  if (!closed) {
-      decRef();
-      closed = true;
-    }
+	closed = true;
   }
 
   bool IndexReader::isLocked(Directory* directory) {
@@ -472,7 +453,7 @@ bool IndexReader::hasNorms(const TCHAR* field) {
 }
 
 void IndexReader::unlock(const char* path){
-	FSDirectory* dir = FSDirectory::getDirectory(path);
+	Directory* dir = FSDirectory::getDirectory(path);
 	unlock(dir);
 	dir->close();
 	_CLDECDELETE(dir);

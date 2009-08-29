@@ -23,6 +23,7 @@
 #include "CLucene/search/PhraseQuery.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/Term.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF2(search,highlight)
 CL_NS_USE(index)
@@ -40,7 +41,7 @@ CL_NS_USE(index)
 
 		// Return extracted terms
 		WeightedTerm** ret = _CL_NEWARRAY(WeightedTerm*,terms.size()+1);
-		terms.toArray(ret);
+		terms.toArray_nullTerminated(ret);
 
 		return ret;
 	}
@@ -78,9 +79,8 @@ CL_NS_USE(index)
   		{
   			try
   			{
-				Term* term = _CLNEW Term(fieldName,(*itr)->getTerm());
+				boost::shared_ptr<Term> term(_CLNEW Term(fieldName,(*itr)->getTerm()));
   				int32_t docFreq=reader->docFreq(term);
-				_CLDECDELETE(term);
 
   				//IDF algorithm taken from DefaultSimilarity class
   				float_t idf=(float_t)(log(totalNumDocs/(float_t)(docFreq+1)) + 1.0);
@@ -95,7 +95,7 @@ CL_NS_USE(index)
   	   
 		// Return extracted terms
 		WeightedTerm** ret = _CL_NEWARRAY(WeightedTerm*,terms.size()+1);
-		terms.toArray(ret);
+		terms.toArray_nullTerminated(ret);
 
 		return ret;
   	}
@@ -119,10 +119,10 @@ CL_NS_USE(index)
 
 	void QueryTermExtractor::getTermsFromPhraseQuery(const PhraseQuery * query, WeightedTermList * terms)
 	{
-		Term** queryTerms = query->getTerms();
+		lucene::util::ArrayBase<boost::shared_ptr<Term>*>* queryTerms = query->getTerms();
 		int32_t i = 0;
-		while ( queryTerms[i] != NULL ){
-			WeightedTerm * pWT = _CLNEW WeightedTerm(query->getBoost(),queryTerms[i]->text());
+		while ( i < queryTerms->length ){
+			WeightedTerm * pWT = _CLNEW WeightedTerm(query->getBoost(),queryTerms->values[i]->get()->text());
 			if (terms->find(pWT)==terms->end()) // possible memory leak if key already present
 				terms->insert(pWT);
 			else
@@ -130,14 +130,13 @@ CL_NS_USE(index)
 
 			i++;
 		}
-		_CLDELETE_ARRAY(queryTerms);
+		_CLDELETE(queryTerms);
 	}
 
 	void QueryTermExtractor::getTermsFromTermQuery(const TermQuery * query, WeightedTermList * terms)
 	{
-		Term * term = query->getTerm();
-		WeightedTerm * pWT = _CLNEW WeightedTerm(query->getBoost(),term->text());
-		_CLDECDELETE(term);
+		boost::shared_ptr<Term> term = query->getTerm();
+		WeightedTerm * pWT = _CLNEW WeightedTerm(query->getBoost(),term.get()->text());
 		if (terms->find(pWT)==terms->end()) // possible memory leak if key already present
 			terms->insert(pWT);
 		else

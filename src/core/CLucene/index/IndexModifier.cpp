@@ -4,6 +4,12 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------
+* Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
+* the GNU Lesser General Public License, as specified in the COPYING file.
+------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "IndexModifier.h"
 
@@ -11,6 +17,7 @@
 #include "IndexReader.h"
 #include "CLucene/store/FSDirectory.h"
 #include "CLucene/document/Document.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 CL_NS_USE(util)
@@ -39,7 +46,11 @@ void IndexModifier::init(Directory* directory, Analyzer* analyzer, bool create) 
 	this->mergeFactor = IndexWriter::DEFAULT_MERGE_FACTOR;
 
 	this->directory = _CL_POINTER(directory);
-	createIndexReader();
+	if (create) {
+		createIndexWriter(create);
+	} else {
+		createIndexReader();
+	}
 	open = true;
 }
 
@@ -53,13 +64,13 @@ void IndexModifier::assureOpen() const{
 	}
 }
 
-void IndexModifier::createIndexWriter() {
+void IndexModifier::createIndexWriter(bool create) {
 	if (indexWriter == NULL) {
 		if (indexReader != NULL) {
 			indexReader->close();
 			_CLDELETE(indexReader);
 		}
-		indexWriter = _CLNEW IndexWriter(directory, analyzer, false);
+		indexWriter = _CLNEW IndexWriter(directory, analyzer, create);
 		indexWriter->setUseCompoundFile(useCompoundFile);
 		//indexWriter->setMaxBufferedDocs(maxBufferedDocs);
 		indexWriter->setMaxFieldLength(maxFieldLength);
@@ -101,7 +112,7 @@ void IndexModifier::addDocument(Document* doc, Analyzer* docAnalyzer) {
 		indexWriter->addDocument(doc);
 }
 
-int32_t IndexModifier::deleteDocuments(Term* term) {
+int32_t IndexModifier::deleteDocuments(boost::shared_ptr<Term> const& term) {
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
@@ -216,18 +227,18 @@ int64_t IndexModifier::getCurrentVersion() const{
 	return IndexReader::getCurrentVersion(directory);
 }
 
-TermDocs* IndexModifier::termDocs(Term* term){
+TermDocs* IndexModifier::termDocs(boost::shared_ptr<Term> const& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
 	return indexReader->termDocs(term);
 }
 
-TermEnum* IndexModifier::terms(Term* term){
+TermEnum* IndexModifier::terms(boost::shared_ptr<Term> const& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
-	if ( term != NULL )
+	if ( term.get() != NULL )
 		return indexReader->terms(term);
 	else
 		return indexReader->terms();

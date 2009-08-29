@@ -18,6 +18,7 @@
 #include "CLucene/util/PriorityQueue.h"
 #include "_SegmentMerger.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -30,10 +31,10 @@ CL_NS_DEF(index)
 	normSeek(ns),
 	_this(r),
 	segment(seg),
-  useSingleNormStream(_useSingleNormStream),
-	dirty(false),
+    useSingleNormStream(_useSingleNormStream),
 	in(instrm),
-	bytes(NULL){
+	bytes(NULL),
+	dirty(false){
   //Func - Constructor
   //Pre  - instrm is a valid reference to an IndexInput
   //Post - A Norm instance has been created with an empty bytes array
@@ -226,43 +227,23 @@ CL_NS_DEF(index)
     return get(si->dir, si, NULL, false, false, BufferedIndexInput::BUFFER_SIZE, true);
   }
 
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
   SegmentReader* SegmentReader::get(SegmentInfo* si, bool doOpenStores) {
     return get(si->dir, si, NULL, false, false, BufferedIndexInput::BUFFER_SIZE, doOpenStores);
   }
 
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
   SegmentReader* SegmentReader::get(SegmentInfo* si, int32_t readBufferSize){
     return get(si->dir, si, NULL, false, false, readBufferSize, true);
   }
 
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
   SegmentReader* SegmentReader::get(SegmentInfo* si, int32_t readBufferSize, bool doOpenStores){
     return get(si->dir, si, NULL, false, false, readBufferSize, doOpenStores);
   }
 
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
   SegmentReader* SegmentReader::get(SegmentInfos* sis, SegmentInfo* si,
                                   bool closeDir) {
     return get(si->dir, si, sis, closeDir, true, BufferedIndexInput::BUFFER_SIZE, true);
   }
 
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
   SegmentReader* SegmentReader::get(Directory* dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
@@ -307,7 +288,6 @@ CL_NS_DEF(index)
       _CLDELETE(termVectorsReaderOrig)
       _CLDECDELETE(cfsReader);
       //termVectorsLocal->unregister(this);
-      _norms.clear();
   }
 
   void SegmentReader::commitChanges(){
@@ -392,6 +372,9 @@ CL_NS_DEF(index)
         _CLDELETE(storeCFSReader);
       }
 
+      this->decRefNorms();
+      _norms.clear();
+
       // maybe close directory
       DirectoryIndexReader::doClose();
   }
@@ -474,7 +457,7 @@ CL_NS_DEF(index)
       return tis->terms();
   }
 
-  TermEnum* SegmentReader::terms(const Term* t) {
+  TermEnum* SegmentReader::terms(boost::shared_ptr<Term const> const& t) {
   //Func - Returns an enumeration of terms starting at or after the named term t
   //Pre  - t != NULL
   //       tis != NULL
@@ -542,7 +525,7 @@ CL_NS_DEF(index)
       return _CLNEW SegmentTermPositions(this);
   }
 
-  int32_t SegmentReader::docFreq(const Term* t) {
+  int32_t SegmentReader::docFreq(boost::shared_ptr<Term const> const& t) {
   //Func - Returns the number of documents which contain the term t
   //Pre  - t holds a valid reference to a Term
   //Post - The number of documents which contain term t has been returned
@@ -722,23 +705,9 @@ bool SegmentReader::hasNorms(const TCHAR* field){
         return norm->bytes;
     }
   }
-/**
-   * Increments the RC of this reader, as well as
-   * of all norms this reader is using
-   */
-  void SegmentReader::incRef() {
+
+  void SegmentReader::decRefNorms(){
     SCOPED_LOCK_MUTEX(THIS_LOCK)
-    DirectoryIndexReader::incRef();
-    NormsType::iterator it = _norms.begin();
-    while (it != _norms.end()) {
-      Norm* norm = it->second;
-      norm->incRef();
-      it++;
-    }
-  }
-  void SegmentReader::decRef(){
-    SCOPED_LOCK_MUTEX(THIS_LOCK)
-    DirectoryIndexReader::decRef();
     NormsType::iterator it = _norms.begin();
     while (it != _norms.end()) {
       Norm* norm = it->second;
@@ -746,6 +715,7 @@ bool SegmentReader::hasNorms(const TCHAR* field){
       it++;
     }
   }
+
   DirectoryIndexReader* SegmentReader::doReopen(SegmentInfos* infos){
     SCOPED_LOCK_MUTEX(THIS_LOCK)
     DirectoryIndexReader* newReader;
@@ -935,18 +905,6 @@ bool SegmentReader::hasNorms(const TCHAR* field){
   }
 
 
-
-
-  void SegmentReader::incRefReaderNotNorms() {
-    SCOPED_LOCK_MUTEX(THIS_LOCK)
-    DirectoryIndexReader::incRef();
-  }
-
-  void SegmentReader::decRefReaderNotNorms(){
-    SCOPED_LOCK_MUTEX(THIS_LOCK)
-    DirectoryIndexReader::decRef();
-  }
-
   void SegmentReader::loadDeletedDocs(){
     // NOTE: the bitvector is stored using the regular directory, not cfs
     if (hasDeletions(si)) {
@@ -983,6 +941,7 @@ bool SegmentReader::hasNorms(const TCHAR* field){
     }
 
     if (normsUpToDate && deletionsUpToDate) {
+      this->si = si; //force the result to use the new segment info (the old one is going to go away!)
       return this;
     }
 
@@ -1085,27 +1044,21 @@ bool SegmentReader::hasNorms(const TCHAR* field){
       if (!success) {
         // An exception occured during reopen, we have to decRef the norms
         // that we incRef'ed already and close singleNormsStream and FieldsReader
-        clone->decRef();
+        clone->decRefNorms();
       }
     )
 
     //disown this memory
-    this->freqStream = NULL;
     this->_fieldInfos = NULL;
-    this->fieldsReader = NULL;
-    this->tis = NULL;
+    this->cfsReader = NULL;
     this->deletedDocs = NULL;
-    this->ones = NULL;
-    this->termVectorsReaderOrig = NULL;
-    this->cfsReader = NULL;
-    this->fieldsReader = NULL;
-    this->tis = NULL;
     this->freqStream = NULL;
+    this->ones = NULL;
     this->proxStream = NULL;
-    this->termVectorsReaderOrig = NULL;
-    this->cfsReader = NULL;
-    this->storeCFSReader = NULL;
     this->singleNormStream = NULL;
+    this->storeCFSReader = NULL;
+    this->termVectorsReaderOrig = NULL;
+    this->tis = NULL;
 
     return clone;
   }

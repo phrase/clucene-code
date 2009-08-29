@@ -22,21 +22,19 @@ void testPrefixQuery(CuTest *tc){
 	}
 	writer.close();
 
-	Term* t = _CLNEW Term(_T("category"), _T("/Computers"));
+	boost::shared_ptr<Term> t(_CLNEW Term(_T("category"), _T("/Computers")));
 	PrefixQuery *query = _CLNEW PrefixQuery(t);
 	IndexSearcher searcher(&directory);
 	Hits *hits = searcher.search(query);
 	CLUCENE_ASSERT(3 == hits->length()); // All documents in /Computers category and below
 	_CLDELETE(query);
-	_CLDELETE(t);
 	_CLDELETE(hits);
 
-	t = _CLNEW Term(_T("category"), _T("/Computers/Mac"));
+	t.reset(_CLNEW Term(_T("category"), _T("/Computers/Mac")));
 	query = _CLNEW PrefixQuery(t);
 	hits = searcher.search(query);
 	CLUCENE_ASSERT(1 == hits->length()); // One in /Computers/Mac
 	_CLDELETE(query);
-	_CLDELETE(t);
 	_CLDELETE(hits);
 }
 
@@ -57,11 +55,10 @@ private:
 	Hits* searchQuery(IndexSearcher* searcher, const TCHAR* field, const TCHAR* text,
 		float_t minSimilarity=FuzzyQuery::defaultMinSimilarity, size_t prefixLen=0){
 
-		Term* t = _CLNEW Term(field, text);
+		boost::shared_ptr<Term> t(_CLNEW Term(field, text));
 		FuzzyQuery* query = _CLNEW FuzzyQuery(t, minSimilarity, prefixLen);
 		Hits* hits = searcher->search(query);
 		_CLLDELETE(query);
-		_CLLDECDELETE(t);
 		return hits;
 	}
 
@@ -197,95 +194,76 @@ public:
 		directory.close();
 	}
 
-	/*
-	void testFuzzinessLong() {
-	RAMDirectory directory;
-	IndexWriter writer = new IndexWriter(directory, new WhitespaceAnalyzer(), true);
-	addDoc("aaaaaaa", writer);
-	addDoc("segment", writer);
-	writer.optimize();
-	writer.close();
-	IndexSearcher searcher = new IndexSearcher(directory);
+    void testFuzzinessLong() {
+        RAMDirectory directory;
+        WhitespaceAnalyzer a;
+        IndexWriter writer(&directory, &a, true);
+        addDoc(_T("aaaaaaa"), &writer);
+        addDoc(_T("segment"), &writer);
+        writer.optimize();
+        writer.close();
+        IndexSearcher searcher(&directory);
+        
+        // not similar enough:
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("xxxxx")) == 0);
 
-	FuzzyQuery query;
-	// not similar enough:
-	query = new FuzzyQuery(new Term("field", "xxxxx"), FuzzyQuery.defaultMinSimilarity, 0);   
-	Hits hits = searcher.search(query);
-	assertEquals(0, hits.length());
-	// edit distance to "aaaaaaa" = 3, this matches because the string is longer than
-	// in testDefaultFuzziness so a bigger difference is allowed:
-	query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 0);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
-	assertEquals(hits.doc(0).get("field"), ("aaaaaaa"));
+        // edit distance to "aaaaaaa" = 3, this matches because the string is longer than
+        // in testDefaultFuzziness so a bigger difference is allowed:
+        Hits* hits = searchQuery(&searcher, _T("field"), _T("aaaaccc"));
+        CLUCENE_ASSERT( hits->length() == 1);
+        CuAssertStrEquals(tc, NULL, _T("aaaaaaa"), hits->doc(0).get(_T("field")));
+        _CLLDELETE(hits);
 
-	// now with prefix
-	query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 1);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
-	assertEquals(hits.doc(0).get("field"), ("aaaaaaa"));
-	query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 4);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
-	assertEquals(hits.doc(0).get("field"), ("aaaaaaa"));
-	query = new FuzzyQuery(new Term("field", "aaaaccc"), FuzzyQuery.defaultMinSimilarity, 5);   
-	hits = searcher.search(query);
-	assertEquals(0, hits.length());
+        // now with prefix
+        hits = searchQuery(&searcher, _T("field"), _T("aaaaccc"), FuzzyQuery::defaultMinSimilarity, 1);
+        CLUCENE_ASSERT( hits->length() == 1);
+        CuAssertStrEquals(tc, NULL, _T("aaaaaaa"), hits->doc(0).get(_T("field")));
+        _CLLDELETE(hits);
+        hits = searchQuery(&searcher, _T("field"), _T("aaaaccc"), FuzzyQuery::defaultMinSimilarity, 4);
+        CLUCENE_ASSERT( hits->length() == 1);
+        CuAssertStrEquals(tc, NULL, _T("aaaaaaa"), hits->doc(0).get(_T("field")));
+        _CLLDELETE(hits);
+        hits = searchQuery(&searcher, _T("field"), _T("aaaaccc"), FuzzyQuery::defaultMinSimilarity, 5);
+        CLUCENE_ASSERT( hits->length() == 0);
+        _CLLDELETE(hits);
 
-	// no match, more than half of the characters is wrong:
-	query = new FuzzyQuery(new Term("field", "aaacccc"), FuzzyQuery.defaultMinSimilarity, 0);   
-	hits = searcher.search(query);
-	assertEquals(0, hits.length());
+        // no match, more than half of the characters is wrong:
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("aaacccc")) == 0);
 
-	// now with prefix
-	query = new FuzzyQuery(new Term("field", "aaacccc"), FuzzyQuery.defaultMinSimilarity, 2);   
-	hits = searcher.search(query);
-	assertEquals(0, hits.length());
+        // now with prefix
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("aaacccc"), FuzzyQuery::defaultMinSimilarity, 2) == 0);
 
-	// "student" and "stellent" are indeed similar to "segment" by default:
-	query = new FuzzyQuery(new Term("field", "student"), FuzzyQuery.defaultMinSimilarity, 0);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
-	query = new FuzzyQuery(new Term("field", "stellent"), FuzzyQuery.defaultMinSimilarity, 0);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
+        // "student" and "stellent" are indeed similar to "segment" by default:
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("student")) == 1);
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("stellent")) == 1);
 
-	// now with prefix
-	query = new FuzzyQuery(new Term("field", "student"), FuzzyQuery.defaultMinSimilarity, 1);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
-	query = new FuzzyQuery(new Term("field", "stellent"), FuzzyQuery.defaultMinSimilarity, 1);   
-	hits = searcher.search(query);
-	assertEquals(1, hits.length());
-	query = new FuzzyQuery(new Term("field", "student"), FuzzyQuery.defaultMinSimilarity, 2);   
-	hits = searcher.search(query);
-	assertEquals(0, hits.length());
-	query = new FuzzyQuery(new Term("field", "stellent"), FuzzyQuery.defaultMinSimilarity, 2);   
-	hits = searcher.search(query);
-	assertEquals(0, hits.length());
+        // now with prefix
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("student"), FuzzyQuery::defaultMinSimilarity, 1) == 1);
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("stellent"), FuzzyQuery::defaultMinSimilarity, 1) == 1);
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("student"), FuzzyQuery::defaultMinSimilarity, 2) == 0);
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("stellent"), FuzzyQuery::defaultMinSimilarity, 2) == 0);
 
-	// "student" doesn't match anymore thanks to increased minimum similarity:
-	query = new FuzzyQuery(new Term("field", "student"), 0.6f, 0);   
-	hits = searcher.search(query);
-	assertEquals(0, hits.length());
+        // "student" doesn't match anymore thanks to increased minimum similarity:
+        CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("student"), 0.6f, 0) == 0);
 
-	try {
-	query = new FuzzyQuery(new Term("field", "student"), 1.1f);
-	fail("Expected IllegalArgumentException");
-	} catch (IllegalArgumentException e) {
-	// expecting exception
-	}
-	try {
-	query = new FuzzyQuery(new Term("field", "student"), -0.1f);
-	fail("Expected IllegalArgumentException");
-	} catch (IllegalArgumentException e) {
-	// expecting exception
-	}
+        try {
+            boost::shared_ptr<Term> student(_CLNEW Term(_T("field"), _T("student")));
+            new FuzzyQuery(student, 1.1f);
+            CuFail(tc, _T("Expected IllegalArgumentException"));
+        } catch (CLuceneError& /*e*/) {
+            // expecting exception
+        }
+        try {
+            boost::shared_ptr<Term> student(_CLNEW Term(_T("field"), _T("student")));
+            new FuzzyQuery(student, -0.1f);
+            CuFail(tc, _T("Expected IllegalArgumentException"));
+        } catch (CLuceneError& /*e*/) {
+            // expecting exception
+        }
 
-	searcher.close();
-	directory.close();
-	}
-	*/
+        searcher.close();
+        directory.close();
+    }
 };
 
 void testFuzzyQuery(CuTest *tc){
@@ -337,7 +315,7 @@ void testFuzzyQuery(CuTest *tc){
 	IndexSearcher searcher (&ram);
 
 	//---
-	Term* term = _CLNEW Term(_T("body"), _T("test~"));
+	boost::shared_ptr<Term> term(_CLNEW Term(_T("body"), _T("test~")));
 	Query* query = _CLNEW FuzzyQuery(term);
 	Hits* result = searcher.search(query);
 
@@ -346,7 +324,6 @@ void testFuzzyQuery(CuTest *tc){
 	//---
 	_CLDELETE(result);
 	_CLDELETE(query);
-	_CLDECDELETE(term);
 	searcher.close();
 	ram.close();
 }

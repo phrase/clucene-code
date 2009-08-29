@@ -16,6 +16,7 @@ CL_CLASS_DEF(document,Document)
 //#include "CLucene/util/VoidList.h"
 //#include "Explanation.h"
 //#include "Similarity.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 
@@ -66,7 +67,7 @@ CL_NS_DEF(search)
       * Called by search code to compute term weights.
       * @see IndexReader#docFreq(Term).
       */
-      virtual int32_t docFreq(const CL_NS(index)::Term* term) const = 0;
+      virtual int32_t docFreq(boost::shared_ptr<const CL_NS(index)::Term> const& term) const = 0;
 
       /** Expert: Returns one greater than the largest possible document number.
       * Called by search code to compute term weights.

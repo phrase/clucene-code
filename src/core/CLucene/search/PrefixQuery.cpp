@@ -15,33 +15,31 @@
 #include "TermQuery.h"
 #include "CLucene/util/BitSet.h"
 #include "CLucene/util/StringBuffer.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(index)
 CL_NS_DEF(search)
 
-  PrefixQuery::PrefixQuery(Term* Prefix){
+  PrefixQuery::PrefixQuery(boost::shared_ptr<Term> const& Prefix){
   //Func - Constructor.
   //       Constructs a query for terms starting with prefix
   //Pre  - Prefix != NULL 
   //Post - The instance has been created
 
       //Get a pointer to Prefix
-      prefix = _CL_POINTER(Prefix);
+      prefix = Prefix;
   }
 
   PrefixQuery::PrefixQuery(const PrefixQuery& clone):Query(clone){
-	prefix = _CL_POINTER(clone.prefix);
+	prefix = clone.prefix;
   }
   Query* PrefixQuery::clone() const{
 	  return _CLNEW PrefixQuery(*this);
   }
 
-  Term* PrefixQuery::getPrefix(bool pointer){
-	if ( pointer )
-		return _CL_POINTER(prefix);
-	else
-		return prefix;
+  boost::shared_ptr<Term> const& PrefixQuery::getPrefix(){
+	return prefix;
   }
 
   PrefixQuery::~PrefixQuery(){
@@ -49,8 +47,6 @@ CL_NS_DEF(search)
   //Pre  - true
   //Post - The instance has been destroyed.
     
-      //Delete prefix by finalizing it
-      _CLDECDELETE(prefix);
   }
 
 
@@ -80,7 +76,7 @@ CL_NS_DEF(search)
 
         PrefixQuery* rq = (PrefixQuery*)other;
 		bool ret = (this->getBoost() == rq->getBoost())
-			&& (this->prefix->equals(rq->prefix));
+			&& (this->prefix.get()->equals(rq->prefix.get()));
 
 		return ret;
   }
@@ -88,13 +84,13 @@ CL_NS_DEF(search)
    Query* PrefixQuery::rewrite(IndexReader* reader){
     BooleanQuery* query = _CLNEW BooleanQuery( true );
     TermEnum* enumerator = reader->terms(prefix);
-    Term* lastTerm = NULL;
+    boost::shared_ptr<Term> lastTerm;
     try {
-      const TCHAR* prefixText = prefix->text();
-      const TCHAR* prefixField = prefix->field();
+      const TCHAR* prefixText = prefix.get()->text();
+      const TCHAR* prefixField = prefix.get()->field();
       const TCHAR* tmp;
       size_t i;
-      size_t prefixLen = prefix->textLength();
+      size_t prefixLen = prefix.get()->textLength();
       do {
         lastTerm = enumerator->term();
         if (lastTerm != NULL &&
@@ -102,11 +98,11 @@ CL_NS_DEF(search)
         {
 
           //now see if term->text() starts with prefixText
-          size_t termLen = lastTerm->textLength();
+          size_t termLen = lastTerm.get()->textLength();
           if ( prefixLen>termLen )
             break; //the prefix is longer than the term, can't be matched
 
-          tmp = lastTerm->text();
+          tmp = lastTerm.get()->text();
 
           //check for prefix match in reverse, since most change will be at the end
           for ( i=prefixLen-1;i!=-1;--i ){
@@ -123,14 +119,11 @@ CL_NS_DEF(search)
           query->add(tq,true,false, false);		  // add to query
         } else
           break;
-		_CLDECDELETE(lastTerm);
       } while (enumerator->next());
     }_CLFINALLY(
       enumerator->close();
 	  _CLDELETE(enumerator);
-	  _CLDECDELETE(lastTerm);
 	);
-	_CLDECDELETE(lastTerm);
 
 
 	//if we only added one clause and the clause is not prohibited then
@@ -164,14 +157,14 @@ CL_NS_DEF(search)
     CL_NS(util)::StringBuffer buffer;
     //check if field equal to the field of prefix
     if( field==NULL ||
-        _tcscmp(prefix->field(),field) != 0 ) {
+        _tcscmp(prefix.get()->field(),field) != 0 ) {
         //Append the field of prefix to the buffer
-        buffer.append(prefix->field());
+        buffer.append(prefix.get()->field());
         //Append a colon
         buffer.append(_T(":") );
     }
     //Append the text of the prefix
-    buffer.append(prefix->text());
+    buffer.append(prefix.get()->text());
 	//Append a wildchar character
     buffer.append(_T("*"));
 	//if the boost factor is not eaqual to 1
@@ -191,10 +184,12 @@ CL_NS_DEF(search)
 
 //todo: this needs to be exposed, but java is still a bit confused about how...
 class PrefixFilter::PrefixGenerator{
-  const Term* prefix;
+  boost::shared_ptr<Term const> prefix;
 public:
-  PrefixGenerator(const Term* prefix){
+  PrefixGenerator(boost::shared_ptr<Term const> const& prefix){
     this->prefix = prefix;
+  }
+  virtual ~PrefixGenerator(){
   }
 
   virtual void handleDoc(int doc) = 0;
@@ -207,20 +202,20 @@ public:
     const TCHAR* tmp;
     size_t i;
     size_t prefixLen = prefix->textLength();
-    Term* term = NULL;
+    boost::shared_ptr<Term> term;
 
     try{
       do{
-          term = enumerator->term(false);
-          if (term != NULL &&
-              term->field() == prefixField // interned comparison
+          term = enumerator->term();
+          if (term.get() != NULL &&
+              term.get()->field() == prefixField // interned comparison
           ){
               //now see if term->text() starts with prefixText
-              size_t termLen = term->textLength();
+              size_t termLen = term.get()->textLength();
               if ( prefixLen>termLen )
                   break; //the prefix is longer than the term, can't be matched
 
-              tmp = term->text();
+              tmp = term.get()->text();
 
               //check for prefix match in reverse, since most change will be at the end
               for ( i=prefixLen-1;i!=-1;--i ){
@@ -250,28 +245,29 @@ public:
 class DefaultPrefixGenerator: public PrefixFilter::PrefixGenerator{
 public:
   BitSet* bts;
-  DefaultPrefixGenerator(BitSet* bts, const Term* prefix):
+  DefaultPrefixGenerator(BitSet* bts, boost::shared_ptr<Term const> const& prefix):
     PrefixGenerator(prefix)
   {
     this->bts = bts;
+  }
+  virtual ~DefaultPrefixGenerator(){
   }
   void handleDoc(int doc) {
     bts->set(doc);
   }
 };
 
-PrefixFilter::PrefixFilter( Term* prefix )
+PrefixFilter::PrefixFilter( boost::shared_ptr<Term> const& prefix )
 {
-	this->prefix = _CL_POINTER(prefix);
+	this->prefix = prefix;
 }
 
 PrefixFilter::~PrefixFilter()
 {
-	_CLDECDELETE(prefix);
 }
 
 PrefixFilter::PrefixFilter( const PrefixFilter& copy ) : 
-	prefix( _CL_POINTER(copy.prefix) )
+	prefix( copy.prefix )
 {
 }
 
@@ -284,7 +280,7 @@ TCHAR* PrefixFilter::toString()
 	//Instantiate a stringbuffer buffer to store the readable version temporarily
     CL_NS(util)::StringBuffer buffer;
     buffer.append(_T("PrefixFilter("));
-    buffer.append(prefix->field());
+    buffer.append(prefix.get()->field());
     buffer.append(_T(")"));
 
 	//Convert StringBuffer buffer to TCHAR block and return it
@@ -301,6 +297,6 @@ BitSet* PrefixFilter::bits( IndexReader* reader )
 	return bts;
 }
 
-CL_NS(index)::Term* PrefixFilter::getPrefix() const { return prefix; }
+boost::shared_ptr<CL_NS(index)::Term> const& PrefixFilter::getPrefix() const { return prefix; }
 
 CL_NS_END

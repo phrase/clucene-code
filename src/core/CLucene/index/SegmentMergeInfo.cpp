@@ -8,6 +8,7 @@
 #include "_SegmentHeader.h"
 #include "_SegmentMergeInfo.h"
 #include "_SegmentTermEnum.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -75,12 +76,10 @@ bool SegmentMergeInfo::next() {
 //Pre  - true
 //Post - Returns true if the term has been moved to the next otherwise false
 	if (termEnum->next()) {
-		_CLDECDELETE(term);
 		term = termEnum->term();
 		return true;
 	} else {
-		_CLDECDELETE(term); //TODO: test HighFreqTerms errors with this
-		term = NULL;
+		term.reset();
 		return false;
 	}
 }
@@ -100,7 +99,6 @@ void SegmentMergeInfo::close() {
         termEnum->close();
         _CLDELETE(termEnum);
     }
-	_CLDECDELETE(term);
 	_CLDELETE_ARRAY(docMap);
 }
 

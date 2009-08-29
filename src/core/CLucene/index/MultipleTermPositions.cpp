@@ -6,16 +6,47 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "MultipleTermPositions.h"
-
 #include "IndexReader.h"
-
 #include "CLucene/util/Array.h"
 #include "CLucene/util/PriorityQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 
 CL_NS_DEF(index)
 
+void MultipleTermPositions::seek(boost::shared_ptr<Term> const&) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
+}
+
+void MultipleTermPositions::seek(TermEnum*) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
+}
+
+int32_t MultipleTermPositions::read(int32_t*, int32_t*,int32_t) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::read");
+}
+
+int32_t MultipleTermPositions::getPayloadLength() const {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::getPayloadLength");
+}
+
+uint8_t* MultipleTermPositions::getPayload(uint8_t*) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::getPayload");
+}
+
+bool MultipleTermPositions::isPayloadAvailable() const{
+	return false;
+} 
+
+TermDocs* MultipleTermPositions::__asTermDocs(){ 
+	return (TermDocs*)this; 
+}
+TermPositions* MultipleTermPositions::__asTermPositions(){ 
+	return (TermPositions*)this; 
+}
+
+	
 class MultipleTermPositions::TermPositionsQueue : public CL_NS(util)::PriorityQueue<TermPositions*,
 	CL_NS(util)::Deletor::Object<TermPositions> > {
 public:
@@ -83,14 +114,14 @@ public:
 	}
 };
 
-MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<Term*>* terms) : _posList(_CLNEW IntQueue()){
+MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms) : _posList(_CLNEW IntQueue()){
 	CLLinkedList<TermPositions*> termPositions;
   for ( size_t i=0;i<terms->length;i++){
     termPositions.push_back( indexReader->termPositions(terms->values[i]));
 	}
 
 	TermPositions** tps = _CL_NEWARRAY(TermPositions*, terms->length+1); // i == tpsSize
-	termPositions.toArray(tps, true);
+	termPositions.toArray_nullTerminated(tps);
 
 	_termPositionsQueue = _CLNEW TermPositionsQueue(tps,terms->length);
 }

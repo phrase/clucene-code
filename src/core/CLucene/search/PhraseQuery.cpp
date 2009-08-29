@@ -26,6 +26,7 @@
 
 #include "_ExactPhraseScorer.h"
 #include "_SloppyPhraseScorer.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -59,14 +60,14 @@ CL_NS_DEF(search)
 	};
 
   PhraseQuery::PhraseQuery():
-	field(NULL), terms(_CLNEW CL_NS(util)::CLVector<CL_NS(index)::Term*>(false) ),
+	field(NULL), terms(_CLNEW CL_NS(util)::CLVector<boost::shared_ptr<CL_NS(index)::Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >(false) ),
 		positions(_CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>), slop(0)
   {
   }
 
   PhraseQuery::PhraseQuery(const PhraseQuery& clone):
 	Query(clone),
-		terms(_CLNEW CL_NS(util)::CLVector<CL_NS(index)::Term*>(false) ),
+		terms(_CLNEW CL_NS(util)::CLVector<boost::shared_ptr<CL_NS(index)::Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >(false) ),
 		positions(_CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>)
   {
       slop  = clone.slop;
@@ -81,13 +82,15 @@ CL_NS_DEF(search)
 	  size=clone.terms->size();
 	  { //msvc6 scope fix
 		  for ( int32_t i=0;i<size;i++ ){
-			  this->terms->push_back( _CL_POINTER((*clone.terms)[i]));
+			  this->terms->push_back( (*clone.terms)[i]);
 		  }
 	  }
   }
   Query* PhraseQuery::clone() const{
 	  return _CLNEW PhraseQuery(*this);
   }
+  
+  const TCHAR* PhraseQuery::getFieldName() const{ return field; }
 
   void PhraseQuery::setSlop(const int32_t s) { slop = s; }
   int32_t PhraseQuery::getSlop() const { return slop; }
@@ -100,9 +103,9 @@ CL_NS_DEF(search)
 	  bool ret = (this->getBoost() == pq->getBoost()) && (this->slop == pq->slop);
 
 	  if ( ret ){
-		  CLListEquals<CL_NS(index)::Term,CL_NS(index)::Term_Equals,
-			  const CL_NS(util)::CLVector<CL_NS(index)::Term*>,
-			  const CL_NS(util)::CLVector<CL_NS(index)::Term*> > comp;
+		  CLListEquals<boost::shared_ptr<CL_NS(index)::Term>,CL_NS(index)::Term_Equals_Shared,
+			  const CL_NS(util)::CLVector<boost::shared_ptr<CL_NS(index)::Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >,
+			  const CL_NS(util)::CLVector<boost::shared_ptr<CL_NS(index)::Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> > > comp;
 		  ret = comp.equals(this->terms,pq->terms);
 	  }
 
@@ -121,10 +124,6 @@ CL_NS_DEF(search)
   //Pre  - true
   //Post 0 The instance has been destroyed
 
-	  //Iterate through all the terms
-	  for (size_t i = 0; i < terms->size(); i++){
-        _CLLDECDELETE((*terms)[i]);
-      }
 	  _CLLDELETE(terms);
 	  _CLLDELETE(positions);
   }
@@ -154,8 +153,8 @@ CL_NS_DEF(search)
     return getClassName();
   }
 
-  void PhraseQuery::add(Term* term) {
-	  CND_PRECONDITION(term != NULL,"term is NULL");
+  void PhraseQuery::add(boost::shared_ptr<CL_NS(index)::Term> const& term) {
+	  CND_PRECONDITION(term.get() != NULL,"term is NULL");
 
 	  int32_t position = 0;
 
@@ -165,16 +164,16 @@ CL_NS_DEF(search)
 	  add(term, position);
   }
 
-  void PhraseQuery::add(Term* term, int32_t position) {
+  void PhraseQuery::add(boost::shared_ptr<CL_NS(index)::Term> const& term, int32_t position) {
 
-	  CND_PRECONDITION(term != NULL,"term is NULL");
+	  CND_PRECONDITION(term.get() != NULL,"term is NULL");
 
 	  if (terms->size() == 0)
 		  field = term->field();
 	  else{
 		  //Check if the field of the _CLNEW term matches the field of the PhraseQuery
 		  //can use != because fields are interned
-		  if ( term->field() != field){
+		  if ( term.get()->field() != field){
 			  TCHAR buf[200];
 			  _sntprintf(buf,200,_T("All phrase terms must be in the same field: %s"),term->field());
 			  _CLTHROWT(CL_ERR_IllegalArgument,buf);
@@ -182,7 +181,7 @@ CL_NS_DEF(search)
 	  }
 
 	  //Store the _CLNEW term
-	  terms->push_back(_CL_POINTER(term));
+	  terms->push_back(term);
 	  positions->push_back(position);
   }
 
@@ -196,7 +195,7 @@ CL_NS_DEF(search)
 
 	Weight* PhraseQuery::_createWeight(Searcher* searcher) {
 		if (terms->size() == 1) {			  // optimize one-term case
-			Term* term = (*terms)[0];
+			boost::shared_ptr<Term> term = (*terms)[0];
 			Query* termQuery = _CLNEW TermQuery(term);
 			termQuery->setBoost(getBoost());
 			Weight* ret = termQuery->_createWeight(searcher);
@@ -207,20 +206,19 @@ CL_NS_DEF(search)
 	}
 
 
-  Term** PhraseQuery::getTerms() const{
+  lucene::util::ObjectArray<boost::shared_ptr<Term> >* PhraseQuery::getTerms() const{
   //Func - added by search highlighter
 
 	  //Let size contain the number of terms
       int32_t size = terms->size();
-      Term** ret = _CL_NEWARRAY(Term*,size+1);
+      CL_NS(util)::ObjectArray<boost::shared_ptr<Term> >* ret = _CLNEW CL_NS(util)::ObjectArray<boost::shared_ptr<Term> >(size);
 
 	  CND_CONDITION(ret != NULL,"Could not allocated memory for ret");
 
 	  //Iterate through terms and copy each pointer to ret
 	  for ( int32_t i=0;i<size;i++ ){
-          ret[i] = (*terms)[i];
+          ret->values[i] = new boost::shared_ptr<Term>((*terms)[i]);
      }
-     ret[size] = NULL;
      return ret;
   }
 
@@ -240,14 +238,14 @@ CL_NS_DEF(search)
 
 	  buffer.appendChar( _T('"') );
 
-	  Term *T = NULL;
+	  boost::shared_ptr<Term> T;
 
 	  //iterate through all terms
 	  for (size_t i = 0; i < terms->size(); i++) {
 		  //Get the i-th term
 		  T = (*terms)[i];
 
-		  buffer.append( T->text() );
+		  buffer.append( T.get()->text() );
 		  //Check if i is at the end of terms
 		  if (i != terms->size()-1){
 			  buffer.appendChar(_T(' '));
@@ -303,7 +301,7 @@ CL_NS_DEF(search)
   //Post -
 
 	  //Get the length of terms
-      const size_t tpsLength = parentQuery->terms->size();
+      const int32_t tpsLength = (const int32_t)parentQuery->terms->size();
 
 	  //optimize zero-term case
       if (tpsLength == 0)
@@ -317,7 +315,7 @@ CL_NS_DEF(search)
     TermPositions* p = NULL;
 
 	//Iterate through all terms
-    for (size_t i = 0; i < tpsLength; i++) {
+    for (int32_t i = 0; i < tpsLength; i++) {
         //Get the termPostitions for the i-th term
         p = reader->termPositions((*parentQuery->terms)[i]);
 
@@ -382,13 +380,13 @@ CL_NS_DEF(search)
 			  query.appendChar(' ');
 		  }
 
-		  Term* term = (*parentQuery->terms)[i];
+		  boost::shared_ptr<Term> term = (*parentQuery->terms)[i];
 
-		  docFreqs.append(term->text());
+		  docFreqs.append(term.get()->text());
 		  docFreqs.appendChar('=');
 		  docFreqs.appendInt(searcher->docFreq(term));
 
-		  query.append(term->text());
+		  query.append(term.get()->text());
 	  }
 	  query.appendChar('\"');
 

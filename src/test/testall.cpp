@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 {
 	#ifdef _MSC_VER
 	#ifdef _DEBUG
-		_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // | _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_CHECK_CRT_DF 
+		_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // | _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_CHECK_CRT_DF
 		_crtBreakAlloc=-1;
 	#endif
 	#endif
@@ -228,6 +228,9 @@ void TestAssertIndexReaderEquals(CuTest *tc,  IndexReader* index1, IndexReader* 
   const Document::FieldsType* fields1, *fields2;
   Document::FieldsType::const_iterator it1, it2;
 
+  CuAssertPtrNotNull(tc, _T("check index1!=null"), index1);
+  CuAssertPtrNotNull(tc, _T("check index1!=null"), index2);
+
   //misc
   CuAssertIntEquals(tc,_T("IndexReaders have different values for numDocs"), index1->numDocs(), index2->numDocs());
   CuAssertIntEquals(tc,_T("IndexReaders have different values for maxDoc"), index1->maxDoc(), index2->maxDoc());
@@ -319,12 +322,12 @@ void TestAssertIndexReaderEquals(CuTest *tc,  IndexReader* index1, IndexReader* 
   while(enum1->next()) {
 
     CuAssertTrue(tc,enum2->next());
-    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term(false)->field(), enum2->term(false)->field() );
-    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term(false)->text(), enum2->term(false)->text() );
-    CuAssert(tc, _T("Different term in dictionary."), enum1->term(false)->equals(enum2->term(false)) );
+    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term().get()->field(), enum2->term().get()->field() );
+    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term().get()->text(), enum2->term().get()->text() );
+    CuAssert(tc, _T("Different term in dictionary."), enum1->term().get()->equals(enum2->term().get()) );
 
-    tp1->seek(enum1->term(false));
-    tp2->seek(enum1->term(false));
+    tp1->seek(enum1->term());
+    tp2->seek(enum1->term());
     while(tp1->next()) {
       CuAssertTrue(tc, tp2->next());
       CuAssertIntEquals(tc,_T("Different doc id in postinglist of term"), tp1->doc(), tp2->doc());

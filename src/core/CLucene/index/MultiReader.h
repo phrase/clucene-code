@@ -13,6 +13,7 @@
 CL_CLASS_DEF(document,Document)
 //#include "Terms.h"
 //#include "SegmentMergeQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -26,7 +27,7 @@ private:
 	bool hasNorms(const TCHAR* field);
 	uint8_t* fakeNorms();
 
-  void init(CL_NS(util)::ArrayBase<IndexReader*>* subReaders, bool closeSubReaders);
+  void init(const CL_NS(util)::ArrayBase<IndexReader*>* subReaders, bool closeSubReaders);
 protected:
 	CL_NS(util)::ArrayBase<IndexReader*>* subReaders;
 	int32_t* starts;			  // 1st docno for each segment
@@ -41,11 +42,12 @@ public:
 	* <p>Construct a MultiReader aggregating the named set of (sub)readers.
 	* Directory locking for delete, undeleteAll, and setNorm operations is
 	* left to the subreaders. </p>
-	* <p>Note that all subreaders are closed if this Multireader is closed.</p>
 	* @param subReaders set of (sub)readers
+  * @param closeSubReaders The subReaders (IndexReader instances) are deleted if true
 	* @throws IOException
+  * @memory The subReaders array itself belongs to the caller
 	*/
-	MultiReader(CL_NS(util)::ArrayBase<IndexReader*>* subReaders, bool closeSubReaders=true);
+	MultiReader(const CL_NS(util)::ArrayBase<IndexReader*>* subReaders, bool closeSubReaders=true);
 
 	~MultiReader();
 
@@ -94,10 +96,10 @@ public:
 	uint8_t* norms(const TCHAR* field);
 	void norms(const TCHAR* field, uint8_t* result);
 	TermEnum* terms();
-	TermEnum* terms(const Term* term);
+	TermEnum* terms(boost::shared_ptr<const Term> const& term);
 
 	//Returns the document frequency of the current term in the set
-	int32_t docFreq(const Term* t=NULL);
+	int32_t docFreq(boost::shared_ptr<const Term> const& t=boost::shared_ptr<const Term>());
 	TermDocs* termDocs();
 	TermPositions* termPositions();
 

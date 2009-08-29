@@ -12,9 +12,8 @@ RAMDirectory* tv_directory = NULL;
 void testTermPositionVectors(CuTest *tc) {
     CLUCENE_ASSERT(tv_searcher!=NULL);
 
-    Term* term = _CLNEW Term(_T("field"), _T("fifty"));
+    boost::shared_ptr<Term> term(_CLNEW Term(_T("field"), _T("fifty")));
     TermQuery query(term);
-    _CLDECDELETE(term);
     try {
       Hits* hits = tv_searcher->search(&query);
       CuAssert (tc,_T("hits.length != 100"), 100 == hits->length());
@@ -39,9 +38,8 @@ void testTermPositionVectors(CuTest *tc) {
 void testTermVectors(CuTest *tc) {
     CLUCENE_ASSERT(tv_searcher!=NULL);
 
-    Term* term = _CLNEW Term(_T("field"), _T("seventy"));
+    boost::shared_ptr<Term> term(_CLNEW Term(_T("field"), _T("seventy")));
     TermQuery query(term);
-    _CLDECDELETE(term);
 
     try {
       Hits* hits = tv_searcher->search(&query);
@@ -168,7 +166,7 @@ void testKnownSetOfDocuments(CuTest *tc) {
       Similarity* sim = knownSearcher.getSimilarity();
       while (termEnum->next() == true)
       {
-        Term* term = termEnum->term(true);
+        boost::shared_ptr<Term> term = termEnum->term();
         //System.out.println("Term: " + term);
         termDocs->seek(term);
 
@@ -207,16 +205,14 @@ void testKnownSetOfDocuments(CuTest *tc) {
 
           _CLDELETE(vector);
         }
-        _CLDECDELETE(term);
         //System.out.println("--------");
       }
       _CLDELETE(termEnum);
       _CLDELETE(termDocs);
 
 
-      Term* tqTerm = _CLNEW Term(_T("field"), _T("chocolate"));
+      boost::shared_ptr<Term> tqTerm(_CLNEW Term(_T("field"), _T("chocolate")));
       TermQuery query(tqTerm);
-      _CLDECDELETE(tqTerm);
 
       Hits* hits = knownSearcher.search(&query);
       //doc 3 should be the first hit b/c it is the shortest match

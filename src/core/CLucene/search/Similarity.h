@@ -7,6 +7,8 @@
 #ifndef _lucene_search_Similarity_
 #define _lucene_search_Similarity_
 
+#include "CLucene/util/VoidList.h"
+#include <boost/shared_ptr.hpp>
 CL_CLASS_DEF(index,Term)
 
 CL_NS_DEF(search)
@@ -103,7 +105,7 @@ public:
    * @param searcher the document collection being searched
    * @return a score factor for the phrase
    */
-   float_t idf(CL_NS(util)::CLVector<CL_NS(index)::Term*>* terms, Searcher* searcher);
+   float_t idf(CL_NS(util)::CLVector<boost::shared_ptr<CL_NS(index)::Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<CL_NS(index)::Term> const&> >* terms, Searcher* searcher);
    //float_t idf(Term** terms, Searcher* searcher);
 
    
@@ -122,7 +124,7 @@ public:
    * @param searcher the document collection being searched
    * @return a score factor for the term
    */
-   float_t idf(CL_NS(index)::Term* term, Searcher* searcher);
+   float_t idf(boost::shared_ptr<CL_NS(index)::Term> const& term, Searcher* searcher);
 
    
    /** Computes a score factor based on a term or phrase's frequency in a
