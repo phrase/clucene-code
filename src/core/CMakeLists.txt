@@ -49,14 +49,15 @@ SET(clucene_core_Files
 	./CLucene/analysis/Analyzers.cpp
 	./CLucene/analysis/AnalysisHeader.cpp
 	./CLucene/store/MMapInput.cpp
-	#./CLucene/store/TransactionalRAMDirectory.cpp
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
+	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
+	#./CLucene/store/RAWDirectory.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp

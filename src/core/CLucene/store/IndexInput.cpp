@@ -12,13 +12,14 @@
 CL_NS_DEF(store)
 CL_NS_USE(util)
 
-	IndexInput::IndexInput()
+	IndexInput::IndexInput():
+		NamedObject()
 	{
 	}
 	IndexInput::~IndexInput()
 	{
 	}
-	IndexInput::IndexInput(const IndexInput& other)
+	IndexInput::IndexInput(const IndexInput& /*other*/)
 	{
 	}
 
@@ -113,7 +114,7 @@ CL_NS_USE(util)
     return ret;
   }
 
-  void IndexInput::readBytes( uint8_t* b, const int32_t len, bool useBuffer) {
+  void IndexInput::readBytes( uint8_t* b, const int32_t len, bool /*useBuffer*/) {
     // Default to ignoring useBuffer entirely
     readBytes(b, len);
   }
@@ -154,19 +155,15 @@ BufferedIndexInput::BufferedIndexInput(int32_t _bufferSize):
   	IndexInput(other),
     buffer(NULL),
     bufferSize(other.bufferSize),
-    bufferStart(other.bufferStart),
-    bufferLength(other.bufferLength),
-    bufferPosition(other.bufferPosition)
+    bufferStart(other.getFilePointer()),
+    bufferLength(0),
+    bufferPosition(0)
   {
-    /* DSR: Does the fact that sometime clone.buffer is not NULL even when
-    ** clone.bufferLength is zero indicate memory corruption/leakage?
-    **   if ( clone.buffer != NULL) { */
-    if (other.bufferLength != 0 && other.buffer != NULL) {
-      buffer = _CL_NEWARRAY(uint8_t,bufferLength);
-      memcpy(buffer,other.buffer,bufferLength * sizeof(uint8_t));
-    }
   }
 
+	const char* BufferedIndexInput::getObjectName(){ return getClassName(); }
+	const char* BufferedIndexInput::getClassName(){ return "BufferedIndexInput"; }
+		
   void BufferedIndexInput::readBytes(uint8_t* b, const int32_t len){
     readBytes(b, len, true);
   }

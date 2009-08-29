@@ -4,6 +4,12 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------
+* Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
+* the GNU Lesser General Public License, as specified in the COPYING file.
+------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "IndexModifier.h"
 
@@ -39,7 +45,11 @@ void IndexModifier::init(Directory* directory, Analyzer* analyzer, bool create) 
 	this->mergeFactor = IndexWriter::DEFAULT_MERGE_FACTOR;
 
 	this->directory = _CL_POINTER(directory);
-	createIndexReader();
+	if (create) {
+		createIndexWriter(create);
+	} else {
+		createIndexReader();
+	}
 	open = true;
 }
 
@@ -53,13 +63,13 @@ void IndexModifier::assureOpen() const{
 	}
 }
 
-void IndexModifier::createIndexWriter() {
+void IndexModifier::createIndexWriter(bool create) {
 	if (indexWriter == NULL) {
 		if (indexReader != NULL) {
 			indexReader->close();
 			_CLDELETE(indexReader);
 		}
-		indexWriter = _CLNEW IndexWriter(directory, analyzer, false);
+		indexWriter = _CLNEW IndexWriter(directory, analyzer, create);
 		indexWriter->setUseCompoundFile(useCompoundFile);
 		//indexWriter->setMaxBufferedDocs(maxBufferedDocs);
 		indexWriter->setMaxFieldLength(maxFieldLength);

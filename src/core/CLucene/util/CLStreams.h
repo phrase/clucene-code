@@ -12,6 +12,8 @@ CL_NS_DEF(util)
 template <typename T>
 class CLUCENE_EXPORT CLStream{
 public:
+	typedef T element_type;
+
 	virtual ~CLStream(){}
 
 	inline int read(){

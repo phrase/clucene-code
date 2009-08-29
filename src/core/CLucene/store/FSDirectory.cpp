@@ -22,15 +22,12 @@
 #include <errno.h>
 
 #include "FSDirectory.h"
+#include "_MMapDirectory.h"
 #include "LockFactory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/IndexWriter.h"
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/_MD5Digester.h"
-
-#ifdef LUCENE_FS_MMAP
-    #include "_MMap.h"
-#endif
 
 CL_NS_DEF(store)
 CL_NS_USE(util)
@@ -42,6 +39,7 @@ CL_NS_USE(util)
 	static CL_NS(util)::CLHashMap<const char*,FSDirectory*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> DIRECTORIES(false,false);
 	STATIC_DEFINE_MUTEX(DIRECTORIES_LOCK)
 
+  bool FSDirectory::useMMap = LUCENE_USE_MMAP;
 	bool FSDirectory::disableLocks=false;
 
 
@@ -163,7 +161,7 @@ CL_NS_USE(util)
 
 	  SCOPED_LOCK_MUTEX(*other.handle->THIS_LOCK)
 	  handle = _CL_POINTER(other.handle);
-	  _pos = other.handle->_fpos; //note where we are currently...
+	  _pos = other.getFilePointer(); //note where we are currently...
   }
 
   FSDirectory::FSIndexInput::SharedHandle::SharedHandle(const char* path){
@@ -354,8 +352,7 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 
   FSDirectory::FSDirectory(const char* _path, const bool createDir, LockFactory* lockFactory):
    Directory(),
-   refCount(0),
-   useMMap(LUCENE_USE_MMAP)
+   refCount(0)
   {
     directory = _path;
     bool doClearLockID = false;
@@ -436,17 +433,18 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
   }
 
 
-    void FSDirectory::setUseMMap(bool value){ useMMap = value; }
-    bool FSDirectory::getUseMMap() const{ return useMMap; }
-    const char* FSDirectory::getClassName(){
-      return "FSDirectory";
-    }
-    const char* FSDirectory::getObjectName() const{
-      return getClassName();
-    }
+  void FSDirectory::setUseMMap(bool value){ useMMap = value; }
+  bool FSDirectory::getUseMMap() { return useMMap; }
 
-    void FSDirectory::setDisableLocks(bool doDisableLocks) { disableLocks = doDisableLocks; }
-    bool FSDirectory::getDisableLocks() { return disableLocks; }
+  const char* FSDirectory::getClassName(){
+    return "FSDirectory";
+  }
+  const char* FSDirectory::getObjectName() const{
+    return getClassName();
+  }
+
+  void FSDirectory::setDisableLocks(bool doDisableLocks) { disableLocks = doDisableLocks; }
+  bool FSDirectory::getDisableLocks() { return disableLocks; }
 
 
   bool FSDirectory::list(vector<string>* names) const{ //todo: fix this, ugly!!!
@@ -482,7 +480,11 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 		SCOPED_LOCK_MUTEX(DIRECTORIES_LOCK)
 		dir = DIRECTORIES.get(tmpdirectory);
 		if ( dir == NULL  ){
-			dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory);
+      if ( getUseMMap() ){
+        dir = _CLNEW MMapDirectory(tmpdirectory,_create,lockFactory);
+      }else{
+			  dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory);
+      }
 			DIRECTORIES.put( dir->directory.c_str(), dir);
 		} else if ( _create ) {
 	    	dir->create();
@@ -543,33 +545,12 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
       return buf.st_size;
   }
 
-  IndexInput* FSDirectory::openMMapFile(const char* name, int32_t bufferSize){
-#ifdef LUCENE_FS_MMAP
-    char fl[CL_MAX_DIR];
-    priv_getFN(fl, name);
-	if ( Misc::file_Size(fl) < LUCENE_INT32_MAX_SHOULDBE ) //todo: would this be bigger on 64bit systems?. i suppose it would be...test first
-		return _CLNEW MMapIndexInput( fl );
-	else
-		return _CLNEW FSIndexInput( fl, bufferSize );
-#else
-	_CLTHROWA(CL_ERR_Runtime,"MMap not enabled at compilation");
-#endif
-  }
-
   bool FSDirectory::openInput(const char * name, IndexInput *& ret, CLuceneError& error, int32_t bufferSize)
   {
-	CND_PRECONDITION(directory[0]!=0,"directory is not open")
+	  CND_PRECONDITION(directory[0]!=0,"directory is not open")
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
-#ifdef LUCENE_FS_MMAP
-	//todo: do some tests here... like if the file
-	//is >2gb, then some system cannot mmap the file
-	//also some file systems mmap will fail?? could detect here too
-	if ( useMMap && Misc::file_Size(fl) < LUCENE_INT32_MAX_SHOULDBE ) //todo: would this be bigger on 64bit systems?. i suppose it would be...test first
-		return MMapIndexInput( fl, ret, error, bufferSize );
-	else
-#endif
-	return FSIndexInput::open( fl, ret, error, bufferSize );
+	  return FSIndexInput::open( fl, ret, error, bufferSize );
   }
 
   void FSDirectory::close(){
