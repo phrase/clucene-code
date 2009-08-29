@@ -13,6 +13,11 @@ CL_NS_DEF(store)
     FSIndexInput(handle, __bufferSize) {
 }
 
+  IndexInput* RawIndexInput::clone() const
+  {
+    return _CLNEW RawIndexInput(*this);
+  }
+
   void RawIndexInput::skipChars( const int32_t count) {
 	seek(getFilePointer()+(count * sizeof(TCHAR) / sizeof(uint8_t)));
 }

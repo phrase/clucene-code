@@ -11,7 +11,6 @@
 #include "_SegmentHeader.h"
 #include "MultiReader.h"
 #include <assert.h>
-#include <iostream>
 
 #include "CLucene/store/Directory.h"
 #include "CLucene/util/Misc.h"

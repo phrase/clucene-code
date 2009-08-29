@@ -18,6 +18,8 @@ CL_NS_DEF(store)
 	protected:
 		RawIndexInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize);
 	public:
+		IndexInput* clone() const;
+
 		/** Reads raw TCHAR encoded characters into an array.
 		* @param buffer the array to read characters into
 		* @param start the offset in the array to start storing characters
