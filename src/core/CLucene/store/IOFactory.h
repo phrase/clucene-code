@@ -15,6 +15,9 @@
 
 CL_NS_DEF(store)
 
+template<typename storage>
+class RAMOutputStream;
+
    /** Abstract base factory class supplying input and output streams to
    * a {@link lucene::store::Directory}.
    * @see IndexInput
@@ -24,6 +27,7 @@ class CLUCENE_EXPORT IOFactory : public CL_NS(util)::NamedObject {
 public:
 	virtual bool openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1) = 0;
 	virtual IndexOutput* newOutput(const char* path) = 0;
+	virtual RAMOutputStream<IndexOutput>* newRAMOutputStream() = 0;
 };
 CL_NS_END
 #endif

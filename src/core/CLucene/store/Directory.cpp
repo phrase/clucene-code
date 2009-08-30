@@ -9,11 +9,14 @@
 #include "Directory.h"
 #include "LockFactory.h"
 #include "CLucene/util/Misc.h"
+#include "FSIOFactory.h"
 
 CL_NS_DEF(store)
 
+IOFactory* Directory::defaultIOFactory = new FSIOFactory<IndexInput, IndexOutput>;
 
-Directory::Directory(){
+Directory::Directory(IOFactory* ioFactory) :
+ioFactory((NULL == ioFactory) ? defaultIOFactory : ioFactory) {
   this->lockFactory = NULL;
 }
 Directory::~Directory(){
@@ -30,6 +33,10 @@ void Directory::setLockFactory( LockFactory* lockFactory ) {
 
 LockFactory* Directory::getLockFactory() {
 	return lockFactory;
+}
+
+IOFactory* Directory::getIOFactory() {
+	return ioFactory;
 }
 
 string Directory::getLockID() {

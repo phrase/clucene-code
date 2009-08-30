@@ -29,7 +29,7 @@ CL_NS_DEF(store)
 	private:
 		static IOFactory* defaultIOFactory;
 	protected:
-		RawDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = defaultIOFactory);
+		RawDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = NULL);
 	public:
     /**
     Returns the directory instance for the named location.
@@ -45,7 +45,7 @@ CL_NS_DEF(store)
     @param create if true, create, or erase any existing contents.
     @return the FSDirectory for the named file.
     */
-		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = defaultIOFactory);
+		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = NULL);
 
 	};
 CL_NS_END

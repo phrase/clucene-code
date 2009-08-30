@@ -16,12 +16,12 @@ CL_NS_DEF(store)
 	IOFactory* RawDirectory::defaultIOFactory = new FSIOFactory<RawIndexInput, RawIndexOutput>;
 
   RawDirectory::RawDirectory(const char* _path, const bool createDir, LockFactory* lockFactory, IOFactory* ioFactory):
-   FSDirectory(_path, createDir, lockFactory, ioFactory)
+   FSDirectory(_path, createDir, lockFactory, (NULL == ioFactory) ? defaultIOFactory : ioFactory)
   {
   }
 
   //static
   FSDirectory* RawDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory, IOFactory* ioFactory){
-    return FSDirectory::getDirectory(file, _create, lockFactory, ioFactory);
+    return FSDirectory::getDirectory(file, _create, lockFactory, (NULL == ioFactory) ? defaultIOFactory : ioFactory);
   }
 CL_NS_END

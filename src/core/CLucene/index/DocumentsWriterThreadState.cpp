@@ -62,8 +62,8 @@ DocumentsWriter::ThreadState::ThreadState(DocumentsWriter* __parent):
   isIdle = true;
   numThreads = 1;
 
-  tvfLocal = _CLNEW RAMOutputStream<IndexOutput>();    // Term vectors for one doc
-  fdtLocal = _CLNEW RAMOutputStream<IndexOutput>();    // Stored fields for one doc
+  tvfLocal = _parent->directory->getIOFactory()->newRAMOutputStream();    // Term vectors for one doc
+  fdtLocal = _parent->directory->getIOFactory()->newRAMOutputStream();    // Stored fields for one doc
 
   this->docBoost = 0.0;
   this->fieldGen = this->posUpto = this->maxPostingsVectors = this->numStoredFields = 0;

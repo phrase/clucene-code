@@ -11,6 +11,7 @@
 #include "CLucene/store/IOFactory.h"
 #include "FSIndexInput.h"
 #include "FSIndexOutput.h"
+#include "_RAMDirectory.h"
 #include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(store)
@@ -20,6 +21,7 @@ class CLUCENE_EXPORT FSIOFactory : public IOFactory {
 public:
 	bool openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1);
 	IndexOutput* newOutput(const char* path);
+	RAMOutputStream<IndexOutput>* newRAMOutputStream();
 	static const char* getClassName();
 	const char* getObjectName() const;
 
@@ -33,6 +35,17 @@ bool FSIOFactory<input, output>::openInput(const char* path, IndexInput*& ret, C
 template<typename input, typename output>
 IndexOutput* FSIOFactory<input, output>::newOutput(const char* path) {
     return _CLNEW FSIndexOutput<output>(path);
+}
+
+template<typename input, typename output>
+RAMOutputStream<IndexOutput>* FSIOFactory<input, output>::newRAMOutputStream() {
+    // cast is for type erasure
+    // TODO: clean this up by having a non-generic interface class
+    return reinterpret_cast<
+        RAMOutputStream<IndexOutput>*
+    >(
+        _CLNEW RAMOutputStream<output>
+    );
 }
 
 template<typename input, typename output>

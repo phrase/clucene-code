@@ -28,7 +28,6 @@
 #include "CLucene/index/IndexWriter.h"
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/_MD5Digester.h"
-#include "FSIOFactory.h"
 
 CL_NS_DEF(store)
 CL_NS_USE(util)
@@ -40,7 +39,6 @@ CL_NS_USE(util)
 	static CL_NS(util)::CLHashMap<const char*,FSDirectory*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> DIRECTORIES(false,false);
 	STATIC_DEFINE_MUTEX(DIRECTORIES_LOCK)
 
-	IOFactory* FSDirectory::defaultIOFactory = new FSIOFactory<IndexInput, IndexOutput>;
   bool FSDirectory::useMMap = LUCENE_USE_MMAP;
 	bool FSDirectory::disableLocks=false;
 
@@ -69,9 +67,8 @@ CL_NS_USE(util)
 	}
 
   FSDirectory::FSDirectory(const char* _path, const bool createDir, LockFactory* lockFactory, IOFactory* ioFactory):
-   Directory(),
-   refCount(0),
-   ioFactory(ioFactory)
+   Directory(ioFactory),
+   refCount(0)
   {
     directory = _path;
     bool doClearLockID = false;
@@ -269,7 +266,7 @@ CL_NS_USE(util)
 	  CND_PRECONDITION(directory[0]!=0,"directory is not open")
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
-	return ioFactory->openInput( fl, ret, error, bufferSize );
+	return getIOFactory()->openInput( fl, ret, error, bufferSize );
   }
 
   void FSDirectory::close(){
@@ -383,7 +380,7 @@ CL_NS_USE(util)
 			  _CLTHROWA(CL_ERR_IO, tmp);
 		  }
 	  }
-    return ioFactory->newOutput( fl );
+    return getIOFactory()->newOutput( fl );
   }
 
   string FSDirectory::toString() const{

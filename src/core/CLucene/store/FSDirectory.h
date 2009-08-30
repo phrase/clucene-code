@@ -31,12 +31,10 @@ CL_CLASS_DEF(util,StringBuffer)
 		class FSIndexInput;
 		friend class FSIndexOutput;
 		friend class FSIndexInput;
-		static IOFactory* defaultIOFactory;
-		IOFactory* ioFactory;
 
 	protected:
 		void priv_getFN(char* buffer, const char* name) const;
-		FSDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = defaultIOFactory);
+		FSDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = NULL);
 	private:
     std::string directory;
 		int refCount;
@@ -83,7 +81,7 @@ CL_CLASS_DEF(util,StringBuffer)
     @param create if true, create, or erase any existing contents.
     @return the FSDirectory for the named file.
     */
-		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = defaultIOFactory);
+		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = NULL);
 
 		/// Returns the time the named file was last modified.
 		int64_t fileModified(const char* name) const;
