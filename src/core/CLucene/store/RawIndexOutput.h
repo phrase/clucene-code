@@ -7,14 +7,12 @@
 #ifndef _lucene_store_RawIndexOutput_
 #define _lucene_store_RawIndexOutput_
 
-#include "FSIndexOutput.h"
+#include "IndexOutput.h"
 
 CL_NS_DEF(store)
 
-class CLUCENE_EXPORT RawIndexOutput: public FSIndexOutput{
+class CLUCENE_EXPORT RawIndexOutput: public IndexOutput{
 public:
-	RawIndexOutput(const char* path);
-
 	/** Writes a sequence of raw TCHAR encoded characters from a string.
 	* @param s the source of the characters
 	* @param start the first character in the sequence

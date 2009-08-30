@@ -55,13 +55,9 @@ SET(clucene_core_Files
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
-	./CLucene/store/FSIOFactory.cpp
-	./CLucene/store/FSIndexInput.cpp
-	./CLucene/store/FSIndexOutput.cpp
 	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
 	./CLucene/store/RawDirectory.cpp
-	./CLucene/store/RawIOFactory.cpp
 	./CLucene/store/RawIndexInput.cpp
 	./CLucene/store/RawIndexOutput.cpp
 	./CLucene/store/SharedHandle.cpp

@@ -28,6 +28,7 @@
 #include "CLucene/index/IndexWriter.h"
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/_MD5Digester.h"
+#include "FSIOFactory.h"
 
 CL_NS_DEF(store)
 CL_NS_USE(util)
@@ -39,7 +40,7 @@ CL_NS_USE(util)
 	static CL_NS(util)::CLHashMap<const char*,FSDirectory*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> DIRECTORIES(false,false);
 	STATIC_DEFINE_MUTEX(DIRECTORIES_LOCK)
 
-	FSIOFactory FSDirectory::defaultIOFactory;
+	IOFactory* FSDirectory::defaultIOFactory = new FSIOFactory<IndexInput, IndexOutput>;
   bool FSDirectory::useMMap = LUCENE_USE_MMAP;
 	bool FSDirectory::disableLocks=false;
 

@@ -9,9 +9,6 @@
 
 CL_NS_DEF(store)
 
-  RawIndexOutput::RawIndexOutput(const char* path) : FSIndexOutput(path) {
-  }
-
   void RawIndexOutput::writeChars(const TCHAR* s, const int32_t length){
     writeBytes(reinterpret_cast<const uint8_t*>(s), length * sizeof(TCHAR) / sizeof(uint8_t));
   }

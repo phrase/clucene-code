@@ -9,7 +9,8 @@
 
 #include "CLucene/util/VoidMap.h"
 #include "FSDirectory.h"
-#include "RawIOFactory.h"
+#include "RawIndexInput.h"
+#include "RawIndexOutput.h"
 
 CL_NS_DEF(store)
 
@@ -26,9 +27,9 @@ CL_NS_DEF(store)
 	*/
 	class CLUCENE_EXPORT RawDirectory:public FSDirectory{
 	private:
-		static RawIOFactory defaultIOFactory;
+		static IOFactory* defaultIOFactory;
 	protected:
-		RawDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
+		RawDirectory(const char* path, const bool createDir, LockFactory* lockFactory=NULL, IOFactory* ioFactory = defaultIOFactory);
 	public:
     /**
     Returns the directory instance for the named location.
@@ -44,7 +45,7 @@ CL_NS_DEF(store)
     @param create if true, create, or erase any existing contents.
     @return the FSDirectory for the named file.
     */
-		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = &defaultIOFactory);
+		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL, IOFactory* ioFactory = defaultIOFactory);
 
 	};
 CL_NS_END
