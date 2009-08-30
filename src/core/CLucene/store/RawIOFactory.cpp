@@ -20,4 +20,13 @@ IndexInput* RawIOFactory::newInput(boost::shared_ptr<SharedHandle> const& handle
 IndexOutput* RawIOFactory::newOutput(const char* path) {
     return _CLNEW RawIndexOutput(path);
 }
+
+const char* RawIOFactory::getClassName(){
+    return "RawIOFactory";
+}
+
+const char* RawIOFactory::getObjectName() const{
+    return getClassName();
+}                     
+
 CL_NS_END

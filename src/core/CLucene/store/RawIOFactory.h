@@ -15,6 +15,8 @@ class CLUCENE_EXPORT RawIOFactory : public FSIOFactory {
 public:
 	IndexInput* newInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize);
 	IndexOutput* newOutput(const char* path);
+	static const char* getClassName();
+	const char* getObjectName() const;
 };
 CL_NS_END
 #endif

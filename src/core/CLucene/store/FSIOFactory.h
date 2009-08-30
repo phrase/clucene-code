@@ -16,6 +16,9 @@ public:
 	bool openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1);
 	IndexInput* newInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize);
 	IndexOutput* newOutput(const char* path);
+	static const char* getClassName();
+	const char* getObjectName() const;
+
 };
 CL_NS_END
 #endif

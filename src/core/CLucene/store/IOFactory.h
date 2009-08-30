@@ -10,6 +10,7 @@
 #include "IndexInput.h"
 #include "IndexOutput.h"
 #include "_SharedHandle.h"
+#include "CLucene/util/Equators.h"
 #include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(store)
@@ -19,7 +20,7 @@ CL_NS_DEF(store)
    * @see IndexInput
    * @see IndexOutput
    */   
-class CLUCENE_EXPORT IOFactory {
+class CLUCENE_EXPORT IOFactory : public CL_NS(util)::NamedObject {
 public:
 	virtual bool openInput(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1) = 0;
 	virtual IndexInput* newInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize) = 0;

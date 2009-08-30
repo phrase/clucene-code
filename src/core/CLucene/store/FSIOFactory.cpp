@@ -25,4 +25,13 @@ IndexInput* FSIOFactory::newInput(boost::shared_ptr<SharedHandle> const& handle,
 IndexOutput* FSIOFactory::newOutput(const char* path) {
     return _CLNEW FSIndexOutput(path);
 }
+
+const char* FSIOFactory::getClassName(){
+    return "FSIOFactory";
+}
+
+const char* FSIOFactory::getObjectName() const{
+    return getClassName();
+}                     
+
 CL_NS_END
