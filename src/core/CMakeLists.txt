@@ -50,11 +50,9 @@ SET(clucene_core_Files
 	./CLucene/analysis/AnalysisHeader.cpp
 	./CLucene/store/MMapInput.cpp
 	./CLucene/store/IndexInput.cpp
-	./CLucene/store/BufferedIndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
 	./CLucene/store/IndexOutput.cpp
-	./CLucene/store/BufferedIndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
 	./CLucene/store/FSIOFactory.cpp

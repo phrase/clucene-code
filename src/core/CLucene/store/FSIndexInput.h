@@ -22,13 +22,13 @@ CL_NS_DEF(store)
    * @see FSDirectory
    * @see IndexInput
    */
-	class CLUCENE_EXPORT FSIndexInput:public BufferedIndexInput {
+	class CLUCENE_EXPORT FSIndexInput:public BufferedIndexInput<IndexInput> {
 		friend class FSIOFactory;
 		boost::shared_ptr<SharedHandle> handle;
 		int64_t _pos;
 	protected:
 		FSIndexInput(boost::shared_ptr<SharedHandle> const& handle, int32_t __bufferSize):
-			BufferedIndexInput(__bufferSize)
+			BufferedIndexInput<IndexInput>(__bufferSize)
 		{
 			this->_pos = 0;
 			this->handle = handle;

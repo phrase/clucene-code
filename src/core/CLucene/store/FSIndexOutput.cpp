@@ -67,7 +67,7 @@ CL_NS_DEF(store)
   }
   void FSIndexOutput::close() {
     try{
-      BufferedIndexOutput::close();
+      BufferedIndexOutput<IndexOutput>::close();
     }catch(CLuceneError& err){
 	    //ignore IO errors...
 	    if ( err.number() != CL_ERR_IO )
@@ -82,7 +82,7 @@ CL_NS_DEF(store)
 
   void FSIndexOutput::seek(const int64_t pos) {
     CND_PRECONDITION(fhandle>=0,"file is not open");
-    BufferedIndexOutput::seek(pos);
+    BufferedIndexOutput<IndexOutput>::seek(pos);
 	int64_t ret = fileSeek(fhandle,pos,SEEK_SET);
 	if ( ret != pos ){
       _CLTHROWA(CL_ERR_IO, "File IO Seek error");

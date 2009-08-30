@@ -7,6 +7,7 @@
 #ifndef _lucene_store_FSIndexOutput_
 #define _lucene_store_FSIndexOutput_
 
+#include "IndexOutput.h"
 #include "BufferedIndexOutput.h"
 
 CL_NS_DEF(store)
@@ -16,7 +17,7 @@ CL_NS_DEF(store)
 * @see FSDirectory
 * @see IndexOutput
 */
-	class CLUCENE_EXPORT FSIndexOutput: public BufferedIndexOutput {
+	class CLUCENE_EXPORT FSIndexOutput: public BufferedIndexOutput<IndexOutput> {
 	private:
 		int32_t fhandle;
 	protected:

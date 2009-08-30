@@ -34,7 +34,7 @@ MultiLevelSkipListReader::MultiLevelSkipListReader(IndexInput* _skipStream, cons
   this->lastChildPointer = 0;
   this->haveSkipped = false;
 	this->skipStream[0] = _skipStream;
-	this->inputIsBuffered = _skipStream->instanceOf(BufferedIndexInput::getClassName());
+	this->inputIsBuffered = _skipStream->instanceOf(BufferedIndexInput<IndexInput>::getClassName());
 	this->skipInterval[0] = _skipInterval;
 	for (int32_t i = 1; i < maxSkipLevels; i++) {
 		// cache skip intervals
@@ -163,8 +163,8 @@ void MultiLevelSkipListReader::loadSkipLevels() {
 		} else {
 			// clone this stream, it is already at the start of the current level
 			skipStream[i] = skipStream[0]->clone();
-			if (inputIsBuffered && length < BufferedIndexInput::BUFFER_SIZE) {
-				((BufferedIndexInput*) skipStream[i])->setBufferSize((int32_t) length);
+			if (inputIsBuffered && length < BufferedIndexInput<IndexInput>::BUFFER_SIZE) {
+				((BufferedIndexInput<IndexInput>*) skipStream[i])->setBufferSize((int32_t) length);
 			}
 
 			// move base stream beyond the current level

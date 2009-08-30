@@ -37,7 +37,7 @@ CL_NS_USE(util)
 	  CND_PRECONDITION(path != NULL, "path is NULL");
 
 	  if ( __bufferSize == -1 )
-		  __bufferSize = CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE;
+		  __bufferSize = CL_NS(store)::BufferedIndexOutput<IndexOutput>::BUFFER_SIZE;
 	  boost::shared_ptr<SharedHandle> handle(_CLNEW SharedHandle(path));
 
 	  //Open the file
@@ -71,7 +71,7 @@ CL_NS_USE(util)
 	  return false;
   }
 
-  FSIndexInput::FSIndexInput(const FSIndexInput& other): BufferedIndexInput(other){
+  FSIndexInput::FSIndexInput(const FSIndexInput& other): BufferedIndexInput<IndexInput>(other){
   //Func - Constructor
   //       Uses clone for its initialization
   //Pre  - clone is a valide instance of FSIndexInput
@@ -98,7 +98,7 @@ CL_NS_USE(util)
     return _CLNEW FSIndexInput(*this);
   }
   void FSIndexInput::close()  {
-	BufferedIndexInput::close();
+	BufferedIndexInput<IndexInput>::close();
 #ifndef _CL_DISABLE_MULTITHREADING
 	if ( handle.get() != NULL ){
 		boost::shared_ptr<SharedHandle> for_locking = handle;

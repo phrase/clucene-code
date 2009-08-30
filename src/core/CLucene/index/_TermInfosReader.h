@@ -56,7 +56,7 @@ CL_NS_DEF(index)
         * Reads the TermInfos file (.tis) and eventually the Term Info Index file (.tii)
 		*/
 		TermInfosReader(CL_NS(store)::Directory* dir, const char* segment, FieldInfos* fis,
-			const int32_t readBufferSize = CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
+			const int32_t readBufferSize = CL_NS(store)::BufferedIndexInput<CL_NS(store)::IndexInput>::BUFFER_SIZE);
 		~TermInfosReader();
 
 		int32_t getSkipInterval() const;

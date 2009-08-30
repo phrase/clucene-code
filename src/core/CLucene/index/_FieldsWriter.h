@@ -11,10 +11,10 @@ CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,IndexOutput)
 CL_CLASS_DEF(store,IndexInput)
 CL_CLASS_DEF(index,FieldInfo)
-CL_CLASS_DEF(store,RAMOutputStream)
 CL_CLASS_DEF(document,Document)
 CL_CLASS_DEF(document,Field)
 CL_CLASS_DEF(index,FieldInfos)
+#include "CLucene/store/_RAMDirectory.h"
 #include "CLucene/util/Array.h"
 
 CL_NS_DEF(index)
@@ -42,7 +42,7 @@ public:
 	// and adds a new entry for this document into the index
 	// stream.  This assumes the buffer was already written
 	// in the correct fields format.
-	void flushDocument(int32_t numStoredFields, CL_NS(store)::RAMOutputStream* buffer);
+	void flushDocument(int32_t numStoredFields, CL_NS(store)::RAMOutputStream<CL_NS(store)::IndexOutput>* buffer);
 
 	void flush();
 

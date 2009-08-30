@@ -15,6 +15,8 @@
 //#include "Directory.h"
 //#include "CLucene/util/VoidMap.h"
 //#include "CLucene/util/Arrays.h"
+#include "CLucene/util/Misc.h"
+#include <assert.h>
 
 CL_NS_DEF(store)
 
@@ -66,7 +68,8 @@ CL_NS_DEF(store)
 	};
 
 
-	class RAMOutputStream: public IndexOutput {		
+	template<typename storage>
+	class RAMOutputStream: public storage {		
 	protected:
 		RAMFile* file;
 		bool deleteFile;
@@ -95,7 +98,7 @@ CL_NS_DEF(store)
     /** Resets this to an empty buffer. */
     void reset();
     /** Copy the current contents of this buffer to the named output. */
-    void writeTo(IndexOutput* output);
+    void writeTo(storage* output);
         
   	void writeByte(const uint8_t b);
   	void writeBytes(const uint8_t* b, const int32_t len);
@@ -110,9 +113,10 @@ CL_NS_DEF(store)
 		static const char* getClassName();   	
    	
 	};
-	typedef RAMOutputStream RAMIndexOutput; //deprecated
+	typedef RAMOutputStream<IndexOutput> RAMIndexOutput; //deprecated
 
-	class RAMInputStream:public IndexInput {				
+	template<typename storage>
+	class RAMInputStream:public storage {				
 	private:
 		RAMFile* file;
 		int64_t _length;
@@ -131,7 +135,7 @@ CL_NS_DEF(store)
 		RAMInputStream(const RAMInputStream& clone);
 		
 	public:
-		LUCENE_STATIC_CONSTANT(int32_t,BUFFER_SIZE=RAMOutputStream::BUFFER_SIZE);
+		LUCENE_STATIC_CONSTANT(int32_t,BUFFER_SIZE=RAMOutputStream<storage>::BUFFER_SIZE);
 
 		RAMInputStream(RAMFile* f);
 		~RAMInputStream();
@@ -150,7 +154,275 @@ CL_NS_DEF(store)
 		const char* getObjectName() const;
 		static const char* getClassName();
 	};
-	typedef RAMInputStream RAMIndexInput; //deprecated
+	typedef RAMInputStream<IndexInput> RAMIndexInput; //deprecated
+
+  template<typename storage>
+  RAMOutputStream<storage>::~RAMOutputStream(){
+	  if ( deleteFile ){
+          _CLDELETE(file);
+    }else{
+     	  file = NULL;
+    }
+  }
+
+  template<typename storage>
+  RAMOutputStream<storage>::RAMOutputStream(RAMFile* f):
+	  file(f),
+	  deleteFile(false),
+	  currentBuffer(NULL),
+	  currentBufferIndex(-1),
+	  bufferPosition(0),
+	  bufferStart(0),
+	  bufferLength(0)
+  {
+  }
+
+  template<typename storage>
+  RAMOutputStream<storage>::RAMOutputStream():
+    file(_CLNEW RAMFile),
+    deleteFile(true),
+    currentBuffer(NULL),
+    currentBufferIndex(-1),
+    bufferPosition(0),
+    bufferStart(0),
+    bufferLength(0)
+  {
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::writeTo(storage* out){
+    flush();
+    const int64_t end = file->getLength();
+    int64_t pos = 0;
+    int32_t p = 0;
+    while (pos < end) {
+      int32_t length = BUFFER_SIZE;
+      int64_t nextPos = pos + length;
+      if (nextPos > end) {                        // at the last buffer
+        length = (int32_t)(end - pos);
+      }
+      out->writeBytes(file->getBuffer(p++), length);
+      pos = nextPos;
+    }
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::reset(){
+	seek((int64_t)0);
+    file->setLength((int64_t)0);
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::close() {
+    flush();
+  }
+
+  /** Random-at methods */
+  template<typename storage>
+  void RAMOutputStream<storage>::seek( const int64_t pos ) {
+          // set the file length in case we seek back
+          // and flush() has not been called yet
+	  setFileLength();
+	  if ( pos < bufferStart || pos >= bufferStart + bufferLength ) {
+		  currentBufferIndex = (int32_t)(pos / BUFFER_SIZE);
+		  switchCurrentBuffer();
+	  }
+
+	  bufferPosition = (int32_t)( pos % BUFFER_SIZE );
+  }
+
+  template<typename storage>
+  int64_t RAMOutputStream<storage>::length() const {
+    return file->getLength();
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::writeByte( const uint8_t b ) {
+	  if ( bufferPosition == bufferLength ) {
+		  currentBufferIndex++;
+		  switchCurrentBuffer();
+	  }
+	  currentBuffer[bufferPosition++] = b;
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::writeBytes( const uint8_t* b, const int32_t len ) {
+	  int32_t srcOffset = 0;
+
+	  while ( srcOffset != len ) {
+		  if ( bufferPosition == bufferLength ) {
+			  currentBufferIndex++;
+			  switchCurrentBuffer();
+		  }
+
+		  int32_t remainInSrcBuffer = len - srcOffset;
+		  int32_t bytesInBuffer = bufferLength - bufferPosition;
+		  int32_t bytesToCopy = bytesInBuffer >= remainInSrcBuffer ? remainInSrcBuffer : bytesInBuffer;
+
+		  memcpy( currentBuffer+bufferPosition, b+srcOffset, bytesToCopy * sizeof(uint8_t) );
+
+		  srcOffset += bytesToCopy;
+		  bufferPosition += bytesToCopy;
+	  }
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::switchCurrentBuffer() {
+
+	  if ( currentBufferIndex == file->numBuffers() ) {
+		  currentBuffer = file->addBuffer( BUFFER_SIZE );
+		  bufferLength = BUFFER_SIZE;
+	  } else {
+		  currentBuffer = file->getBuffer( currentBufferIndex );
+		  bufferLength = file->getBufferLen(currentBufferIndex);
+	  }
+    assert(bufferLength >=0);//
+
+	  bufferPosition = 0;
+	  bufferStart = (int64_t)BUFFER_SIZE * (int64_t)currentBufferIndex;
+  }
+
+
+
+  template<typename storage>
+  void RAMOutputStream<storage>::setFileLength() {
+	  int64_t pointer = bufferStart + bufferPosition;
+	  if ( pointer > file->getLength() ) {
+		  file->setLength( pointer );
+	  }
+  }
+
+  template<typename storage>
+  void RAMOutputStream<storage>::flush() {
+	  file->setLastModified( CL_NS(util)::Misc::currentTimeMillis() );
+	  setFileLength();
+  }
+
+  template<typename storage>
+  int64_t RAMOutputStream<storage>::getFilePointer() const {
+	  return currentBufferIndex < 0 ? 0 : bufferStart + bufferPosition;
+  }
+
+
+  template<typename storage>
+  RAMInputStream<storage>::RAMInputStream(RAMFile* f):
+  	file(f),
+  	currentBuffer(NULL),
+  	currentBufferIndex(-1),
+  	bufferPosition(0),
+  	bufferStart(0),
+  	bufferLength(0)
+  {
+    _length = f->getLength();
+
+    if ( _length/BUFFER_SIZE >= 0x7FFFFFFFL ) {
+    	// TODO: throw exception
+    }
+  }
+
+  template<typename storage>
+  RAMInputStream<storage>::RAMInputStream(const RAMInputStream& other):
+    storage(other)
+  {
+  	file = other.file;
+    _length = other._length;
+    currentBufferIndex = other.currentBufferIndex;
+    currentBuffer = other.currentBuffer;
+    bufferPosition = other.bufferPosition;
+    bufferStart = other.bufferStart;
+    bufferLength = other.bufferLength;
+  }
+
+  template<typename storage>
+  RAMInputStream<storage>::~RAMInputStream(){
+      RAMInputStream::close();
+  }
+
+  template<typename storage>
+  IndexInput* RAMInputStream<storage>::clone() const
+  {
+    return _CLNEW RAMInputStream(*this);
+  }
+
+  template<typename storage>
+  int64_t RAMInputStream<storage>::length() const {
+    return _length;
+  }
+
+  template<typename storage>
+  const char* RAMInputStream<storage>::getDirectoryType() const{
+	  return RAMDirectory::getClassName();
+  }
+	template<typename storage>
+	const char* RAMInputStream<storage>::getObjectName() const{ return getClassName(); }
+	template<typename storage>
+	const char* RAMInputStream<storage>::getClassName(){ return "RAMInputStream"; }
+
+  template<typename storage>
+  uint8_t RAMInputStream<storage>::readByte()
+  {
+	  if ( bufferPosition >= bufferLength ) {
+		  currentBufferIndex++;
+		  switchCurrentBuffer();
+	  }
+	  return currentBuffer[bufferPosition++];
+  }
+
+  template<typename storage>
+  void RAMInputStream<storage>::readBytes( uint8_t* _dest, const int32_t _len ) {
+
+	  uint8_t* dest = _dest;
+	  int32_t len = _len;
+
+	  while ( len > 0 ) {
+		  if ( bufferPosition >= bufferLength ) {
+			  currentBufferIndex++;
+			  switchCurrentBuffer();
+		  }
+
+		  int32_t remainInBuffer = bufferLength - bufferPosition;
+		  int32_t bytesToCopy = len < remainInBuffer ? len : remainInBuffer;
+		  memcpy( dest, currentBuffer+bufferPosition, bytesToCopy * sizeof(uint8_t) );
+
+		  dest += bytesToCopy;
+		  len -= bytesToCopy;
+		  bufferPosition += bytesToCopy;
+	  }
+
+  }
+
+  template<typename storage>
+  int64_t RAMInputStream<storage>::getFilePointer() const {
+	  return currentBufferIndex < 0 ? 0 : bufferStart + bufferPosition;
+  }
+
+  template<typename storage>
+  void RAMInputStream<storage>::seek( const int64_t pos ) {
+	  if ( currentBuffer == NULL || pos < bufferStart || pos >= bufferStart + BUFFER_SIZE ) {
+		  currentBufferIndex = (int32_t)( pos / BUFFER_SIZE );
+		  switchCurrentBuffer();
+	  }
+	  bufferPosition = (int32_t)(pos % BUFFER_SIZE);
+  }
+
+  template<typename storage>
+  void RAMInputStream<storage>::close() {
+  }
+
+  template<typename storage>
+  void RAMInputStream<storage>::switchCurrentBuffer() {
+	  if ( currentBufferIndex >= file->numBuffers() ) {
+		  // end of file reached, no more buffers left
+		  _CLTHROWA(CL_ERR_IO, "Read past EOF");
+	  } else {
+		  currentBuffer = file->getBuffer( currentBufferIndex );
+		  bufferPosition = 0;
+		  bufferStart = (int64_t)BUFFER_SIZE * (int64_t)currentBufferIndex;
+		  int64_t bufLen = _length - bufferStart;
+		  bufferLength = bufLen > BUFFER_SIZE ? BUFFER_SIZE : static_cast<int32_t>(bufLen);
+	  }
+    assert (bufferLength >=0);
+  }
 
 CL_NS_END
 #endif

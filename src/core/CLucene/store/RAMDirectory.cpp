@@ -119,248 +119,6 @@ CL_NS_DEF(store)
   }
 
 
-  RAMOutputStream::~RAMOutputStream(){
-	  if ( deleteFile ){
-          _CLDELETE(file);
-    }else{
-     	  file = NULL;
-    }
-  }
-  RAMOutputStream::RAMOutputStream(RAMFile* f):
-	  file(f),
-	  deleteFile(false),
-	  currentBuffer(NULL),
-	  currentBufferIndex(-1),
-	  bufferPosition(0),
-	  bufferStart(0),
-	  bufferLength(0)
-  {
-  }
-
-  RAMOutputStream::RAMOutputStream():
-    file(_CLNEW RAMFile),
-    deleteFile(true),
-    currentBuffer(NULL),
-    currentBufferIndex(-1),
-    bufferPosition(0),
-    bufferStart(0),
-    bufferLength(0)
-  {
-  }
-
-  void RAMOutputStream::writeTo(IndexOutput* out){
-    flush();
-    const int64_t end = file->getLength();
-    int64_t pos = 0;
-    int32_t p = 0;
-    while (pos < end) {
-      int32_t length = BUFFER_SIZE;
-      int64_t nextPos = pos + length;
-      if (nextPos > end) {                        // at the last buffer
-        length = (int32_t)(end - pos);
-      }
-      out->writeBytes(file->getBuffer(p++), length);
-      pos = nextPos;
-    }
-  }
-
-  void RAMOutputStream::reset(){
-	seek((int64_t)0);
-    file->setLength((int64_t)0);
-  }
-
-  void RAMOutputStream::close() {
-    flush();
-  }
-
-  /** Random-at methods */
-  void RAMOutputStream::seek( const int64_t pos ) {
-          // set the file length in case we seek back
-          // and flush() has not been called yet
-	  setFileLength();
-	  if ( pos < bufferStart || pos >= bufferStart + bufferLength ) {
-		  currentBufferIndex = (int32_t)(pos / BUFFER_SIZE);
-		  switchCurrentBuffer();
-	  }
-
-	  bufferPosition = (int32_t)( pos % BUFFER_SIZE );
-  }
-
-  int64_t RAMOutputStream::length() const {
-    return file->getLength();
-  }
-
-  void RAMOutputStream::writeByte( const uint8_t b ) {
-	  if ( bufferPosition == bufferLength ) {
-		  currentBufferIndex++;
-		  switchCurrentBuffer();
-	  }
-	  currentBuffer[bufferPosition++] = b;
-  }
-
-  void RAMOutputStream::writeBytes( const uint8_t* b, const int32_t len ) {
-	  int32_t srcOffset = 0;
-
-	  while ( srcOffset != len ) {
-		  if ( bufferPosition == bufferLength ) {
-			  currentBufferIndex++;
-			  switchCurrentBuffer();
-		  }
-
-		  int32_t remainInSrcBuffer = len - srcOffset;
-		  int32_t bytesInBuffer = bufferLength - bufferPosition;
-		  int32_t bytesToCopy = bytesInBuffer >= remainInSrcBuffer ? remainInSrcBuffer : bytesInBuffer;
-
-		  memcpy( currentBuffer+bufferPosition, b+srcOffset, bytesToCopy * sizeof(uint8_t) );
-
-		  srcOffset += bytesToCopy;
-		  bufferPosition += bytesToCopy;
-	  }
-  }
-
-  void RAMOutputStream::switchCurrentBuffer() {
-
-	  if ( currentBufferIndex == file->numBuffers() ) {
-		  currentBuffer = file->addBuffer( BUFFER_SIZE );
-		  bufferLength = BUFFER_SIZE;
-	  } else {
-		  currentBuffer = file->getBuffer( currentBufferIndex );
-		  bufferLength = file->getBufferLen(currentBufferIndex);
-	  }
-    assert(bufferLength >=0);//
-
-	  bufferPosition = 0;
-	  bufferStart = (int64_t)BUFFER_SIZE * (int64_t)currentBufferIndex;
-  }
-
-
-
-  void RAMOutputStream::setFileLength() {
-	  int64_t pointer = bufferStart + bufferPosition;
-	  if ( pointer > file->getLength() ) {
-		  file->setLength( pointer );
-	  }
-  }
-
-  void RAMOutputStream::flush() {
-	  file->setLastModified( Misc::currentTimeMillis() );
-	  setFileLength();
-  }
-
-  int64_t RAMOutputStream::getFilePointer() const {
-	  return currentBufferIndex < 0 ? 0 : bufferStart + bufferPosition;
-  }
-
-
-  RAMInputStream::RAMInputStream(RAMFile* f):
-  	file(f),
-  	currentBuffer(NULL),
-  	currentBufferIndex(-1),
-  	bufferPosition(0),
-  	bufferStart(0),
-  	bufferLength(0)
-  {
-    _length = f->getLength();
-
-    if ( _length/BUFFER_SIZE >= 0x7FFFFFFFL ) {
-    	// TODO: throw exception
-    }
-  }
-
-  RAMInputStream::RAMInputStream(const RAMInputStream& other):
-    IndexInput(other)
-  {
-  	file = other.file;
-    _length = other._length;
-    currentBufferIndex = other.currentBufferIndex;
-    currentBuffer = other.currentBuffer;
-    bufferPosition = other.bufferPosition;
-    bufferStart = other.bufferStart;
-    bufferLength = other.bufferLength;
-  }
-
-  RAMInputStream::~RAMInputStream(){
-      RAMInputStream::close();
-  }
-
-  IndexInput* RAMInputStream::clone() const
-  {
-    return _CLNEW RAMInputStream(*this);
-  }
-
-  int64_t RAMInputStream::length() const {
-    return _length;
-  }
-
-  const char* RAMInputStream::getDirectoryType() const{
-	  return RAMDirectory::getClassName();
-  }
-	const char* RAMIndexInput::getObjectName() const{ return getClassName(); }
-	const char* RAMIndexInput::getClassName(){ return "RAMIndexInput"; }
-
-  uint8_t RAMInputStream::readByte()
-  {
-	  if ( bufferPosition >= bufferLength ) {
-		  currentBufferIndex++;
-		  switchCurrentBuffer();
-	  }
-	  return currentBuffer[bufferPosition++];
-  }
-
-  void RAMInputStream::readBytes( uint8_t* _dest, const int32_t _len ) {
-
-	  uint8_t* dest = _dest;
-	  int32_t len = _len;
-
-	  while ( len > 0 ) {
-		  if ( bufferPosition >= bufferLength ) {
-			  currentBufferIndex++;
-			  switchCurrentBuffer();
-		  }
-
-		  int32_t remainInBuffer = bufferLength - bufferPosition;
-		  int32_t bytesToCopy = len < remainInBuffer ? len : remainInBuffer;
-		  memcpy( dest, currentBuffer+bufferPosition, bytesToCopy * sizeof(uint8_t) );
-
-		  dest += bytesToCopy;
-		  len -= bytesToCopy;
-		  bufferPosition += bytesToCopy;
-	  }
-
-  }
-
-  int64_t RAMInputStream::getFilePointer() const {
-	  return currentBufferIndex < 0 ? 0 : bufferStart + bufferPosition;
-  }
-
-  void RAMInputStream::seek( const int64_t pos ) {
-	  if ( currentBuffer == NULL || pos < bufferStart || pos >= bufferStart + BUFFER_SIZE ) {
-		  currentBufferIndex = (int32_t)( pos / BUFFER_SIZE );
-		  switchCurrentBuffer();
-	  }
-	  bufferPosition = (int32_t)(pos % BUFFER_SIZE);
-  }
-
-  void RAMInputStream::close() {
-  }
-
-  void RAMInputStream::switchCurrentBuffer() {
-	  if ( currentBufferIndex >= file->numBuffers() ) {
-		  // end of file reached, no more buffers left
-		  _CLTHROWA(CL_ERR_IO, "Read past EOF");
-	  } else {
-		  currentBuffer = file->getBuffer( currentBufferIndex );
-		  bufferPosition = 0;
-		  bufferStart = (int64_t)BUFFER_SIZE * (int64_t)currentBufferIndex;
-		  int64_t bufLen = _length - bufferStart;
-		  bufferLength = bufLen > BUFFER_SIZE ? BUFFER_SIZE : static_cast<int32_t>(bufLen);
-	  }
-    assert (bufferLength >=0);
-  }
-
-
-
-
   bool RAMDirectory::list(vector<string>* names) const{
     SCOPED_LOCK_MUTEX(files_mutex);
 
@@ -389,7 +147,7 @@ CL_NS_DEF(store)
   {
   	vector<string> names;
     dir->list(&names);
-    uint8_t buf[CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE];
+    uint8_t buf[CL_NS(store)::BufferedIndexOutput<IndexOutput>::BUFFER_SIZE];
 
     for (size_t i=0;i<names.size();++i ){
       // make place on ram disk
@@ -401,7 +159,7 @@ CL_NS_DEF(store)
       int64_t len = is->length();
       int64_t readCount = 0;
       while (readCount < len) {
-          int32_t toRead = (int32_t)(readCount + CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE > len ? len - readCount : CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE);
+          int32_t toRead = (int32_t)(readCount + CL_NS(store)::BufferedIndexOutput<IndexOutput>::BUFFER_SIZE > len ? len - readCount : CL_NS(store)::BufferedIndexOutput<IndexOutput>::BUFFER_SIZE);
           is->readBytes(buf, toRead);
           os->writeBytes(buf, toRead);
           readCount += toRead;
@@ -460,7 +218,7 @@ CL_NS_DEF(store)
 		  error.set(CL_ERR_IO, "[RAMDirectory::open] The requested file does not exist.");
 		  return false;
     }
-    ret = _CLNEW RAMInputStream( file );
+    ret = _CLNEW RAMInputStream<IndexInput>( file );
 	  return true;
   }
 
@@ -544,7 +302,7 @@ CL_NS_DEF(store)
     #endif
     (*files)[n] = file;
 
-    return _CLNEW RAMOutputStream(file);
+    return _CLNEW RAMOutputStream<IndexOutput>(file);
   }
 
   std::string RAMDirectory::toString() const{
