@@ -7,7 +7,7 @@
 #ifndef _lucene_store_FSIndexOutput_
 #define _lucene_store_FSIndexOutput_
 
-#include "CLucene/store/IndexOutput.h"
+#include "BufferedIndexOutput.h"
 
 CL_NS_DEF(store)
 

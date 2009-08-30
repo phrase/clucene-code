@@ -13,6 +13,7 @@
 CL_CLASS_DEF(store,Directory)
 //CL_CLASS_DEF(store,IndexInput)
 #include "CLucene/util/_ThreadLocal.h"
+#include "CLucene/store/BufferedIndexInput.h"
 //#include "FieldInfos.h"
 //#include "TermInfo.h"
 //#include "TermInfosWriter.h"

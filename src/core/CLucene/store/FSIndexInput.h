@@ -7,7 +7,7 @@
 #ifndef _lucene_store_FSIndexInput_
 #define _lucene_store_FSIndexInput_
 
-#include "IndexInput.h"
+#include "BufferedIndexInput.h"
 #include "FSDirectory.h"
 #include "_SharedHandle.h"
 #include "IOFactory.h"

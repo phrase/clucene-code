@@ -11,6 +11,7 @@
 #include "LockFactory.h"
 #include "Directory.h"
 #include "FSDirectory.h"
+#include "BufferedIndexOutput.h"
 #include "CLucene/index/IndexReader.h"
 //#include "CLucene/util/VoidMap.h"
 #include "CLucene/util/Misc.h"

@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "FSIndexInput.h"
+#include "BufferedIndexOutput.h"
 
 #include <fcntl.h>
 #ifdef _CL_HAVE_IO_H
