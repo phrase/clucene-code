@@ -11,6 +11,7 @@
 //#include "IndexReader.h"
 #include "CLucene/util/Misc.h"
 #include "_IndexFileNames.h"
+#include <ostream>
 CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,IndexInput)
 CL_CLASS_DEF(store,IndexOutput)
