@@ -18,6 +18,7 @@ SOURCE_GROUP("snowball-impl" ./CLucene/snowball/include/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/libstemmer/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/runtime/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/src_c/*)
+SOURCE_GROUP("search ./CLucene/search/*)
 
 SET(clucene_contribs_Files
     ./CLucene/analysis/LanguageBasedAnalyzer.cpp
@@ -67,11 +68,25 @@ SET(clucene_contribs_Files
     ./CLucene/snowball/src_c/stem_UTF_8_russian.c
     ./CLucene/snowball/src_c/stem_UTF_8_spanish.c
     ./CLucene/snowball/src_c/stem_UTF_8_swedish.c
+    ./CLucene/search/MPISearcher.cpp
 )
 SET ( clucene_contrib_extra_libs clucene-core clucene-shared ${EXTRA_LIBS})
 
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-contribs-lib_SOURCE_DIR}/*.h)
+
+#add extra capabilities
+find_package(ZLIB)
+FIND_PACKAGE(Boost COMPONENTS serialization mpi)
+FIND_PACKAGE(MPI)
+IF ( NOT ZLIB_FOUND )
+  MESSAGE ( FATAL "ZLib not found" )
+ENDIF ( NOT ZLIB_FOUND )
+INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
+SET ( clucene_contrib_extra_libs "${clucene_contrib_extra_libs}" ${ZLIB_LIBRARIES} )
+SET(clucene_contrib_extra_libs ${clucene_contrib_extra_libs} ${Boost_MPI_LIBRARY})
+SET(clucene_contrib_extra_libs ${clucene_contrib_extra_libs} ${Boost_SERIALIZATION_LIBRARY})
+SET(clucene_contrib_extra_libs ${clucene_contrib_extra_libs} ${MPI_LIBRARIES})
 
 find_package(Iconv)
 SET ( clucene-contrib-libs "" )
