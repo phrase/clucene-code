@@ -8,12 +8,12 @@
 #include "CLucene/_ApiHeader.h"
 #include "CLucene/index/IndexReader.h"
 #include "MPISearcher.h"
-#include "SearchHeader.h"
-#include "Query.h"
-#include "_HitQueue.h"
+#include "CLucene/search/SearchHeader.h"
+#include "CLucene/search/Query.h"
+#include "CLucene/search/_HitQueue.h"
 #include "CLucene/document/Document.h"
 #include "CLucene/index/Term.h"
-#include "_FieldDocSortedHitQueue.h"
+#include "CLucene/search/_FieldDocSortedHitQueue.h"
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/deque.hpp>
 #include <boost/serialization/utility.hpp>

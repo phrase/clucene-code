@@ -18,7 +18,7 @@ SOURCE_GROUP("snowball-impl" ./CLucene/snowball/include/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/libstemmer/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/runtime/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/src_c/*)
-SOURCE_GROUP("search ./CLucene/search/*)
+SOURCE_GROUP("search" ./CLucene/search/*)
 
 SET(clucene_contribs_Files
     ./CLucene/analysis/LanguageBasedAnalyzer.cpp

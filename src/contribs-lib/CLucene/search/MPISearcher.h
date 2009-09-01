@@ -10,7 +10,7 @@
 
 
 //#include "SearchHeader.h"
-#include "Searchable.h"
+#include "CLucene/search/Searchable.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/mpi.hpp>
 #include <boost/variant.hpp>
