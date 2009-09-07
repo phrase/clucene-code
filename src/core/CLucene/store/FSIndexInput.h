@@ -124,7 +124,7 @@ CL_NS_DEF(store)
 
 	  SCOPED_LOCK_MUTEX(*other.handle.get()->THIS_LOCK)
 	  handle = other.handle;
-	  _pos = other.handle.get()->_fpos; //note where we are currently...
+	  _pos = other.getFilePointer(); //note where we are currently...
   }
 
   template<typename storage>

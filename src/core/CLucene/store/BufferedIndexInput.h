@@ -94,17 +94,10 @@ BufferedIndexInput<storage>::BufferedIndexInput(int32_t _bufferSize):
   	storage(other),
     buffer(NULL),
     bufferSize(other.bufferSize),
-    bufferStart(other.bufferStart),
-    bufferLength(other.bufferLength),
-    bufferPosition(other.bufferPosition)
+    bufferStart(other.getFilePointer()),
+    bufferLength(0),
+    bufferPosition(0)
   {
-    /* DSR: Does the fact that sometime clone.buffer is not NULL even when
-    ** clone.bufferLength is zero indicate memory corruption/leakage?
-    **   if ( clone.buffer != NULL) { */
-    if (other.bufferSize != 0 && other.buffer != NULL) {
-      buffer = _CL_NEWARRAY(uint8_t,bufferSize);
-      memcpy(buffer,other.buffer,bufferSize * sizeof(uint8_t));
-    }
   }
 
 	template<typename storage>
