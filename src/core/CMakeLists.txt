@@ -66,6 +66,7 @@ SET(clucene_core_Files
 	./CLucene/document/DateTools.cpp
 	./CLucene/document/Field.cpp
 	./CLucene/document/FieldSelector.cpp
+	./CLucene/document/ComparableTools.cpp
 	./CLucene/document/NumberTools.cpp
 	./CLucene/index/IndexFileNames.cpp
 	./CLucene/index/IndexFileNameFilter.cpp
