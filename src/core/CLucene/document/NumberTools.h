@@ -8,6 +8,7 @@
 #define _lucene_document_NumberTools_
 
 #include <string>
+#include "ComparableTools.h"
 
 CL_NS_DEF(document)
 
@@ -28,33 +29,29 @@ CL_NS_DEF(document)
  */
 class CLUCENE_EXPORT NumberTools :LUCENE_BASE {
 
-	#define NUMBERTOOLS_RADIX 36
-
-	#define NEGATIVE_PREFIX _T("-")
-	// NB: NEGATIVE_PREFIX must be < POSITIVE_PREFIX
-	#define POSITIVE_PREFIX _T("0")
-
 public:
 	//NB: this must be less than
     /**
      * Equivalent to longToString(Long.MIN_VALUE); STR_SIZE is depandant on the length of it
      */
-	static const TCHAR* MIN_STRING_VALUE;
+	static inline const TCHAR* MIN_STRING_VALUE() {
+		return ComparableTools<int64_t>::MIN_STRING_VALUE().c_str();
+	}
 
 	/**
      * Equivalent to longToString(Long.MAX_VALUE)
      */
-	static const TCHAR* MAX_STRING_VALUE;
+	static inline const TCHAR* MAX_STRING_VALUE() {
+		return ComparableTools<int64_t>::MAX_STRING_VALUE().c_str();
+	}
 
 	/**
      * The length of (all) strings returned by {@link #longToString}
      */
-    LUCENE_STATIC_CONSTANT (size_t, STR_SIZE = 14);
+    LUCENE_STATIC_CONSTANT (size_t, STR_SIZE = ComparableTools<int64_t>::STR_SIZE);
 
 	/**
      * Converts a long to a String suitable for indexing.
-	 *
-	 * @memory Caller should free the returned buffer
      */
     static std::basic_string<TCHAR> longToString(int64_t l);
 
