@@ -293,29 +293,27 @@ void IWlargeScaleCorrectness_tester::invoke(
 			block_size++;
 		}
 
-		TCHAR* value0_string = NumberTools::longToString(value0 % documents);
-		TCHAR* value1_string = NumberTools::longToString(value1);
+		basic_string<TCHAR> value0_string = NumberTools::longToString(value0 % documents);
+		basic_string<TCHAR> value1_string = NumberTools::longToString(value1);
 
 		Document doc;
 		
 		doc.add (
 			*_CLNEW Field(
 				_T("field0"),
-				value0_string,
+				value0_string.c_str(),
 				Field::STORE_YES | Field::INDEX_UNTOKENIZED
 			)
 		);
 		doc.add (
 			*_CLNEW Field(
 				_T("field1"),
-				value1_string,
+				value1_string.c_str(),
 				Field::STORE_YES | Field::INDEX_UNTOKENIZED
 			)
 		);
 		ndx->addDocument(&doc);
 
-		_CLDELETE_ARRAY(value0_string);
-		_CLDELETE_ARRAY(value1_string);
 		value1 = (value1 + step) % documents;
 	}
 

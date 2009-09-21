@@ -7,6 +7,8 @@
 #ifndef _lucene_document_NumberTools_
 #define _lucene_document_NumberTools_
 
+#include <string>
+
 CL_NS_DEF(document)
 
 /**
@@ -54,7 +56,7 @@ public:
 	 *
 	 * @memory Caller should free the returned buffer
      */
-    static TCHAR* longToString(int64_t l);
+    static std::basic_string<TCHAR> longToString(int64_t l);
 
     /**
      * Converts a String that was returned by {@link #longToString} back to a
@@ -66,7 +68,7 @@ public:
      *             if the input does not parse (it was not a String returned by
      *             longToString()).
      */
-    static int64_t stringToLong(const TCHAR* str);
+    static int64_t stringToLong(std::basic_string<TCHAR> const& str);
 
 	~NumberTools();
 
