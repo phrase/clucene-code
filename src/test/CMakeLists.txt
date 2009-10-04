@@ -4,6 +4,23 @@ INCLUDE (DefineOptions)
 DEFINE_OPTIONS(EXTRA_OPTIONS EXTRA_LIBS)
 ADD_DEFINITIONS(${EXTRA_OPTIONS})
 
+#Locate Boost libs. Windows users: make sure BOOST_ROOT and BOOST_PATH are set correctly on your environment.
+#See the site FAQ for more details.
+#todo: allow this to fall back on a local distributed copy, so user doesn't have to d/l Boost seperately
+SET(Boost_USE_MULTITHREAD ON)
+FIND_PACKAGE( Boost )
+#todo: limit Boost version?
+#todo: use COMPONENTS threads to locate boost_threads without breaking the current support
+IF(Boost_FOUND)
+	MESSAGE( "Boost libraries found" )
+	message(STATUS "Boost_INCLUDE_DIR    : ${Boost_INCLUDE_DIR}")
+	#message(STATUS "Boost_THREAD_LIBRARY : ${Boost_THREAD_LIBRARY}")
+	#LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} )
+	INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+ELSE()
+	MESSAGE("Boost libraries were not found; looked at ${BOOST_ROOT}")
+ENDIF()
+
 INCLUDE_DIRECTORIES( ${clucene-test_SOURCE_DIR} )
 
 SOURCE_GROUP("unit_testing" ./*.cpp)
@@ -26,7 +43,6 @@ SET(test_files ./tests.cpp
 ./analysis/TestAnalysis.cpp
 ./analysis/TestAnalyzers.cpp
 ./debug/TestError.cpp
-./document/TestDateTools.cpp
 ./document/TestDocument.cpp
 ./document/TestNumberTools.cpp
 ./store/TestStore.cpp
@@ -39,6 +55,7 @@ SET(test_files ./tests.cpp
 ./search/TestWildcard.cpp
 ./search/TestTermVector.cpp
 ./index/TestIndexWriter.cpp
+./index/TestIndexModifier.cpp
 ./index/TestIndexReader.cpp
 ./index/TestThreading.cpp
 ./index/TestUtf8.cpp
@@ -75,22 +92,8 @@ ENDIF ( ZLIB_FOUND )
    
 SET(test_monolithic_Files ${clucene-core_SOURCE_DIR}/CLucene/CLMonolithic.cpp ./CLMonolithic_Test.cpp)
 
-IF ( CMAKE_COMPILER_IS_GNUCC )
-    CHECK_CXX_ACCEPTS_FLAG(-Wall GccFlagWall)
-    CHECK_CXX_ACCEPTS_FLAG(-pedantic GccFlagPedantic)
-ENDIF ( CMAKE_COMPILER_IS_GNUCC )
-
-
 SET (TESTS_CXX_FLAGS "-DMAKE_CLUCENE_SHARED_LIB -DMAKE_CLUCENE_CORE_LIB")
 SET (TESTS_EXE_LINKER_FLAGS "${CMAKE_THREAD_LIBS_INIT}")
-IF ( GccFlagG )
-    SET(TESTS_CXX_FLAGS "${TESTS_CXX_FLAGS} -g")
-ENDIF ( GccFlagG )
-IF ( GccFlagWall )
-    #SET(TESTS_CXX_FLAGS "${TESTS_CXX_FLAGS} -Wall")
-    #SET(TESTS_EXE_LINKER_FLAGS "${TESTS_EXE_LINKER_FLAGS} -Wall")
-ENDIF ( GccFlagWall )
-
 
 ADD_EXECUTABLE(cl_test-ascii EXCLUDE_FROM_ALL ${test_monolithic_Files} )
 TARGET_LINK_LIBRARIES(cl_test-ascii "${EXTRA_LIBS}")
@@ -164,9 +167,9 @@ ADD_CUSTOM_TARGET(test-platform-charfuncs
 ADD_EXECUTABLE(cl_test-pedantic EXCLUDE_FROM_ALL ${test_monolithic_Files})
 TARGET_LINK_LIBRARIES(cl_test-pedantic "${EXTRA_LIBS}")
 SET_TARGET_PROPERTIES(cl_test-pedantic PROPERTIES
-    COMPILE_DEFINITIONS "-pedantic"
-    COMPILE_FLAGS "${TESTS_CXX_FLAGS} -pedantic"
-    LINK_FLAGS "${TESTS_EXE_LINKER_FLAGS}")
+    COMPILE_DEFINITIONS ""
+    COMPILE_FLAGS "${TESTS_CXX_FLAGS} -std=gnu++98 -pedantic -Wnon-virtual-dtor -Wundef -Wcast-align -Wchar-subscripts -W -Wformat-security -Wextra -Wall -Wno-long-long -Wno-sign-compare"
+    LINK_FLAGS "${TESTS_EXE_LINKER_FLAGS} -Wall")
 ADD_CUSTOM_TARGET(test-pedantic
     COMMENT "Running cl_test-pedantic"
     COMMAND ${EXECUTABLE_OUTPUT_PATH}/cl_test-pedantic

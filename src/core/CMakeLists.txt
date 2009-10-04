@@ -9,6 +9,23 @@ ADD_DEFINITIONS(${EXTRA_OPTIONS} -DMAKE_CLUCENE_CORE_LIB)
 #see if we can hide all symbols by default...
 MACRO_CHECK_GCC_VISIBILITY(_CL_HAVE_GCCVISIBILITYPATCH)
 
+#Locate Boost libs. Windows users: make sure BOOST_ROOT and BOOST_PATH are set correctly on your environment.
+#See the site FAQ for more details.
+#todo: allow this to fall back on a local distributed copy, so user doesn't have to d/l Boost seperately
+SET(Boost_USE_MULTITHREAD ON)
+FIND_PACKAGE( Boost )
+#todo: limit Boost version?
+#todo: use COMPONENTS threads to locate boost_threads without breaking the current support
+IF(Boost_FOUND)
+	MESSAGE( "Boost libraries found" )
+	message(STATUS "Boost_INCLUDE_DIR    : ${Boost_INCLUDE_DIR}")
+	#message(STATUS "Boost_THREAD_LIBRARY : ${Boost_THREAD_LIBRARY}")
+	#LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} )
+	INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+ELSE()
+	MESSAGE("Boost libraries were not found; looked at ${BOOST_ROOT}")
+ENDIF()
+
 #add the files to our groups and core
 SOURCE_GROUP("analysis" ./CLucene/analysis/*)
 #seems to be a bug in cmake, can't put these in analysis\\standard folder :(
@@ -48,15 +65,19 @@ SET(clucene_core_Files
 	./CLucene/analysis/standard/StandardTokenizer.cpp
 	./CLucene/analysis/Analyzers.cpp
 	./CLucene/analysis/AnalysisHeader.cpp
-	./CLucene/store/MMapInput.cpp
-	#./CLucene/store/TransactionalRAMDirectory.cpp
+	#./CLucene/store/MMapInput.cpp
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
+	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
+	./CLucene/store/RawDirectory.cpp
+	./CLucene/store/RawIndexInput.cpp
+	./CLucene/store/RawIndexOutput.cpp
+	./CLucene/store/SharedHandle.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp
@@ -85,14 +106,14 @@ SET(clucene_core_Files
 	./CLucene/index/SkipListWriter.cpp
 	./CLucene/index/IndexFileDeleter.cpp
 	./CLucene/index/SegmentReader.cpp
-	./CLucene/index/DirectoryIndexReader.cpp
+  ./CLucene/index/DirectoryIndexReader.cpp
 	./CLucene/index/TermVectorWriter.cpp
 	./CLucene/index/IndexReader.cpp
 	./CLucene/index/SegmentTermPositions.cpp
 	./CLucene/index/SegmentMerger.cpp
 	./CLucene/index/IndexWriter.cpp
-	./CLucene/index/MultiReader.cpp
-	./CLucene/index/MultiSegmentReader.cpp
+  ./CLucene/index/MultiReader.cpp
+  ./CLucene/index/MultiSegmentReader.cpp
 	./CLucene/index/Payload.cpp
 	./CLucene/index/SegmentTermEnum.cpp
 	./CLucene/index/TermInfo.cpp
@@ -142,7 +163,6 @@ SET(clucene_core_Files
 	./CLucene/search/DateFilter.cpp
 	./CLucene/search/MatchAllDocsQuery.cpp
 	./CLucene/search/MultiPhraseQuery.cpp
-	./CLucene/search/ConstantScoreQuery.cpp
 )
 
 #if USE_SHARED_OBJECT_FILES then we link directly to the object files (means rebuilding them for the core)
@@ -152,7 +172,6 @@ ENDIF ( USE_SHARED_OBJECT_FILES )
 
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-core_SOURCE_DIR}/*.h)
-
 
 #create the libraries
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )
