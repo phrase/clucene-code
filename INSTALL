@@ -9,7 +9,8 @@ Building from source:
 --------------------
 
 Dependencies:
-* CMake version 2.4.2 or later.
+* CMake version 2.4.2 or later (2.6 or later recommended due to an improved FindBoost module)
+* Boost libs (http://www.boost.org/), latest version recommended
 * A functioning and fairly new C++ compiler. We test mostly on GCC and Visual Studio 6+.
 Anything other than that may not work.
 * Something to unzip/untar the source code.
@@ -28,6 +29,13 @@ Build instructions:
     create different types of builds in the same source-tree.]
 # mkdir <clucene>/build-name
 # cd <clucene>/build-name
+5*.) Windows users: make sure Boost environment variables are defined at least for the current
+   command prompt session. You can check this by typing "set" (no quotes). If you have any doubts,
+   just type the following 3 commands to set those variables, as follows (boost_1_40_0 being the current
+   Boost version):
+	set BOOST_BUILD_PATH=C:\{parent directory for boost}\boost_1_40_0\tools\build\v2
+	set BOOST_PATH=C:\{parent directory for boost}
+	set BOOST_ROOT=C:\{parent directory for boost}\boost_1_40_0
 6.) Configure using cmake. This can be done many different ways, but the basic syntax is
 # cmake [-G "Script name"] ..
     [Where "Script name" is the name of the scripts to build (e.g. Visual Studio 8 2005).

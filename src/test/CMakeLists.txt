@@ -4,10 +4,24 @@ INCLUDE (DefineOptions)
 DEFINE_OPTIONS(EXTRA_OPTIONS EXTRA_LIBS)
 ADD_DEFINITIONS(${EXTRA_OPTIONS})
 
-FIND_PACKAGE(Boost)
+#Locate Boost libs. Windows users: make sure BOOST_ROOT and BOOST_PATH are set correctly on your environment.
+#See the site FAQ for more details.
+#todo: allow this to fall back on a local distributed copy, so user doesn't have to d/l Boost seperately
+SET(Boost_USE_MULTITHREAD ON)
+FIND_PACKAGE( Boost )
+#todo: limit Boost version?
+#todo: use COMPONENTS threads to locate boost_threads without breaking the current support
+IF(Boost_FOUND)
+	MESSAGE( "Boost libraries found" )
+	message(STATUS "Boost_INCLUDE_DIR    : ${Boost_INCLUDE_DIR}")
+	#message(STATUS "Boost_THREAD_LIBRARY : ${Boost_THREAD_LIBRARY}")
+	#LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} )
+	INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
+ELSE()
+	MESSAGE("Boost libraries were not found; looked at ${BOOST_ROOT}")
+ENDIF()
 
 INCLUDE_DIRECTORIES( ${clucene-test_SOURCE_DIR} )
-INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIR} )
 
 SOURCE_GROUP("unit_testing" ./*.cpp)
 SOURCE_GROUP("analysis" ./analysis/*)
