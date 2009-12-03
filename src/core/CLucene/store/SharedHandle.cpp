@@ -7,6 +7,10 @@
 #include "CLucene/_ApiHeader.h"
 #include "_SharedHandle.h"
 
+#ifdef _CL_HAVE_IO_H
+	#include <io.h>
+#endif
+
 CL_NS_DEF(store)
 
   SharedHandle::SharedHandle(const char* path){
