@@ -464,7 +464,7 @@ xx
   #define MAX_MMAP_BUF LUCENE_INT32_MAX_SHOULDBE
 
 	/// Returns a stream reading an existing file.
-  bool MMapDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t bufferSize){
+  bool MMapDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t /*bufferSize*/){
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
     int64_t len = Misc::file_Size(fl);

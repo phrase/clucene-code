@@ -26,7 +26,7 @@ CL_NS_USE(util)
 CL_NS_DEF(index)
 
 FieldsReader::FieldsReader(Directory* d, const char* segment, FieldInfos* fn, int32_t _readBufferSize, int32_t _docStoreOffset, int32_t size):
-	cloneableFieldsStream(NULL), fieldsStream(NULL), indexStream(NULL), fieldInfos(fn), closed(false)
+	fieldInfos(fn), cloneableFieldsStream(NULL), fieldsStream(NULL), indexStream(NULL), closed(false)
 {
 //Func - Constructor
 //Pre  - d contains a valid reference to a Directory
@@ -507,7 +507,9 @@ CL_NS(analysis)::TokenStream* FieldsReader::FieldForMerge::tokenStreamValue() co
 	return NULL;
 }
 
-FieldsReader::FieldForMerge::FieldForMerge(void* _value, ValueType _type, const FieldInfo* fi, const bool binary, const bool compressed, const bool tokenize) : Field(fi->name, 0) {
+FieldsReader::FieldForMerge::FieldForMerge(void* _value, ValueType _type, const FieldInfo* fi, const bool binary, const bool compressed, const bool tokenize) : 
+  Field(fi->name, 0) 
+{
 
 	uint32_t bits = STORE_YES;
 
