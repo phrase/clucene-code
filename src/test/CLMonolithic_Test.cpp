@@ -30,6 +30,7 @@
 #include "queryParser/TestQueryParser.cpp"
 #include "queryParser/TestMultiFieldQueryParser.cpp"
 #include "search/TestSearch.cpp"
+#include "search/TestBoolean.cpp"
 #include "search/TestSort.cpp"
 #include "search/TestTermVector.cpp"
 #include "search/TestForDuplicates.cpp"

@@ -14,7 +14,7 @@ IF(Boost_FOUND)
 	#LINK_DIRECTORIES ( ${Boost_LIBRARY_DIRS} )
 	INCLUDE_DIRECTORIES( ${Boost_INCLUDE_DIRS} )
 ELSE()
-	MESSAGE("Boost libraries were not found; looked at ${BOOST_ROOT}")
+	MESSAGE(FATAL_ERROR "Boost libraries were not found; looked at '${BOOST_ROOT}'")
 ENDIF()
 
 INCLUDE (DefineOptions)
