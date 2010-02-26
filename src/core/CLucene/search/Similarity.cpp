@@ -186,9 +186,9 @@ CL_NS_DEF(search)
    }
 
 
-   float_t Similarity::idf(CL_NS(util)::CLVector<boost::shared_ptr<Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >* terms, Searcher* searcher) {
+   float_t Similarity::idf(CL_NS(util)::CLVector<boost::shared_ptr<Term>, CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >* terms, Searcher* searcher) {
       float_t _idf = 0.0f;
-      for (CL_NS(util)::CLVector<boost::shared_ptr<Term> >::iterator i = terms->begin(); i != terms->end(); i++ ) {
+	  for (CL_NS(util)::CLVector<boost::shared_ptr<Term>, CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> >::iterator i = terms->begin(); i != terms->end(); i++ ) {
          _idf += idf(*i, searcher);
       }
       return _idf;
