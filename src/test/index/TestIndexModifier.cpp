@@ -120,7 +120,7 @@ void IMinsertDelete_tester<modification>::invoke(
 
 void testIMinsertDelete(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
-	sprintf(fsdir,"%s/%s",cl_tempDir, "test.search");
+	_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "test.search");
 	RAMDirectory ram;
 	Directory* disk = FSDirectory::getDirectory(fsdir, true);
 	IMinsertDelete_tester<bulk_modification>().invoke(ram, tc);

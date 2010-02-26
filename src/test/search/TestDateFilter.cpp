@@ -9,7 +9,7 @@
 	void testBefore(CuTest *tc) {
 	// create an index
 		char fsdir[CL_MAX_PATH];
-		sprintf(fsdir,"%s/%s",cl_tempDir, "dfindex");
+		_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "dfindex");
 		
 		Directory* indexStore = FSDirectory::getDirectory( fsdir,true);
 		Analyzer* a = _CLNEW SimpleAnalyzer();

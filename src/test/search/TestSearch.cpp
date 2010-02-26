@@ -226,7 +226,7 @@ void SearchTest(CuTest *tc, bool bram) {
 	SimpleAnalyzer analyzer;
 
 	char fsdir[CL_MAX_PATH];
-	sprintf(fsdir,"%s/%s",cl_tempDir, "test.search");
+	_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "test.search");
 	Directory* ram = (bram?(Directory*)_CLNEW RAMDirectory():(Directory*)FSDirectory::getDirectory(fsdir, true) );
 
 	IndexWriter writer( ram, &analyzer, true);
