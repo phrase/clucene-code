@@ -49,7 +49,7 @@ CL_NS_DEF(index)
     static void uncompress(const CL_NS(util)::ValueArray<uint8_t>& input, CL_NS(util)::ValueArray<uint8_t>& output);
 	public:
 		FieldsReader(CL_NS(store)::Directory* d, const char* segment, FieldInfos* fn,
-			int32_t readBufferSize = CL_NS(store)::BufferedIndexInput<CL_NS(store)::IndexInput>::BUFFER_SIZE, int32_t docStoreOffset = -1, int32_t size = 0);
+			int32_t readBufferSize = CL_NS(store)::BufferedIndexInput::BUFFER_SIZE, int32_t docStoreOffset = -1, int32_t size = 0);
 		~FieldsReader();
 
 	//protected:

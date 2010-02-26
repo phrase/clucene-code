@@ -45,7 +45,7 @@ protected:
 	bool doDeleteFile(const char* name);
 
 public:
-	CompoundFileReader(CL_NS(store)::Directory* dir, const char* name, int32_t _readBufferSize=CL_NS(store)::BufferedIndexInput<CL_NS(store)::IndexInput>::BUFFER_SIZE);
+	CompoundFileReader(CL_NS(store)::Directory* dir, const char* name, int32_t _readBufferSize=CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
 	~CompoundFileReader();
 	CL_NS(store)::Directory* getDirectory();
 	const char* getName() const;

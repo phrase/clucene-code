@@ -43,7 +43,7 @@ public:
  *  this helps with testing since JUnit test cases in a different class
  *  can then access package fields of this class.
  */
-class CSIndexInput:public CL_NS(store)::BufferedIndexInput<IndexInput> {
+class CSIndexInput:public CL_NS(store)::BufferedIndexInput {
 private:
 	CL_NS(store)::IndexInput* base;
 	int64_t fileOffset;
@@ -60,7 +60,7 @@ protected:
 	}
 
 public:
-	CSIndexInput(CL_NS(store)::IndexInput* base, const int64_t fileOffset, const int64_t length, const int32_t readBufferSize = CL_NS(store)::BufferedIndexInput<IndexInput>::BUFFER_SIZE);
+	CSIndexInput(CL_NS(store)::IndexInput* base, const int64_t fileOffset, const int64_t length, const int32_t readBufferSize = CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
 	CSIndexInput(const CSIndexInput& clone);
 	~CSIndexInput();
 
@@ -88,7 +88,7 @@ public:
 };
 
 
-CSIndexInput::CSIndexInput(CL_NS(store)::IndexInput* base, const int64_t fileOffset, const int64_t length, const int32_t _readBufferSize):BufferedIndexInput<IndexInput>(_readBufferSize){
+CSIndexInput::CSIndexInput(CL_NS(store)::IndexInput* base, const int64_t fileOffset, const int64_t length, const int32_t _readBufferSize):BufferedIndexInput(_readBufferSize){
    this->base = base;
    this->fileOffset = fileOffset;
    this->_length = length;
@@ -110,7 +110,7 @@ IndexInput* CSIndexInput::clone() const
 {
 	return _CLNEW CSIndexInput(*this);
 }
-CSIndexInput::CSIndexInput(const CSIndexInput& clone): BufferedIndexInput<IndexInput>(clone){
+CSIndexInput::CSIndexInput(const CSIndexInput& clone): BufferedIndexInput(clone){
    this->base = clone.base; //no need to clone this..
    this->fileOffset = clone.fileOffset;
    this->_length = clone._length;

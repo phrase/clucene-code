@@ -228,7 +228,7 @@ void FieldsWriter::writeField(FieldInfo* fi, CL_NS(document)::Field* field)
 	}
 }
 
-void FieldsWriter::flushDocument(int32_t numStoredFields, CL_NS(store)::RAMOutputStream<IndexOutput>* buffer) {
+void FieldsWriter::flushDocument(int32_t numStoredFields, CL_NS(store)::RAMOutputStream* buffer) {
 	indexStream->writeLong(fieldsStream->getFilePointer());
 	fieldsStream->writeVInt(numStoredFields);
 	buffer->writeTo(fieldsStream);

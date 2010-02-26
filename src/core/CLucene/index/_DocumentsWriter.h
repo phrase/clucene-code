@@ -286,7 +286,7 @@ private:
    * to a partial segment. */
   class BufferedNorms {
   public:
-    CL_NS(store)::RAMOutputStream<CL_NS(store)::IndexOutput> out;
+    CL_NS(store)::RAMOutputStream out;
     int32_t upto;
 
     BufferedNorms();
@@ -556,8 +556,8 @@ private:
 
   public:
     bool isIdle;                // Whether we are in use
-    CL_NS(store)::RAMOutputStream<CL_NS(store)::IndexOutput>* tvfLocal;    // Term vectors for one doc
-    CL_NS(store)::RAMOutputStream<CL_NS(store)::IndexOutput>* fdtLocal;    // Stored fields for one doc
+    CL_NS(store)::RAMOutputStream* tvfLocal;    // Term vectors for one doc
+    CL_NS(store)::RAMOutputStream* fdtLocal;    // Stored fields for one doc
     FieldsWriter* localFieldsWriter;       // Fields for one doc
     int32_t numThreads;                   // Number of threads that use this instance
     int32_t numAllFieldData;

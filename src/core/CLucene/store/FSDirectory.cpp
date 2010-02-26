@@ -22,6 +22,9 @@
 #include <errno.h>
 
 #include "FSDirectory.h"
+#include "BufferedIndexInput.h"
+#include "BufferedIndexOutput.h"
+#include "FSDirectory.h"
 #include "_MMapDirectory.h"
 #include "LockFactory.h"
 #include "CLucene/index/IndexReader.h"
@@ -41,6 +44,290 @@ CL_NS_USE(util)
 
   bool FSDirectory::useMMap = LUCENE_USE_MMAP;
 	bool FSDirectory::disableLocks=false;
+  
+  
+	class FSDirectory::FSIndexInput:public BufferedIndexInput {
+		/**
+		* We used a shared handle between all the fsindexinput clones.
+		* This reduces number of file handles we need, and it means
+		* we dont have to use file tell (which is slow) before doing
+		* a read.
+    * TODO: get rid of this and dup/fctnl or something like that...
+		*/
+		class SharedHandle: LUCENE_REFBASE{
+		public:
+			int32_t fhandle;
+			int64_t _length;
+			int64_t _fpos;
+			DEFINE_MUTEX(*THIS_LOCK)
+			char path[CL_MAX_DIR]; //todo: this is only used for cloning, better to get information from the fhandle
+			SharedHandle(const char* path);
+			~SharedHandle();
+		};
+		SharedHandle* handle;
+		int64_t _pos;
+		FSIndexInput(SharedHandle* handle, int32_t __bufferSize):
+			BufferedIndexInput(__bufferSize)
+		{
+			this->_pos = 0;
+			this->handle = handle;
+		};
+	protected:
+		FSIndexInput(const FSIndexInput& clone);
+	public:
+		static bool open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t bufferSize=-1);
+		~FSIndexInput();
+
+		IndexInput* clone() const;
+		void close();
+		int64_t length() const { return handle->_length; }
+
+		const char* getDirectoryType() const{ return FSDirectory::getClassName(); }
+    const char* getObjectName() const{ return getClassName(); }
+    static const char* getClassName() { return "FSIndexInput"; }
+	protected:
+		// Random-access methods
+		void seekInternal(const int64_t position);
+		// IndexInput methods
+		void readInternal(uint8_t* b, const int32_t len);
+	};
+
+	class FSDirectory::FSIndexOutput: public BufferedIndexOutput {
+	private:
+		int32_t fhandle;
+	protected:
+		// output methods:
+		void flushBuffer(const uint8_t* b, const int32_t size);
+	public:
+		FSIndexOutput(const char* path);
+		~FSIndexOutput();
+
+		// output methods:
+		void close();
+
+		// Random-access methods
+		void seek(const int64_t pos);
+		int64_t length() const;
+	};
+
+	bool FSDirectory::FSIndexInput::open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t __bufferSize )    {
+	//Func - Constructor.
+	//       Opens the file named path
+	//Pre  - path != NULL
+	//Post - if the file could not be opened  an exception is thrown.
+
+	  CND_PRECONDITION(path != NULL, "path is NULL");
+
+	  if ( __bufferSize == -1 )
+		  __bufferSize = CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE;
+	  SharedHandle* handle = _CLNEW SharedHandle(path);
+
+	  //Open the file
+	  handle->fhandle  = ::_cl_open(path, _O_BINARY | O_RDONLY | _O_RANDOM, _S_IREAD );
+
+	  //Check if a valid handle was retrieved
+	  if (handle->fhandle >= 0){
+		  //Store the file length
+		  handle->_length = fileSize(handle->fhandle);
+		  if ( handle->_length == -1 )
+	  		error.set( CL_ERR_IO,"fileStat error" );
+		  else{
+			  handle->_fpos = 0;
+			  ret = _CLNEW FSIndexInput(handle, __bufferSize);
+			  return true;
+		  }
+	  }else{
+		  int err = errno;
+      if ( err == ENOENT )
+	      error.set(CL_ERR_IO, "File does not exist");
+      else if ( err == EACCES )
+        error.set(CL_ERR_IO, "File Access denied");
+      else if ( err == EMFILE )
+        error.set(CL_ERR_IO, "Too many open files");
+      else
+      	error.set(CL_ERR_IO, "Could not open file");
+	  }
+#ifndef _CL_DISABLE_MULTITHREADING
+    delete handle->THIS_LOCK;
+#endif
+	  _CLDECDELETE(handle);
+	  return false;
+  }
+
+  FSDirectory::FSIndexInput::FSIndexInput(const FSIndexInput& other): BufferedIndexInput(other){
+  //Func - Constructor
+  //       Uses clone for its initialization
+  //Pre  - clone is a valide instance of FSIndexInput
+  //Post - The instance has been created and initialized by clone
+	  if ( other.handle == NULL )
+		  _CLTHROWA(CL_ERR_NullPointer, "other handle is null");
+
+	  SCOPED_LOCK_MUTEX(*other.handle->THIS_LOCK)
+	  handle = _CL_POINTER(other.handle);
+	  _pos = other.handle->_fpos; //note where we are currently...
+  }
+
+  FSDirectory::FSIndexInput::SharedHandle::SharedHandle(const char* path){
+  	fhandle = 0;
+    _length = 0;
+    _fpos = 0;
+    strcpy(this->path,path);
+
+#ifndef _CL_DISABLE_MULTITHREADING
+	  THIS_LOCK = new _LUCENE_THREADMUTEX;
+#endif
+  }
+  FSDirectory::FSIndexInput::SharedHandle::~SharedHandle() {
+    if ( fhandle >= 0 ){
+      if ( ::_close(fhandle) != 0 )
+        _CLTHROWA(CL_ERR_IO, "File IO Close error");
+      else
+        fhandle = -1;
+    }
+  }
+
+  FSDirectory::FSIndexInput::~FSIndexInput(){
+  //Func - Destructor
+  //Pre  - True
+  //Post - The file for which this instance is responsible has been closed.
+  //       The instance has been destroyed
+
+	  FSIndexInput::close();
+  }
+
+  IndexInput* FSDirectory::FSIndexInput::clone() const
+  {
+    return _CLNEW FSDirectory::FSIndexInput(*this);
+  }
+  void FSDirectory::FSIndexInput::close()  {
+	BufferedIndexInput::close();
+#ifndef _CL_DISABLE_MULTITHREADING
+	if ( handle != NULL ){
+		//here we have a bit of a problem... we need to lock the handle to ensure that we can
+		//safely delete the handle... but if we delete the handle, then the scoped unlock,
+		//won't be able to unlock the mutex...
+
+		//take a reference of the lock object...
+		_LUCENE_THREADMUTEX* mutex = handle->THIS_LOCK;
+		//lock the mutex
+		mutex->lock();
+
+		//determine if we are about to delete the handle...
+		bool dounlock = ( handle->__cl_refcount > 1 );
+
+    //decdelete (deletes if refcount is down to 0
+		_CLDECDELETE(handle);
+
+		//printf("handle=%d\n", handle->__cl_refcount);
+		if ( dounlock ){
+			mutex->unlock();
+		}else{
+			delete mutex;
+		}
+	}
+#else
+	_CLDECDELETE(handle);
+#endif
+  }
+
+  void FSDirectory::FSIndexInput::seekInternal(const int64_t position)  {
+	CND_PRECONDITION(position>=0 &&position<handle->_length,"Seeking out of range")
+	_pos = position;
+  }
+
+/** IndexInput methods */
+void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
+	CND_PRECONDITION(handle!=NULL,"shared file handle has closed");
+	CND_PRECONDITION(handle->fhandle>=0,"file is not open");
+	SCOPED_LOCK_MUTEX(*handle->THIS_LOCK)
+
+	if ( handle->_fpos != _pos ){
+		if ( fileSeek(handle->fhandle,_pos,SEEK_SET) != _pos ){
+			_CLTHROWA( CL_ERR_IO, "File IO Seek error");
+		}
+		handle->_fpos = _pos;
+	}
+
+	bufferLength = _read(handle->fhandle,b,len); // 2004.10.31:SF 1037836
+	if (bufferLength == 0){
+		_CLTHROWA(CL_ERR_IO, "read past EOF");
+	}
+	if (bufferLength == -1){
+		//if (EINTR == errno) we could do something else... but we have
+		//to guarantee some return, or throw EOF
+
+		_CLTHROWA(CL_ERR_IO, "read error");
+	}
+	_pos+=bufferLength;
+	handle->_fpos=_pos;
+}
+
+  FSDirectory::FSIndexOutput::FSIndexOutput(const char* path){
+	//O_BINARY - Opens file in binary (untranslated) mode
+	//O_CREAT - Creates and opens new file for writing. Has no effect if file specified by filename exists
+	//O_RANDOM - Specifies that caching is optimized for, but not restricted to, random access from disk.
+	//O_WRONLY - Opens file for writing only;
+	  if ( Misc::dir_Exists(path) )
+	    fhandle = _cl_open( path, _O_BINARY | O_RDWR | _O_RANDOM | O_TRUNC, _S_IREAD | _S_IWRITE);
+	  else // added by JBP
+	    fhandle = _cl_open( path, _O_BINARY | O_RDWR | _O_RANDOM | O_CREAT, _S_IREAD | _S_IWRITE);
+
+	  if ( fhandle < 0 ){
+      int err = errno;
+      if ( err == ENOENT )
+	      _CLTHROWA(CL_ERR_IO, "File does not exist");
+      else if ( err == EACCES )
+          _CLTHROWA(CL_ERR_IO, "File Access denied");
+      else if ( err == EMFILE )
+          _CLTHROWA(CL_ERR_IO, "Too many open files");
+    }
+  }
+  FSDirectory::FSIndexOutput::~FSIndexOutput(){
+	if ( fhandle >= 0 ){
+	  try {
+        FSIndexOutput::close();
+	  }catch(CLuceneError& err){
+	    //ignore IO errors...
+	    if ( err.number() != CL_ERR_IO )
+	        throw;
+	  }
+	}
+  }
+
+  /** output methods: */
+  void FSDirectory::FSIndexOutput::flushBuffer(const uint8_t* b, const int32_t size) {
+	  CND_PRECONDITION(fhandle>=0,"file is not open");
+      if ( size > 0 && _write(fhandle,b,size) != size )
+        _CLTHROWA(CL_ERR_IO, "File IO Write error");
+  }
+  void FSDirectory::FSIndexOutput::close() {
+    try{
+      BufferedIndexOutput::close();
+    }catch(CLuceneError& err){
+	    //ignore IO errors...
+	    if ( err.number() != CL_ERR_IO )
+	        throw;
+    }
+
+    if ( ::_close(fhandle) != 0 )
+      _CLTHROWA(CL_ERR_IO, "File IO Close error");
+    else
+      fhandle = -1; //-1 now indicates closed
+  }
+
+  void FSDirectory::FSIndexOutput::seek(const int64_t pos) {
+    CND_PRECONDITION(fhandle>=0,"file is not open");
+    BufferedIndexOutput::seek(pos);
+	int64_t ret = fileSeek(fhandle,pos,SEEK_SET);
+	if ( ret != pos ){
+      _CLTHROWA(CL_ERR_IO, "File IO Seek error");
+	}
+  }
+  int64_t FSDirectory::FSIndexOutput::length() const {
+	  CND_PRECONDITION(fhandle>=0,"file is not open");
+	  return fileSize(fhandle);
+  }
+
 
 	const char* FSDirectory::LOCK_DIR=NULL;
 	const char* FSDirectory::getLockDir(){
@@ -66,8 +353,8 @@ CL_NS_USE(util)
 		return LOCK_DIR;
 	}
 
-  FSDirectory::FSDirectory(const char* _path, const bool createDir, LockFactory* lockFactory, IOFactory* ioFactory):
-   Directory(ioFactory),
+  FSDirectory::FSDirectory(const char* _path, const bool createDir, LockFactory* lockFactory):
+   Directory(),
    refCount(0)
   {
     directory = _path;
@@ -180,7 +467,7 @@ CL_NS_USE(util)
   }
 
   //static
-  FSDirectory* FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory, IOFactory* ioFactory){
+  FSDirectory* FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory){
     FSDirectory* dir = NULL;
 	{
 		if ( !file || !*file )
@@ -199,7 +486,7 @@ CL_NS_USE(util)
       if ( getUseMMap() ){
         dir = _CLNEW MMapDirectory(tmpdirectory,_create,lockFactory);
       }else{
-			  dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory,ioFactory);
+			  dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory);
       }
 			DIRECTORIES.put( dir->directory.c_str(), dir);
 		} else if ( _create ) {
@@ -266,7 +553,7 @@ CL_NS_USE(util)
 	  CND_PRECONDITION(directory[0]!=0,"directory is not open")
     char fl[CL_MAX_DIR];
     priv_getFN(fl, name);
-	return getIOFactory()->openInput( fl, ret, error, bufferSize );
+    return FSIndexInput::open( fl, ret, error, bufferSize );
   }
 
   void FSDirectory::close(){
@@ -380,7 +667,7 @@ CL_NS_USE(util)
 			  _CLTHROWA(CL_ERR_IO, tmp);
 		  }
 	  }
-    return getIOFactory()->newOutput( fl );
+    return _CLNEW FSIndexOutput( fl );
   }
 
   string FSDirectory::toString() const{

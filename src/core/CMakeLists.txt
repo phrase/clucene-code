@@ -69,14 +69,13 @@ SET(clucene_core_Files
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
+	./CLucene/store/BufferedIndexInput.cpp
+	./CLucene/store/BufferedIndexOutput.cpp
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
 	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
-	./CLucene/store/RawDirectory.cpp
-	./CLucene/store/RawIndexInput.cpp
-	./CLucene/store/RawIndexOutput.cpp
 	./CLucene/store/SharedHandle.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp

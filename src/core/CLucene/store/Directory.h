@@ -9,7 +9,6 @@
 
 #include "CLucene/util/Equators.h"
 #include "CLucene/LuceneThreads.h"
-#include "IOFactory.h"
 #include <string>
 #include <vector>
 
@@ -34,13 +33,10 @@ CL_NS_DEF(store)
    *
    */
 class CLUCENE_EXPORT Directory: LUCENE_REFBASE, public CL_NS(util)::NamedObject {
-	private:
-		static IOFactory* defaultIOFactory;
-		IOFactory* ioFactory;
 	protected:
  		LockFactory* lockFactory;
 
-		Directory(IOFactory* ioFactory = NULL);
+		Directory();
 		// Removes an existing file in the directory.
 		virtual bool doDeleteFile(const char* name) = 0;
 	public:
@@ -97,8 +93,6 @@ class CLUCENE_EXPORT Directory: LUCENE_REFBASE, public CL_NS(util)::NamedObject 
 		void setLockFactory( LockFactory* lockFactory );
 
 		LockFactory* getLockFactory();
-
-		IOFactory* getIOFactory();
 
     virtual std::string getLockID();
 	};

@@ -42,7 +42,7 @@ public:
 	// and adds a new entry for this document into the index
 	// stream.  This assumes the buffer was already written
 	// in the correct fields format.
-	void flushDocument(int32_t numStoredFields, CL_NS(store)::RAMOutputStream<CL_NS(store)::IndexOutput>* buffer);
+	void flushDocument(int32_t numStoredFields, CL_NS(store)::RAMOutputStream* buffer);
 
 	void flush();
 

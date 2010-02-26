@@ -70,9 +70,9 @@ MultiLevelSkipListWriter::~MultiLevelSkipListWriter(){
 }
 
 void MultiLevelSkipListWriter::init() {
-  skipBuffer = _CLNEW CL_NS(util)::ObjectArray<CL_NS(store)::RAMOutputStream<IndexOutput> >(numberOfSkipLevels);
+  skipBuffer = _CLNEW CL_NS(util)::ObjectArray<CL_NS(store)::RAMOutputStream>(numberOfSkipLevels);
   for (int32_t i = 0; i < numberOfSkipLevels; i++) {
-    skipBuffer->values[i] = _CLNEW RAMOutputStream<IndexOutput>;
+    skipBuffer->values[i] = _CLNEW RAMOutputStream;
   }
 }
 

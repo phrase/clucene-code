@@ -224,11 +224,11 @@ CL_NS_DEF(index)
   }
 
   SegmentReader* SegmentReader::get(SegmentInfo* si){
-    return get(si->dir, si, NULL, false, false, BufferedIndexInput<IndexInput>::BUFFER_SIZE, true);
+    return get(si->dir, si, NULL, false, false, BufferedIndexInput::BUFFER_SIZE, true);
   }
 
   SegmentReader* SegmentReader::get(SegmentInfo* si, bool doOpenStores) {
-    return get(si->dir, si, NULL, false, false, BufferedIndexInput<IndexInput>::BUFFER_SIZE, doOpenStores);
+    return get(si->dir, si, NULL, false, false, BufferedIndexInput::BUFFER_SIZE, doOpenStores);
   }
 
   SegmentReader* SegmentReader::get(SegmentInfo* si, int32_t readBufferSize){
@@ -241,7 +241,7 @@ CL_NS_DEF(index)
 
   SegmentReader* SegmentReader::get(SegmentInfos* sis, SegmentInfo* si,
                                   bool closeDir) {
-    return get(si->dir, si, sis, closeDir, true, BufferedIndexInput<IndexInput>::BUFFER_SIZE, true);
+    return get(si->dir, si, sis, closeDir, true, BufferedIndexInput::BUFFER_SIZE, true);
   }
 
   SegmentReader* SegmentReader::get(Directory* dir, SegmentInfo* si,
