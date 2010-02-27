@@ -152,7 +152,7 @@ CuSuite *testatomicupdates(void)
 {
   srand ( (unsigned int)Misc::currentTimeMillis() );
   CuSuite *suite = CuSuiteNew(_T("CLucene Atomic Updates Test"));
- // SUITE_ADD_TEST(suite, testRAMThreading);
+  SUITE_ADD_TEST(suite, testRAMThreading);
   SUITE_ADD_TEST(suite, testFSThreading);
 
   return suite;
