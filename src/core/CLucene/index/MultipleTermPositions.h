@@ -33,7 +33,7 @@ public:
 	* @exception IOException
 	*/ 
   MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms);
-	virtual ~MultipleTermPositions(){}
+	virtual ~MultipleTermPositions();
 
 	bool next();
 

@@ -114,7 +114,9 @@ public:
 	}
 };
 
-MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms) : _posList(_CLNEW IntQueue()){
+MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms) : 
+  _posList(_CLNEW IntQueue())
+{
 	CLLinkedList<TermPositions*> termPositions;
   for ( size_t i=0;i<terms->length;i++){
     termPositions.push_back( indexReader->termPositions(terms->values[i]));
@@ -124,6 +126,10 @@ MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_
 	termPositions.toArray_nullTerminated(tps);
 
 	_termPositionsQueue = _CLNEW TermPositionsQueue(tps,terms->length);
+}
+MultipleTermPositions::~MultipleTermPositions(){
+  _CLDELETE(_termPositionsQueue);
+  _CLDELETE(_posList);
 }
 
 bool MultipleTermPositions::next() {
