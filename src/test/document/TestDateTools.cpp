@@ -9,8 +9,12 @@
 void assertEquals(CuTest* tc, const TCHAR* isoFormat, int64_t d){
     TCHAR* tmp = DateTools::getISOFormat(d);
     int res = _tcscmp(isoFormat, tmp);
+    if ( res != 0 ){
+	TCHAR buf[4096];
+	_sntprintf(buf,4096, _T("Error: expected <%s> actual <%s>"), isoFormat, tmp);
+        CuAssertIntEquals(tc, buf, 0, res);
+    }
     _CLDELETE_LCARRAY(tmp);
-    CLUCENE_ASSERT(res == 0);
 }
 
 void testStringToDate(CuTest *tc) {
