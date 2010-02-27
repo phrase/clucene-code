@@ -515,7 +515,7 @@ Token* KeywordTokenizer::next(Token* token){
     token->clear();
     TCHAR* termBuffer=token->termBuffer();
     const TCHAR* readBuffer=NULL;
-	assert(false);//test me
+
     while (true) {
       rd = input->read(readBuffer, 1, cl_min(bufferSize, token->bufferLength()-upto) );
       if (rd == -1)
@@ -525,6 +525,9 @@ Token* KeywordTokenizer::next(Token* token){
       }
 	    _tcsncpy(termBuffer + upto, readBuffer, rd);
       upto += rd;
+    }
+    if ( termBuffer == NULL ){
+      termBuffer=token->resizeTermBuffer(token->bufferLength() + 8);
     }
     termBuffer[upto]=0;
     token->setTermLength(upto);
