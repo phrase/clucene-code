@@ -281,8 +281,8 @@ PerFieldAnalyzerWrapper::PerFieldAnalyzerWrapper(Analyzer* defaultAnalyzer):
 }
 PerFieldAnalyzerWrapper::~PerFieldAnalyzerWrapper(){
     analyzerMap->clear();
-    _CLDELETE(analyzerMap);
-    _CLDELETE(defaultAnalyzer);
+    _CLLDELETE(analyzerMap);
+    _CLLDELETE(defaultAnalyzer);
 }
 
 void PerFieldAnalyzerWrapper::addAnalyzer(const TCHAR* fieldName, Analyzer* analyzer) {

@@ -237,7 +237,8 @@ CL_NS_DEF(search)
 		return (int32_t) ((1-minimumSimilarity) * (cl_min(textLen, m) + prefixLength));
 	}
 
-  class FuzzyQuery::ScoreTerm {
+  // TODO: Make ScoreTerm and ScoreTermQueue reside under FuzzyQuery
+  class ScoreTerm {
   public:
 	  boost::shared_ptr<Term> term;
 	  float_t score;
@@ -248,7 +249,7 @@ CL_NS_DEF(search)
 	  }
   };
 
-  class FuzzyQuery::ScoreTermQueue : public PriorityQueue<ScoreTerm*, CL_NS(util)::Deletor::Object<ScoreTerm> > {
+  class ScoreTermQueue : public PriorityQueue<ScoreTerm*, CL_NS(util)::Deletor::Object<ScoreTerm> > {
   public:
 	  ScoreTermQueue(int32_t size){
 		  initialize(size, true);
