@@ -44,6 +44,8 @@ FilteredTermEnum::FilteredTermEnum():actualEnum(NULL){
 		if (actualEnum == NULL){
 			return false; 
 		}
+		
+        currentTerm.reset();
 
 		//Iterate through the enumeration
         while (currentTerm.get() == NULL) {
