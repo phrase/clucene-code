@@ -58,6 +58,9 @@ OPTION(ENABLE_DMALLOC
 OPTION(ENABLE_ASCII_MODE
   "enable ascii support"
   OFF)
+OPTION(ENABLE_ANSI_MODE
+  "compile with -ansi flag"
+  ON)
 OPTION(LUCENE_USE_INTERNAL_CHAR_FUNCTIONS
   "use internal character functions. required to run tests correctly"
   ON)
@@ -113,7 +116,9 @@ IF ( CMAKE_COMPILER_IS_GNUCC )
     #    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC"  )
    # ENDIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
 
+   IF( ENABLE_ANSI_MODE )
     SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ansi")
+   ENDIF ( ENABLE_ANSI_MODE )
 ENDIF(CMAKE_COMPILER_IS_GNUCC) 
 
 
