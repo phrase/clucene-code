@@ -7,9 +7,7 @@
 #ifndef _lucene_store_BufferedIndexOutput_
 #define _lucene_store_BufferedIndexOutput_
 
-#include "CLucene/_ApiHeader.h"
 #include "IndexOutput.h"
-#include "CLucene/util/Misc.h"
 
 CL_NS_DEF(store)
 

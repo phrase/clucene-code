@@ -6,8 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "BufferedIndexInput.h"
-#include "IndexOutput.h"
-#include "IndexInput.h"
+#include "BufferedIndexOutput.h"
 #include "CLucene/util/Misc.h"
 
 CL_NS_USE(util)
