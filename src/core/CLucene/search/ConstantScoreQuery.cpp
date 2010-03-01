@@ -112,7 +112,7 @@ public:
             
             TCHAR* tmp = parentQuery->filter->toString();
             buf.append(tmp);
-            _CLLDELETE(tmp);
+            _CLDELETE_LCARRAY(tmp);
 
             buf.append(_T("), product of:"));
 
@@ -127,7 +127,7 @@ public:
             
             TCHAR* tmp = parentQuery->filter->toString();
             buf.append(tmp);
-            _CLLDELETE(tmp);
+            _CLDELETE_LCARRAY(tmp);
 
             buf.append(_T(") doesn't match id "));
             buf.appendInt(doc);
