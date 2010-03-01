@@ -170,8 +170,8 @@ void MMapMapping_Create(MMapMapping& mmap, const char* path, int64_t offset = 0,
   if ( mmap.length > 0 ){
 		mmap.mmaphandle = CreateFileMappingA(mmap.fhandle,NULL,PAGE_READONLY,0,0,NULL);
 		if ( mmap.mmaphandle != NULL ){
-      _cl_dword_t nHigh = (_cl_dword_t) ((offset & 0xFFFFFFFF00000000) >> 32);
-      _cl_dword_t nLow = (_cl_dword_t) (offset & 0x00000000FFFFFFFF);
+      _cl_dword_t nHigh = (_cl_dword_t) ((offset & _ILONGLONG(0xFFFFFFFF00000000)) >> 32);
+      _cl_dword_t nLow = (_cl_dword_t) (offset & _ILONGLONG(0x00000000FFFFFFFF));
 
 			void* address = MapViewOfFile(mmap.mmaphandle,FILE_MAP_READ,nHigh,nLow,mmap.length);
 			if ( address != NULL ){

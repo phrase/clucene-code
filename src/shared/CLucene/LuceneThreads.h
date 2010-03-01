@@ -42,9 +42,6 @@ class CLuceneThreadIdCompare;
         	#define _LUCENE_THREAD_FUNC_RETURN(val) return (void*)val;
           typedef void* (luceneThreadStartRoutine)(void* lpThreadParameter );
           
-          #define _LUCENE_ATOMIC_INC(theInteger) CL_NS(util)::mutex_thread::atomic_increment(theInteger)
-          #define _LUCENE_ATOMIC_DEC(theInteger) CL_NS(util)::mutex_thread::atomic_decrement(theInteger)
-          #define _LUCENE_ATOMIC_INT uint32_t
           class CLUCENE_SHARED_EXPORT mutex_thread
           {
           public:
@@ -61,9 +58,6 @@ class CLuceneThreadIdCompare;
         		static void JoinThread(_LUCENE_THREADID_TYPE id);
         		void Wait(mutex_thread* shared_lock);
         		void NotifyAll();
-
-            static int32_t atomic_increment(uint32_t* theInteger);
-            static int32_t atomic_decrement(uint32_t* theInteger);
           };
 					class CLUCENE_SHARED_EXPORT shared_condition{
         	private:
@@ -75,6 +69,31 @@ class CLuceneThreadIdCompare;
 						void Wait(mutex_thread* shared_lock);
         		void NotifyAll();
 					};
+
+          #ifdef _CL_HAVE_GCC_ATOMIC_FUNCTIONS
+            #define _LUCENE_ATOMIC_INT uint32_t
+            #define _LUCENE_ATOMIC_INT_SET(x,v) x=v
+            #define _LUCENE_ATOMIC_INT_GET(x) x
+          #else
+            class CLUCENE_SHARED_EXPORT __LUCENE_ATOMIC_INT{
+            public:
+              int value;
+              CL_NS(util)::mutex_thread THIS_LOCK;
+            };
+            #define _LUCENE_ATOMIC_INT  CL_NS(util)::__LUCENE_ATOMIC_INT
+            #define _LUCENE_ATOMIC_INT_SET(x,v) x.value=v
+            #define _LUCENE_ATOMIC_INT_GET(x) x.value
+          #endif
+          
+          class CLUCENE_SHARED_EXPORT atomic_threads{
+          public:
+            static int32_t atomic_increment(_LUCENE_ATOMIC_INT* theInteger);
+            static int32_t atomic_decrement(_LUCENE_ATOMIC_INT* theInteger);
+          };
+
+          #define _LUCENE_ATOMIC_INC(theInteger) CL_NS(util)::atomic_threads::atomic_increment(theInteger)
+          #define _LUCENE_ATOMIC_DEC(theInteger) CL_NS(util)::atomic_threads::atomic_decrement(theInteger)
+
     	#elif defined(_CL_HAVE_WIN32_THREADS)
         	#define _LUCENE_THREADID_TYPE uint64_t
     	    #define _LUCENE_THREAD_FUNC(name, argName) void __stdcall name(void* argName) //< use this macro to correctly define the thread start routine
@@ -83,7 +102,8 @@ class CLuceneThreadIdCompare;
           #define _LUCENE_ATOMIC_INC(theInteger) CL_NS(util)::mutex_thread::atomic_increment(theInteger)
           #define _LUCENE_ATOMIC_DEC(theInteger) CL_NS(util)::mutex_thread::atomic_decrement(theInteger)
           #define _LUCENE_ATOMIC_INT long
-          #define _LUCENE_ATOMIC_MUTEX long
+          #define _LUCENE_ATOMIC_INT_SET(x,v) x=v
+          #define _LUCENE_ATOMIC_INT_GET(x) x
 
           typedef void (__stdcall luceneThreadStartRoutine)(void* lpThreadParameter );
           class CLUCENE_SHARED_EXPORT mutex_thread

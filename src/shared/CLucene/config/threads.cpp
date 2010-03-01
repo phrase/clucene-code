@@ -63,10 +63,10 @@ CL_NS_DEF(util)
   }
 
   int32_t mutex_thread::atomic_increment(_LUCENE_ATOMIC_INT *theInteger){
-    return _InterlockedIncrement(theInteger);
+    return InterlockedIncrement(theInteger);
   }
   int32_t mutex_thread::atomic_decrement(_LUCENE_ATOMIC_INT *theInteger){
-    return _InterlockedDecrement(theInteger);
+    return InterlockedDecrement(theInteger);
   }
 
 
@@ -174,19 +174,19 @@ CL_NS_DEF(util)
         return pthread_self();
     }
       
-    int32_t mutex_thread::atomic_increment(_LUCENE_ATOMIC_INT *theInteger){
+    int32_t atomic_threads::atomic_increment(_LUCENE_ATOMIC_INT *theInteger){
       #ifdef _CL_HAVE_GCC_ATOMIC_FUNCTIONS
         return __sync_add_and_fetch(theInteger, 1);
       #else
-        SCOPED_MUTEX_LOCK(theInteger->THIS_LOCK)
+        SCOPED_LOCK_MUTEX(theInteger->THIS_LOCK)
         return ++theInteger->value;
       #endif
     }
-    int32_t mutex_thread::atomic_decrement(_LUCENE_ATOMIC_INT *theInteger){
+    int32_t atomic_threads::atomic_decrement(_LUCENE_ATOMIC_INT *theInteger){
       #ifdef _CL_HAVE_GCC_ATOMIC_FUNCTIONS
         return __sync_sub_and_fetch(theInteger, 1);
       #else
-        SCOPED_MUTEX_LOCK(theInteger->THIS_LOCK)
+        SCOPED_LOCK_MUTEX(theInteger->THIS_LOCK)
         return --theInteger->value;
       #endif
     }

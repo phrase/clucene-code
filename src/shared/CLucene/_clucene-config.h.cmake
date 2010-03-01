@@ -82,9 +82,6 @@ ${FUNCTION_SLEEPFUNCTION}
 /* Define if recursive pthread mutexes are available */
 #cmakedefine _CL_HAVE_PTHREAD_MUTEX_RECURSIVE  1 
 
-/* Define if we have gcc atomic functions */
-#cmakedefine _CL_HAVE_GCC_ATOMIC_FUNCTIONS 1
-
 /** define if you would like to force clucene to use the internal
 * character functions.
 * Tests may display unpredictable behaviour if this is not defined.
