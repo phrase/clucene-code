@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_SegmentHeader.h"
 #include "CLucene/util/PriorityQueue.h"
 #include "CLucene/util/Misc.h"
@@ -530,10 +532,10 @@ void SegmentMerger::mergeTermInfos(){
       //Pop the first SegmentMergeInfo from the queue
       match[matchSize++] = queue->pop();
       //Get the Term of match[0]
-      Term* term = match[0]->term;
+      Term::Pointer term = match[0]->term;
 
       //Condition check to see if term points to a valid instance
-      CND_CONDITION(term != NULL,"term is NULL")	;
+      CND_CONDITION(term.get() != NULL,"term is NULL")	;
 
       //Get the current top of the queue
       top = queue->top();

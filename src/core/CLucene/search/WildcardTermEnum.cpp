@@ -5,14 +5,15 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
-#include "WildcardTermEnum.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "WildcardTermEnum.h"
 #include "CLucene/index/IndexReader.h"
 
 CL_NS_USE(index)
 CL_NS_DEF(search)
 
-    bool WildcardTermEnum::termCompare(Term* term) {
+    bool WildcardTermEnum::termCompare(Term::Pointer term) {
         if ( term!=NULL && __term->field() == term->field() ) {
             const TCHAR* searchText = term->text();
             const TCHAR* patternText = __term->text();
@@ -25,9 +26,9 @@ CL_NS_DEF(search)
     }
 
     /** Creates new WildcardTermEnum */
-    WildcardTermEnum::WildcardTermEnum(IndexReader* reader, Term* term):
+    WildcardTermEnum::WildcardTermEnum(IndexReader* reader, Term::Pointer term):
 	    FilteredTermEnum(),
-		__term(_CL_POINTER(term)),
+		__term(term),
 		fieldMatch(false),
 		_endEnum(false)
     {
@@ -47,18 +48,16 @@ CL_NS_DEF(search)
 		CND_PRECONDITION(preLen<term->textLength(), "preLen >= term->textLength()");
 		pre[preLen]=0; //trim end
 
-		Term* t = _CLNEW Term(__term, pre);
+		Term::Pointer t(new Term(__term, pre));
 		setEnum( reader->terms(t) );
-		_CLDECDELETE(t);
   }
 
     void WildcardTermEnum::close()
     {
-       if ( __term != NULL ){
+       if ( __term.get() != NULL ){
          FilteredTermEnum::close();
 
-         _CLDECDELETE(__term);
-         __term = NULL;
+         __term.reset();
 
          _CLDELETE_CARRAY( pre );
        }

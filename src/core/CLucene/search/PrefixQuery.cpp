@@ -5,6 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/index/Terms.h"
 #include "CLucene/index/IndexReader.h"
@@ -20,28 +21,25 @@ CL_NS_USE(util)
 CL_NS_USE(index)
 CL_NS_DEF(search)
 
-  PrefixQuery::PrefixQuery(Term* Prefix){
+  PrefixQuery::PrefixQuery(Term::Pointer prefix) {
   //Func - Constructor.
   //       Constructs a query for terms starting with prefix
   //Pre  - Prefix != NULL 
   //Post - The instance has been created
 
       //Get a pointer to Prefix
-      prefix = _CL_POINTER(Prefix);
+      this->prefix = prefix;
   }
 
   PrefixQuery::PrefixQuery(const PrefixQuery& clone):Query(clone){
-	prefix = _CL_POINTER(clone.prefix);
+	prefix = clone.prefix;
   }
   Query* PrefixQuery::clone() const{
 	  return _CLNEW PrefixQuery(*this);
   }
 
-  Term* PrefixQuery::getPrefix(bool pointer){
-	if ( pointer )
-		return _CL_POINTER(prefix);
-	else
-		return prefix;
+  Term::Pointer PrefixQuery::getPrefix(bool pointer){
+	return prefix;
   }
 
   PrefixQuery::~PrefixQuery(){
@@ -49,8 +47,6 @@ CL_NS_DEF(search)
   //Pre  - true
   //Post - The instance has been destroyed.
     
-      //Delete prefix by finalizing it
-      _CLDECDELETE(prefix);
   }
 
 
@@ -88,7 +84,7 @@ CL_NS_DEF(search)
    Query* PrefixQuery::rewrite(IndexReader* reader){
     BooleanQuery* query = _CLNEW BooleanQuery( true );
     TermEnum* enumerator = reader->terms(prefix);
-    Term* lastTerm = NULL;
+    Term::Pointer lastTerm;
     try {
       const TCHAR* prefixText = prefix->text();
       const TCHAR* prefixField = prefix->field();
@@ -123,15 +119,11 @@ CL_NS_DEF(search)
           query->add(tq,true,false, false);		  // add to query
         } else
           break;
-		_CLDECDELETE(lastTerm);
       } while (enumerator->next());
     }_CLFINALLY(
       enumerator->close();
 	  _CLDELETE(enumerator);
-	  _CLDECDELETE(lastTerm);
 	);
-	_CLDECDELETE(lastTerm);
-
 
 	//if we only added one clause and the clause is not prohibited then
 	//we can just return the query
@@ -191,9 +183,9 @@ CL_NS_DEF(search)
 
 //todo: this needs to be exposed, but java is still a bit confused about how...
 class PrefixFilter::PrefixGenerator{
-  const Term* prefix;
+  Term::ConstPointer prefix;
 public:
-  PrefixGenerator(const Term* prefix){
+  PrefixGenerator(Term::ConstPointer prefix) {
     this->prefix = prefix;
   }
 
@@ -207,12 +199,12 @@ public:
     const TCHAR* tmp;
     size_t i;
     size_t prefixLen = prefix->textLength();
-    Term* term = NULL;
+    Term::Pointer term;
 
     try{
       do{
           term = enumerator->term(false);
-          if (term != NULL &&
+          if (term.get() != NULL &&
               term->field() == prefixField // interned comparison
           ){
               //now see if term->text() starts with prefixText
@@ -250,7 +242,7 @@ public:
 class DefaultPrefixGenerator: public PrefixFilter::PrefixGenerator{
 public:
   BitSet* bts;
-  DefaultPrefixGenerator(BitSet* bts, const Term* prefix):
+  DefaultPrefixGenerator(BitSet* bts, Term::ConstPointer prefix):
     PrefixGenerator(prefix)
   {
     this->bts = bts;
@@ -260,19 +252,15 @@ public:
   }
 };
 
-PrefixFilter::PrefixFilter( Term* prefix )
-{
-	this->prefix = _CL_POINTER(prefix);
+PrefixFilter::PrefixFilter(Term::Pointer prefix) {
+	this->prefix = prefix;
 }
 
-PrefixFilter::~PrefixFilter()
-{
-	_CLDECDELETE(prefix);
+PrefixFilter::~PrefixFilter() {
 }
 
 PrefixFilter::PrefixFilter( const PrefixFilter& copy ) : 
-	prefix( _CL_POINTER(copy.prefix) )
-{
+	prefix(copy.prefix) {
 }
 
 Filter* PrefixFilter::clone() const {
@@ -301,6 +289,6 @@ BitSet* PrefixFilter::bits( IndexReader* reader )
 	return bts;
 }
 
-CL_NS(index)::Term* PrefixFilter::getPrefix() const { return prefix; }
+CL_NS(index)::Term::Pointer PrefixFilter::getPrefix() const { return prefix; }
 
 CL_NS_END

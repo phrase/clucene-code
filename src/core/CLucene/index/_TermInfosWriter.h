@@ -81,7 +81,7 @@ class TermInfo;
 		~TermInfosWriter();
 
 
-    void add(Term* term, TermInfo* ti);
+    void add(Term::Pointer term, TermInfo* ti);
 
     /** Adds a new <<fieldNumber, termText>, TermInfo> pair to the set.
     Term must be lexicographically greater than all previous Terms added.

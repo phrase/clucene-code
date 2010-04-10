@@ -5,22 +5,20 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
-#include "Terms.h"
+#include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "Terms.h"
 
 CL_NS_DEF(index)
 
-Term* TermEnum::term(bool pointer){
-	Term* ret = term();
-	if ( !pointer )
-		ret->__cl_decref();
-	return ret;
+Term::Pointer TermEnum::term(bool pointer){
+	return term();
 }
 
 TermEnum::~TermEnum(){
 }
 
-bool TermEnum::skipTo(Term* target){
+bool TermEnum::skipTo(Term::Pointer target){
 	do {
 		if (!next())
 			return false;

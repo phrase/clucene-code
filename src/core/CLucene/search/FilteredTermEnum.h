@@ -8,7 +8,6 @@
 #define _lucene_search_FilteredTermEnum_
 
 
-CL_CLASS_DEF(index,Term)
 #include "CLucene/index/Terms.h"
 
 CL_NS_DEF(search)
@@ -35,15 +34,15 @@ public:
 
 	/** Returns the current Term in the enumeration.
 	* Returns null if no Term matches or all terms have been enumerated. */
-	CL_NS(index)::Term* term(bool pointer);
-	CL_NS(index)::Term* term();
+	CL_NS(index)::Term::Pointer term(bool pointer);
+	CL_NS(index)::Term::Pointer term();
 
 	/** Closes the enumeration to further activity, freeing resources.  */
 	void close();
 
 protected:
 	/** Equality compare on the term */
-	virtual bool termCompare(CL_NS(index)::Term* term) = 0;
+	virtual bool termCompare(CL_NS(index)::Term::Pointer term) = 0;
 
 	/** Indicates the end of the enumeration has been reached */
 	virtual bool endEnum() = 0;
@@ -51,7 +50,7 @@ protected:
 	void setEnum(CL_NS(index)::TermEnum* actualEnum) ;
 
 private:
-	CL_NS(index)::Term* currentTerm;
+	CL_NS(index)::Term::Pointer currentTerm;
 	CL_NS(index)::TermEnum* actualEnum;
 
 };

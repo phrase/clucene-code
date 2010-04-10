@@ -5,12 +5,13 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "MultiReader.h"
 #include "_MultiSegmentReader.h"
 
 #include "IndexReader.h"
 #include "CLucene/document/Document.h"
-#include "Term.h"
 #include "Terms.h"
 #include "CLucene/util/PriorityQueue.h"
 #include "_SegmentHeader.h"
@@ -258,16 +259,17 @@ void MultiReader::doSetNorm(int32_t n, const TCHAR* field, uint8_t value){
 }
 
 TermEnum* MultiReader::terms() {
-  ensureOpen();
-	return _CLNEW MultiTermEnum(subReaders, starts, NULL);
+	ensureOpen();
+	Term::ConstPointer emptyPointer;
+	return _CLNEW MultiTermEnum(subReaders, starts, emptyPointer);
 }
 
-TermEnum* MultiReader::terms(const Term* term) {
+TermEnum* MultiReader::terms(Term::ConstPointer term) {
     ensureOpen();
 	return _CLNEW MultiTermEnum(subReaders, starts, term);
 }
 
-int32_t MultiReader::docFreq(const Term* t) {
+int32_t MultiReader::docFreq(Term::ConstPointer t) {
     ensureOpen();
 	int32_t total = 0;				  // sum freqs in Multi
 	for (size_t i = 0; i < subReaders->length; i++)

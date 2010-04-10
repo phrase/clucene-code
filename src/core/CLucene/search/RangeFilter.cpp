@@ -5,6 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/index/Terms.h"
 #include "CLucene/index/IndexReader.h"
@@ -75,11 +76,10 @@ search results, and false for those that should not. */
 BitSet* RangeFilter::bits( IndexReader* reader )
 {
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
-	Term* term = NULL;
+	Term::Pointer term;
 	
-	Term* t = _CLNEW Term( field, (lowerValue ? lowerValue : _T("")), false );
+	Term::Pointer t(new Term( field, (lowerValue ? lowerValue : _T("")), false ));
 	TermEnum* enumerator = reader->terms( t );	// get enumeration of all terms after lowerValue
-	_CLDECDELETE( t );
 	
 	if( enumerator->term(false) == NULL ) {
 		_CLDELETE( enumerator );
@@ -98,7 +98,7 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 		{
 			term = enumerator->term();
 			
-			if( term == NULL || _tcscmp(term->field(), field) )
+			if( term.get() == NULL || _tcscmp(term->field(), field) )
 				break;
 			
 			if( !checkLower || lowerValue == NULL || _tcscmp(term->text(), lowerValue) > 0 )
@@ -120,13 +120,11 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 				}
 			}
 			
-			_CLDECDELETE( term );
 		}
 		while( enumerator->next() );
 	}
 	_CLFINALLY
 	(
-		_CLDECDELETE( term );
 		termDocs->close();
 		_CLVDELETE( termDocs );
 		enumerator->close();

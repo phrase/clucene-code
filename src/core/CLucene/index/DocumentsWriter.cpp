@@ -14,6 +14,8 @@
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/document/Field.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/document/Document.h"
 #include "_FieldInfos.h"
@@ -22,7 +24,6 @@
 #include "IndexWriter.h"
 #include "_IndexFileNames.h"
 #include "_FieldsWriter.h"
-#include "Term.h"
 #include "_Term.h"
 #include "_TermInfo.h"
 #include "_TermVector.h"
@@ -79,7 +80,7 @@ AbortException::AbortException(CLuceneError& _err, DocumentsWriter* docWriter):
 }
 
 DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory* directory, IndexWriter* writer):
-  bufferedDeleteTerms(_CLNEW CL_NS(util)::CLHashMap<Term*,Num*, Term_Compare,Term_Equals>),
+  bufferedDeleteTerms(_CLNEW CL_NS(util)::CLHashMap<Term::Pointer, Num*, Term_Compare, Term_Equals, Term::Deletor, Deletor::Object<Num> >),
 	waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) ),
   freeByteBlocks(FreeByteBlocksType(true)), freeCharBlocks(FreeCharBlocksType(true))
 {
@@ -831,7 +832,7 @@ void DocumentsWriter::close() {
   CONDITION_NOTIFYALL(THIS_WAIT_CONDITION)
 }
 
-DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Term* delTerm) {
+DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Term::Pointer delTerm) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
 
   // First, find a thread state.  If this thread already
@@ -878,7 +879,7 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
     bool success = false;
     try {
       state->init(doc, nextDocID);
-      if (delTerm != NULL) {
+      if (delTerm.get() != NULL) {
         addDeleteTerm(delTerm, state->docID);
         state->doFlushAfter = timeToFlushDeletes();
       }
@@ -915,14 +916,15 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
 }
 
 bool DocumentsWriter::addDocument(Document* doc, Analyzer* analyzer){
-  return updateDocument(doc, analyzer, NULL);
+	Term::Pointer emptyTerm;
+	return updateDocument(doc, analyzer, emptyTerm); 
 }
 
-bool DocumentsWriter::updateDocument(Term* t, Document* doc, Analyzer* analyzer){
+bool DocumentsWriter::updateDocument(Term::Pointer t, Document* doc, Analyzer* analyzer){
   return updateDocument(doc, analyzer, t);
 }
 
-bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term* delTerm) {
+bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term::Pointer delTerm) {
 
   // This call is synchronized but fast
   ThreadState* state = getThreadState(doc, delTerm);
@@ -983,9 +985,8 @@ void DocumentsWriter::clearBufferedDeletes() {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   DocumentsWriter::TermNumMapType::iterator term = bufferedDeleteTerms->begin();
   while ( term != bufferedDeleteTerms->end() ){
-    Term* t = term->first;
+    Term::Pointer t = term->first;
     bufferedDeleteTerms->erase(term);
-    _CLDECDELETE(t);
     term = bufferedDeleteTerms->begin();
   }
   bufferedDeleteDocIDs.clear();
@@ -994,17 +995,17 @@ void DocumentsWriter::clearBufferedDeletes() {
     resetPostingsData();
 }
 
-bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<Term*>* terms) {
+bool DocumentsWriter::bufferDeleteTerms(const CLArrayList<Term::Pointer, Term::Deletor>* terms) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)
   }
-  for (size_t i = 0; i < terms->length; i++)
+  for (size_t i = 0; i < terms->size(); i++)
     addDeleteTerm((*terms)[i], numDocsInRAM);
   return timeToFlushDeletes();
 }
 
-bool DocumentsWriter::bufferDeleteTerm(Term* term) {
+bool DocumentsWriter::bufferDeleteTerm(Term::Pointer term) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)
@@ -1038,11 +1039,11 @@ bool DocumentsWriter::hasDeletes() {
 // current number of documents buffered in ram so that the
 // delete term will be applied to those documents as well
 // as the disk segments.
-void DocumentsWriter::addDeleteTerm(Term* term, int32_t docCount) {
+void DocumentsWriter::addDeleteTerm(Term::Pointer term, int32_t docCount) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   Num* num = bufferedDeleteTerms->get(term);
   if (num == NULL) {
-    bufferedDeleteTerms->put(_CL_POINTER(term), new Num(docCount));
+    bufferedDeleteTerms->put(term, new Num(docCount));
     // This is coarse approximation of actual bytes used:
     numBytesUsed += ( _tcslen(term->field()) + term->textLength()) * BYTES_PER_CHAR
         + 4 + 5 * OBJECT_HEADER_BYTES + 5 * OBJECT_POINTER_BYTES;

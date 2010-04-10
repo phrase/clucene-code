@@ -9,6 +9,8 @@
 
 #include "Scorer.h"
 #include "SearchHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Similarity.h"
 #include "ScorerDocQueue.h"
 #include "Explanation.h"

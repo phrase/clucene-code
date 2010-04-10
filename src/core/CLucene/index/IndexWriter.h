@@ -30,7 +30,6 @@ class DocumentsWriter;
 class IndexFileDeleter;
 class LogMergePolicy;
 class IndexDeletionPolicy;
-class Term;
 
 /**
   An <code>IndexWriter</code> creates and maintains an index.
@@ -702,7 +701,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void deleteDocuments(Term* term);
+  void deleteDocuments(Term::Pointer term);
 
   /**
    * Deletes the document(s) containing any of the
@@ -712,7 +711,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void deleteDocuments(const CL_NS(util)::ArrayBase<Term*>* terms);
+  void deleteDocuments(const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms);
 
   /**
    * Updates a document by first deleting the document(s)
@@ -726,7 +725,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void updateDocument(Term* term, CL_NS(document)::Document* doc);
+  void updateDocument(Term::Pointer term, CL_NS(document)::Document* doc);
 
   /**
    * Updates a document by first deleting the document(s)
@@ -741,7 +740,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void updateDocument(Term* term, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
+  void updateDocument(Term::Pointer term, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
   /**
    * Returns default write lock timeout for newly

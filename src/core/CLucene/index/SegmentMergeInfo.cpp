@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_SegmentHeader.h"
 #include "_SegmentMergeInfo.h"
 #include "_SegmentTermEnum.h"
@@ -25,8 +27,8 @@ SegmentMergeInfo::SegmentMergeInfo(const int32_t b, TermEnum* te, IndexReader* r
 
     CND_PRECONDITION(b >= 0, "b is a negative number");
 
-    postings=NULL;
-	term   = te->term();
+    postings = NULL;
+	term = te->term();
 }
 
 SegmentMergeInfo::~SegmentMergeInfo(){
@@ -75,12 +77,10 @@ bool SegmentMergeInfo::next() {
 //Pre  - true
 //Post - Returns true if the term has been moved to the next otherwise false
 	if (termEnum->next()) {
-		_CLDECDELETE(term);
 		term = termEnum->term();
 		return true;
 	} else {
-		_CLDECDELETE(term); //TODO: test HighFreqTerms errors with this
-		term = NULL;
+		term.reset();
 		return false;
 	}
 }
@@ -100,7 +100,6 @@ void SegmentMergeInfo::close() {
         termEnum->close();
         _CLDELETE(termEnum);
     }
-	_CLDECDELETE(term);
 	_CLDELETE_ARRAY(docMap);
 }
 

@@ -96,11 +96,10 @@ void testIWmergeSegments1(CuTest *tc){
 	//test the ram loading
 	RAMDirectory ram2(&ram);
 	IndexReader* reader2 = IndexReader::open(&ram2);
-	Term* term = _CLNEW Term(_T("field0"),fld);
+	Term::Pointer term(new Term(_T("field0"),fld));
 	TermEnum* en = reader2->terms(term);
 	CLUCENE_ASSERT(en->next());
 	_CLDELETE(en);
-	_CLDECDELETE(term);
 	_CLDELETE(reader2);
 }
 
@@ -141,11 +140,11 @@ void testIWmergeSegments2(CuTest *tc){
 
 	//test the ram querying
 	IndexSearcher searcher(fsdir);
-	Term* term0 = _CLNEW Term(_T("field0"),_T("value1"));
+	Term::Pointer term0(new Term(_T("field0"),_T("value1")));
 	Query* query0 = QueryParser::parse(_T("value0"),_T("field0"),&a);
 	Hits* hits0 = searcher.search(query0);
 	CLUCENE_ASSERT(hits0->length() > 0);
-	Term* term1 = _CLNEW Term(_T("field0"),_T("value0"));
+	Term::Pointer term1(new Term(_T("field0"),_T("value0")));
 	Query* query1 = QueryParser::parse(_T("value1"),_T("field0"),&a);
 	Hits* hits1 = searcher.search(query1);
 	CLUCENE_ASSERT(hits1->length() > 0);
@@ -153,8 +152,6 @@ void testIWmergeSegments2(CuTest *tc){
 	_CLDELETE(query1);
 	_CLDELETE(hits0);
   _CLDELETE(hits1);
-	_CLDECDELETE(term0);
-	_CLDECDELETE(term1);
 	_CLDECDELETE(dir);
 }
 

@@ -7,7 +7,8 @@
 #ifndef _lucene_search_PrefixQuery
 #define _lucene_search_PrefixQuery
 
-CL_CLASS_DEF(index,Term)
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 //#include "CLucene/index/Terms.h"
 //#include "CLucene/index/IndexReader.h"
 //#include "SearchHeader.h"
@@ -22,13 +23,13 @@ CL_NS_DEF(search)
 * is built by QueryParser for input like <code>app*</code>. */
 	class CLUCENE_EXPORT PrefixQuery: public Query {
 	private:
-		CL_NS(index)::Term* prefix;
+		CL_NS(index)::Term::Pointer prefix;
 	protected:
 		PrefixQuery(const PrefixQuery& clone);
 	public:
 
 		//Constructor. Constructs a query for terms starting with prefix
-		PrefixQuery(CL_NS(index)::Term* Prefix);
+		PrefixQuery(CL_NS(index)::Term::Pointer prefix);
 
 		//Destructor
 		~PrefixQuery();
@@ -38,7 +39,7 @@ CL_NS_DEF(search)
 		static const char* getClassName();
 
 		/** Returns the prefix of this query. */
-		CL_NS(index)::Term* getPrefix(bool pointer=true);
+		CL_NS(index)::Term::Pointer getPrefix(bool pointer=true);
 
     Query* combine(CL_NS(util)::ArrayBase<Query*>* queries);
 		Query* rewrite(CL_NS(index)::IndexReader* reader);
@@ -55,13 +56,13 @@ CL_NS_DEF(search)
     class CLUCENE_EXPORT PrefixFilter: public Filter 
     {
     private:
-    	CL_NS(index)::Term* prefix;
+    	CL_NS(index)::Term::Pointer prefix;
     protected:
     	PrefixFilter( const PrefixFilter& copy );
     public:
       class PrefixGenerator;
 
-    	PrefixFilter(CL_NS(index)::Term* prefix);
+    	PrefixFilter(CL_NS(index)::Term::Pointer prefix);
     	~PrefixFilter();
     
     	/** Returns a BitSet with true for documents which should be permitted in
@@ -74,7 +75,7 @@ CL_NS_DEF(search)
     	TCHAR* toString();
 
 		// Returns a reference of internal prefix
-		CL_NS(index)::Term* getPrefix() const;
+		CL_NS(index)::Term::Pointer getPrefix() const;
     };
 CL_NS_END
 #endif

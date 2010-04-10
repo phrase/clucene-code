@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "DirectoryIndexReader.h"
 #include "_IndexFileDeleter.h"
 #include "IndexDeletionPolicy.h"

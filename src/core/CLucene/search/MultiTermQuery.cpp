@@ -5,11 +5,12 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "MultiTermQuery.h"
 #include "BooleanQuery.h"
 #include "FilteredTermEnum.h"
 #include "TermQuery.h"
-#include "CLucene/index/Term.h"
 #include "CLucene/util/StringBuffer.h"
 
 CL_NS_USE(index)
@@ -18,35 +19,29 @@ CL_NS_DEF(search)
 
 /** Constructs a query for terms matching <code>term</code>. */
 
-  MultiTermQuery::MultiTermQuery(Term* t){
+  MultiTermQuery::MultiTermQuery(Term::Pointer t){
   //Func - Constructor
   //Pre  - t != NULL
   //Post - The instance has been created
 
-      CND_PRECONDITION(t != NULL, "t is NULL");
+      CND_PRECONDITION(t.get() != NULL, "t is NULL");
 
-      term  = _CL_POINTER(t);
-
+      term = t;
   }
   MultiTermQuery::MultiTermQuery(const MultiTermQuery& clone):
   	Query(clone)	
   {
-	term = _CLNEW Term(clone.getTerm(false),clone.getTerm(false)->text());
+	term.reset(new Term(clone.getTerm(false), clone.getTerm(false)->text()));
   }
 
   MultiTermQuery::~MultiTermQuery(){
   //Func - Destructor
   //Pre  - true
   //Post - The instance has been destroyed
-
-      _CLDECDELETE(term);
   }
 
-  Term* MultiTermQuery::getTerm(bool pointer) const{
-	if ( pointer )
-		return _CL_POINTER(term);
-	else
-		return term;
+  Term::Pointer MultiTermQuery::getTerm(bool pointer) const {
+	return term;
   }
 
 	Query* MultiTermQuery::rewrite(IndexReader* reader) {
@@ -54,8 +49,8 @@ CL_NS_DEF(search)
 		BooleanQuery* query = _CLNEW BooleanQuery( true );
 		try {
             do {
-                Term* t = enumerator->term(false);
-                if (t != NULL) {
+                Term::Pointer t = enumerator->term(false);
+                if (t.get() != NULL) {
                     TermQuery* tq = _CLNEW TermQuery(t);	// found a match
                     tq->setBoost(getBoost() * enumerator->difference()); // set the boost
                     query->add(tq,true, false, false);		// add to q

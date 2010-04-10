@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "IndexModifier.h"
 
 #include "IndexWriter.h"
@@ -101,7 +103,7 @@ void IndexModifier::addDocument(Document* doc, Analyzer* docAnalyzer) {
 		indexWriter->addDocument(doc);
 }
 
-int32_t IndexModifier::deleteDocuments(Term* term) {
+int32_t IndexModifier::deleteDocuments(Term::Pointer term) {
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
@@ -216,18 +218,18 @@ int64_t IndexModifier::getCurrentVersion() const{
 	return IndexReader::getCurrentVersion(directory);
 }
 
-TermDocs* IndexModifier::termDocs(Term* term){
+TermDocs* IndexModifier::termDocs(Term::Pointer term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
 	return indexReader->termDocs(term);
 }
 
-TermEnum* IndexModifier::terms(Term* term){
+TermEnum* IndexModifier::terms(Term::Pointer term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
-	if ( term != NULL )
+	if ( term.get() != NULL )
 		return indexReader->terms(term);
 	else
 		return indexReader->terms();

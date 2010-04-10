@@ -33,9 +33,8 @@ bool atomicSearchFailed = false;
 		      d.add(*_CLNEW Field(_T("contents"), sb.getBuffer() , Field::STORE_NO | Field::INDEX_TOKENIZED));
           //wprintf(L"update on thread %lld #%d, doc %s\n", _LUCENE_CURRTHREADID, i, buf);
 		      _i64tot(i,buf,10);
-		      Term* t = _CLNEW Term(_T("id"), buf);
+		      Term::Pointer t(new Term(_T("id"), buf));
 		      writer->updateDocument(t, &d);
-		      _CLDECDELETE(t);
 		    }
 
 	      count++;

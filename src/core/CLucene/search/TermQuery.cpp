@@ -9,7 +9,6 @@
 
 #include "SearchHeader.h"
 #include "Scorer.h"
-#include "CLucene/index/Term.h"
 #include "Explanation.h"
 #include "Similarity.h"
 #include "Searchable.h"
@@ -32,10 +31,10 @@ CL_NS_DEF(search)
 		float_t queryWeight;
 
 		TermQuery* parentQuery;	// CLucene specific
-		CL_NS(index)::Term* _term;
+		CL_NS(index)::Term::Pointer _term;
 
 	public:
-		TermWeight(Searcher* searcher, TermQuery* parentQuery, CL_NS(index)::Term* _term);
+		TermWeight(Searcher* searcher, TermQuery* parentQuery, CL_NS(index)::Term::Pointer _term);
 		virtual ~TermWeight();
 		
 		// return a *new* string describing this object
@@ -51,16 +50,18 @@ CL_NS_DEF(search)
 
 
 	/** Constructs a query for the term <code>t</code>. */
-	TermQuery::TermQuery(Term* t):
-		term( _CL_POINTER(t) )
+	TermQuery::TermQuery(Term::Pointer t):
+		term(t)
 	{
 	}
+
 	TermQuery::TermQuery(const TermQuery& clone):
   		Query(clone){
-		this->term=_CL_POINTER(clone.term);
+		this->term = clone.term;
 	}
-	TermQuery::~TermQuery(){
-	    _CLLDECDELETE(term);
+
+	TermQuery::~TermQuery() {
+		// empty
 	}
 
 	Query* TermQuery::clone() const{
@@ -78,12 +79,8 @@ CL_NS_DEF(search)
 	}
 
 	//added by search highlighter
-	Term* TermQuery::getTerm(bool pointer) const
-	{
-		if ( pointer )
-			return _CL_POINTER(term);
-		else
-			return term;
+	Term::Pointer TermQuery::getTerm(bool pointer) const {
+		return term;
 	}
 
 	TCHAR* TermQuery::toString(const TCHAR* field) const{
@@ -109,7 +106,7 @@ CL_NS_DEF(search)
 			&& this->term->equals(tq->term);
 	}
 
-   TermWeight::TermWeight(Searcher* _searcher, TermQuery* _parentQuery, Term* term):similarity(_searcher->getSimilarity()),
+   TermWeight::TermWeight(Searcher* _searcher, TermQuery* _parentQuery, Term::Pointer term):similarity(_searcher->getSimilarity()),
 	   value(0), queryNorm(0),queryWeight(0), parentQuery(_parentQuery),_term(term)
    {
 		   idf = similarity->idf(term, _searcher); // compute idf

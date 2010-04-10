@@ -16,6 +16,7 @@
 #include "Explanation.h"
 
 #include "CLucene/index/_Term.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/index/Terms.h"
 #include "CLucene/index/IndexReader.h"
@@ -59,15 +60,16 @@ CL_NS_DEF(search)
 	};
 
   PhraseQuery::PhraseQuery():
-	field(NULL), terms(_CLNEW CL_NS(util)::CLVector<CL_NS(index)::Term*>(false) ),
+	field(NULL),
+	terms(_CLNEW CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>(false) ),
 		positions(_CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>), slop(0)
   {
   }
 
   PhraseQuery::PhraseQuery(const PhraseQuery& clone):
 	Query(clone),
-		terms(_CLNEW CL_NS(util)::CLVector<CL_NS(index)::Term*>(false) ),
-		positions(_CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>)
+	terms(_CLNEW CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>(false) ),
+	positions(_CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>)
   {
       slop  = clone.slop;
 	  field = clone.field;
@@ -81,7 +83,7 @@ CL_NS_DEF(search)
 	  size=clone.terms->size();
 	  { //msvc6 scope fix
 		  for ( int32_t i=0;i<size;i++ ){
-			  this->terms->push_back( _CL_POINTER((*clone.terms)[i]));
+			  this->terms->push_back((*clone.terms)[i]);
 		  }
 	  }
   }
@@ -100,9 +102,11 @@ CL_NS_DEF(search)
 	  bool ret = (this->getBoost() == pq->getBoost()) && (this->slop == pq->slop);
 
 	  if ( ret ){
-		  CLListEquals<CL_NS(index)::Term,CL_NS(index)::Term_Equals,
-			  const CL_NS(util)::CLVector<CL_NS(index)::Term*>,
-			  const CL_NS(util)::CLVector<CL_NS(index)::Term*> > comp;
+		CLListEquals<
+			Term::Pointer,
+			Term_Equals,
+			const CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>,
+			const CL_NS(util)::CLVector<Term::Pointer, Term::Deletor> > comp;
 		  ret = comp.equals(this->terms,pq->terms);
 	  }
 
@@ -121,10 +125,6 @@ CL_NS_DEF(search)
   //Pre  - true
   //Post 0 The instance has been destroyed
 
-	  //Iterate through all the terms
-	  for (size_t i = 0; i < terms->size(); i++){
-        _CLLDECDELETE((*terms)[i]);
-      }
 	  _CLLDELETE(terms);
 	  _CLLDELETE(positions);
   }
@@ -154,8 +154,8 @@ CL_NS_DEF(search)
     return getClassName();
   }
 
-  void PhraseQuery::add(Term* term) {
-	  CND_PRECONDITION(term != NULL,"term is NULL");
+  void PhraseQuery::add(Term::Pointer term) {
+	  CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
 	  int32_t position = 0;
 
@@ -165,9 +165,9 @@ CL_NS_DEF(search)
 	  add(term, position);
   }
 
-  void PhraseQuery::add(Term* term, int32_t position) {
+  void PhraseQuery::add(Term::Pointer term, int32_t position) {
 
-	  CND_PRECONDITION(term != NULL,"term is NULL");
+	  CND_PRECONDITION(term.get() != NULL,"term is NULL");
 
 	  if (terms->size() == 0)
 		  field = term->field();
@@ -182,7 +182,7 @@ CL_NS_DEF(search)
 	  }
 
 	  //Store the _CLNEW term
-	  terms->push_back(_CL_POINTER(term));
+	  terms->push_back(term);
 	  positions->push_back(position);
   }
 
@@ -196,7 +196,7 @@ CL_NS_DEF(search)
 
 	Weight* PhraseQuery::_createWeight(Searcher* searcher) {
 		if (terms->size() == 1) {			  // optimize one-term case
-			Term* term = (*terms)[0];
+			Term::Pointer term = (*terms)[0];
 			Query* termQuery = _CLNEW TermQuery(term);
 			termQuery->setBoost(getBoost());
 			Weight* ret = termQuery->_createWeight(searcher);
@@ -207,22 +207,20 @@ CL_NS_DEF(search)
 	}
 
 
-  Term** PhraseQuery::getTerms() const{
+	CL_NS(util)::CLVector<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* PhraseQuery::getTerms() const {
   //Func - added by search highlighter
 
-	  //Let size contain the number of terms
-      int32_t size = terms->size();
-      Term** ret = _CL_NEWARRAY(Term*,size+1);
+		CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>* ret = _CLNEW CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>(false)
+		
+		CND_CONDITION(ret != NULL,"Could not allocated memory for ret");
 
-	  CND_CONDITION(ret != NULL,"Could not allocated memory for ret");
+		//Iterate through terms and copy each pointer to ret
+		for (int32_t i = 0; i < terms->size(); i++) {
+			ret->push_back((*terms)[i]);
+		}
 
-	  //Iterate through terms and copy each pointer to ret
-	  for ( int32_t i=0;i<size;i++ ){
-          ret[i] = (*terms)[i];
-     }
-     ret[size] = NULL;
-     return ret;
-  }
+		return ret;
+	}
 
   TCHAR* PhraseQuery::toString(const TCHAR* f) const{
 	  //Func - Prints a user-readable version of this query.
@@ -240,7 +238,7 @@ CL_NS_DEF(search)
 
 	  buffer.appendChar( _T('"') );
 
-	  Term *T = NULL;
+	  Term::Pointer T;
 
 	  //iterate through all terms
 	  for (size_t i = 0; i < terms->size(); i++) {
@@ -382,7 +380,7 @@ CL_NS_DEF(search)
 			  query.appendChar(' ');
 		  }
 
-		  Term* term = (*parentQuery->terms)[i];
+		  Term::Pointer term = (*parentQuery->terms)[i];
 
 		  docFreqs.append(term->text());
 		  docFreqs.appendChar('=');

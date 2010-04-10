@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 #include "MultiSearcher.h"
 #include "SearchHeader.h"
@@ -62,7 +64,7 @@ CL_NS_DEF(search)
      }
   }
 
-  int32_t MultiSearcher::docFreq(const Term* term) const {
+  int32_t MultiSearcher::docFreq(Term::ConstPointer term) const {
     int32_t docFreq = 0;
 	for (int32_t i = 0; i < searchablesLen; ++i)
       docFreq += searchables[i]->docFreq(term);

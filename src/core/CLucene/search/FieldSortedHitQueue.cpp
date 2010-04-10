@@ -9,6 +9,8 @@
 #include "_FieldDocSortedHitQueue.h"
 #include "_FieldCacheImpl.h"
 #include "Compare.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 
 CL_NS_USE(util)

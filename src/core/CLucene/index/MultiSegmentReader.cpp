@@ -5,11 +5,11 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
-
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "IndexReader.h"
 #include "CLucene/document/Document.h"
 #include "CLucene/document/FieldSelector.h"
-#include "Term.h"
 #include "Terms.h"
 #include "CLucene/util/PriorityQueue.h"
 #include "_SegmentHeader.h"
@@ -339,16 +339,17 @@ void MultiSegmentReader::doSetNorm(int32_t n, const TCHAR* field, uint8_t value)
 }
 
 TermEnum* MultiSegmentReader::terms() {
-  ensureOpen();
-	return _CLNEW MultiTermEnum(subReaders, starts, NULL);
+	ensureOpen();
+	Term::ConstPointer emptyPointer;
+	return _CLNEW MultiTermEnum(subReaders, starts, emptyPointer);
 }
 
-TermEnum* MultiSegmentReader::terms(const Term* term) {
+TermEnum* MultiSegmentReader::terms(Term::ConstPointer term) {
     ensureOpen();
 	return _CLNEW MultiTermEnum(subReaders, starts, term);
 }
 
-int32_t MultiSegmentReader::docFreq(const Term* t) {
+int32_t MultiSegmentReader::docFreq(Term::ConstPointer t) {
     ensureOpen();
 	int32_t total = 0;				  // sum freqs in Multi
 	for (size_t i = 0; i < subReaders->length; i++)
@@ -488,22 +489,13 @@ const char* MultiSegmentReader::getObjectName() const{
   return getClassName();
 }
 
-
-
-
-
-
-
-
-
-
 void MultiTermDocs::init(ArrayBase<IndexReader*>* r, const int32_t* s){
 	subReaders       = r;
 	starts        = s;
 	base          = 0;
 	pointer       = 0;
 	current       = NULL;
-	term          = NULL;
+	term.reset();
 	readerTermDocs   = NULL;
 
 	//Check if there are subReaders
@@ -556,23 +548,24 @@ void MultiTermDocs::seek(TermEnum* termEnum){
 	seek(termEnum->term(false));
 }
 
-void MultiTermDocs::seek( Term* tterm) {
+void MultiTermDocs::seek(Term::Pointer tterm) {
 //Func - Resets the instance for a new search
 //Pre  - tterm != NULL
 //Post - The instance has been reset for a new search
 
-	CND_PRECONDITION(tterm != NULL, "tterm is NULL");
+	CND_PRECONDITION(tterm.get() != NULL, "tterm is NULL");
 
+	// TODO: Is this still needed?
 	//Assigning tterm is done as below for a reason
 	//The construction ensures that if seek is called from within
 	//MultiTermDocs with as argument this->term (seek(this->term)) that the assignment
 	//will succeed and all referencecounters represent the correct situation
 
 	//Get a pointer from tterm and increase its reference counter
-	Term *TempTerm = _CL_POINTER(tterm);
+	Term::Pointer TempTerm = tterm;
 
 	//Finialize term to ensure we decrease the reference counter of the instance which term points to
-	_CLDECDELETE(term);
+	term.reset();
 
 	//Assign TempTerm to term
 	term = TempTerm;
@@ -666,7 +659,7 @@ void MultiTermDocs::close() {
 	base          = 0;
 	pointer       = 0;
 
-	_CLDECDELETE(term);
+	term.reset();
 }
 
 TermDocs* MultiTermDocs::termDocs(IndexReader* reader) {
@@ -688,7 +681,7 @@ TermDocs* MultiTermDocs::termDocs(const int32_t i) {
 }
 
 
-MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t *starts, const Term* t){
+MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t *starts, Term::ConstPointer t){
 //Func - Constructor
 //       Opens all enumerations of all readers
 //Pre  - readers != NULL and contains an array of IndexReader instances each responsible for
@@ -708,7 +701,6 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 	TermEnum* termEnum  = NULL;
 	SegmentMergeInfo* smi      = NULL;
 	_docFreq = 0;
-	_term = NULL;
 	queue                      = _CLNEW SegmentMergeQueue(subReaders->length);
 
 	CND_CONDITION (queue != NULL, "Could not allocate memory for queue");
@@ -719,7 +711,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 		reader = (*subReaders)[i];
 
 		//Check if the enumeration must start from term t
-		if (t != NULL) {
+		if (t.get() != NULL) {
 			//termEnum is an enumeration of terms starting at or after the named term t
 			termEnum = reader->terms(t);
 		}else{
@@ -733,7 +725,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 		// Note that in the call termEnum->getTerm(false) below false is required because
 		// otherwise a reference is leaked. By passing false getTerm is
 		// ordered to return an unowned reference instead. (Credits for DSR)
-		if (t == NULL ? smi->next() : termEnum->term(false) != NULL){
+		if (t.get() == NULL ? smi->next() : termEnum->term(false) != NULL){
 			// initialize queue
 			queue->put(smi);
 		} else{
@@ -745,7 +737,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 	}
 
 	//Check if the queue has elements
-	if (t != NULL && queue->size() > 0) {
+	if (t.get() != NULL && queue->size() > 0) {
 		next();
 	}
 }
@@ -770,18 +762,17 @@ bool MultiTermEnum::next(){
 
 	SegmentMergeInfo* top = queue->top();
 	if (top == NULL) {
-	    _CLDECDELETE(_term);
-	    _term = NULL;
+		_term.reset();
 	    return false;
 	}
 
 	//The getTerm method requires the client programmer to indicate whether he
 	// owns the returned reference, so we can discard ours
 	// right away.
-	_CLDECDELETE(_term);
+	//_CLDECDELETE(_term);
 
 	//Assign term the term of top and make sure the reference counter is increased
-	_term = _CL_POINTER(top->term);
+	_term = top->term;
 	_docFreq = 0;
 
 	//Find the next term
@@ -805,7 +796,7 @@ bool MultiTermEnum::next(){
 }
 
 
-Term* MultiTermEnum::term() {
+Term::Pointer MultiTermEnum::term() {
 //Func - Returns the current term of the set of enumerations
 //Pre  - pointer is true or false and indicates if the reference counter
 //       of term must be increased or not
@@ -813,14 +804,11 @@ Term* MultiTermEnum::term() {
 //Post - pointer = true -> term has been returned with an increased reference counter
 //       pointer = false -> term has been returned
 
-	return _CL_POINTER(_term);
+	return _term;
 }
 
-Term* MultiTermEnum::term(bool pointer) {
-  	if ( pointer )
-    	return _CL_POINTER(_term);
-    else
-    	return _term;
+Term::Pointer MultiTermEnum::term(bool pointer) {
+   	return _term;
 }
 
 int32_t MultiTermEnum::docFreq() const {
@@ -840,17 +828,9 @@ void MultiTermEnum::close() {
 //       the closing of the queue
 //       term has been finalized and reset to NULL
 
-	// Needed when this enumeration hasn't actually been exhausted yet
-	_CLDECDELETE(_term);
-
 	//Close the queue This will destroy all SegmentMergeInfo instances!
 	queue->close();
-
 }
-
-
-
-
 
 MultiTermPositions::MultiTermPositions(ArrayBase<IndexReader*>* r, const int32_t* s){
 //Func - Constructor

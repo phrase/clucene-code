@@ -8,6 +8,8 @@
 #include "Query.h"
 #include "MatchAllDocsQuery.h"
 #include "Explanation.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Searchable.h"
 
 #include "CLucene/index/IndexReader.h"

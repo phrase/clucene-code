@@ -9,7 +9,6 @@
 
 
 //#include "CLucene/document/DateField.h"
-CL_CLASS_DEF(index,Term)
 //#include "CLucene/index/Terms.h"
 //#include "CLucene/index/IndexReader.h"
 //#include "CLucene/util/BitSet.h"
@@ -29,8 +28,8 @@ CL_NS_DEF(search)
  */
   class CLUCENE_EXPORT DateFilter: public Filter {
   private:
-	CL_NS(index)::Term* start;
-    CL_NS(index)::Term* end;
+	CL_NS(index)::Term::Pointer start;
+    CL_NS(index)::Term::Pointer end;
 
   protected:
     DateFilter(const DateFilter& copy);

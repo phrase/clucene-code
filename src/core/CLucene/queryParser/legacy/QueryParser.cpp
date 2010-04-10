@@ -12,6 +12,7 @@
 #include "CLucene/search/SearchHeader.h"
 #include "CLucene/search/BooleanClause.h"
 #include "CLucene/search/Query.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "QueryToken.h"
 

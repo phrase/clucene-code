@@ -12,7 +12,6 @@
 
 CL_NS_DEF(index)
 
-class Term;
 class IndexReader;
 
 class MultipleTermPositions : public TermPositions {
@@ -31,7 +30,7 @@ public:
 	* 
 	* @exception IOException
 	*/ 
-  MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<Term*>* terms);
+  MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms);
 	virtual ~MultipleTermPositions(){}
 
 	bool next();
@@ -50,7 +49,7 @@ public:
 	* Not implemented.
 	* @throws UnsupportedOperationException
 	*/
-	void seek(Term*) {
+	void seek(Term::Pointer) {
 		_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
 	}
 

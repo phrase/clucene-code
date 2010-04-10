@@ -13,6 +13,7 @@
 #include "CLucene/store/IndexInput.h"
 #include "CLucene/store/IndexOutput.h"
 #include "CLucene/index/IndexReader.h"
+#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "Terms.h"
 #include "_TermInfo.h"
@@ -58,9 +59,9 @@ public:
 	SegmentTermDocs( const SegmentReader* Parent);
     virtual ~SegmentTermDocs();
 
-	virtual void seek(Term* term);
+	virtual void seek(Term::Pointer term);
     virtual void seek(TermEnum* termEnum);
-	virtual void seek(const TermInfo* ti,Term* term);
+	virtual void seek(const TermInfo* ti, Term::Pointer term);
 
 	virtual void close();
 	virtual int32_t doc()const;
@@ -105,7 +106,7 @@ public:
 	~SegmentTermPositions();
 
 private:
-	void seek(const TermInfo* ti, Term* term);
+	void seek(const TermInfo* ti, Term::Pointer term);
 
 public:
 	void close();
@@ -152,7 +153,7 @@ private:
 	virtual TermPositions* __asTermPositions();
 
     //resolve SegmentTermDocs/TermPositions ambiguity
-	void seek(Term* term){ SegmentTermDocs::seek(term); }
+	void seek(Term::Pointer term){ SegmentTermDocs::seek(term); }
     void seek(TermEnum* termEnum){ SegmentTermDocs::seek(termEnum); }
     int32_t doc() const{ return SegmentTermDocs::doc(); }
 	int32_t freq() const{ return SegmentTermDocs::freq(); }
@@ -345,7 +346,7 @@ public:
 	///Returns an enumeration of all the Terms and TermInfos in the set.
 	TermEnum* terms();
 	///Returns an enumeration of terms starting at or after the named term t
-	TermEnum* terms(const Term* t);
+	TermEnum* terms(Term::ConstPointer t);
 
 	///Gets the document identified by n
 	bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
@@ -359,7 +360,7 @@ public:
 	TermPositions* termPositions();
 
 	///Returns the number of documents which contain the term t
-	int32_t docFreq(const Term* t);
+	int32_t docFreq(Term::ConstPointer t);
 
 	///Returns the actual number of documents in the segment
 	int32_t numDocs();

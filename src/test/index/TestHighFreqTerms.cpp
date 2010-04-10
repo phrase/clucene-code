@@ -9,14 +9,13 @@
 	class TestTermInfo: LUCENE_BASE {
 	public:
       int32_t docFreq;
-      Term* term;
+      Term::Pointer term;
       
-      TestTermInfo(Term* t, int32_t df) {
-        term = _CL_POINTER(t);
+      TestTermInfo(Term::Pointer t, int32_t df) {
+        term = t;
         docFreq = df;
       }
       ~TestTermInfo(){
-         _CLDECDELETE(term);
       }
     };
 
@@ -41,7 +40,7 @@
         int32_t minFreq = 0;
         while (terms->next()) {
           if (terms->docFreq() > minFreq) {
-            Term* term = terms->term(false);
+            Term::Pointer term = terms->term(false);
 			tiq->put(_CLNEW TestTermInfo(term, terms->docFreq()));
             c++;
             if (tiq->size() >= numTerms) {		  // if tiq overfull

@@ -9,7 +9,6 @@
 
 
 //#include "CLucene/index/IndexReader.h"
-CL_CLASS_DEF(index,Term)
 //#include "Filter.h"
 CL_CLASS_DEF(document,Document)
 //#include "Sort.h"
@@ -66,7 +65,7 @@ CL_NS_DEF(search)
       * Called by search code to compute term weights.
       * @see IndexReader#docFreq(Term).
       */
-      virtual int32_t docFreq(const CL_NS(index)::Term* term) const = 0;
+      virtual int32_t docFreq(CL_NS(index)::Term::ConstPointer term) const = 0;
 
       /** Expert: Returns one greater than the largest possible document number.
       * Called by search code to compute term weights.

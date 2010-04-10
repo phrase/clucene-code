@@ -21,7 +21,7 @@ private:
 	TermPositions* postings;
 public:
 	TermEnum* termEnum;
-	Term* term;
+	Term::Pointer term;
 	int32_t base;
 	IndexReader* reader;
      

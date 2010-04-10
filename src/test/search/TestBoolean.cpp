@@ -9,35 +9,27 @@
 /// TestBooleanQuery.java, ported 5/9/2009
 void testEquality(CuTest *tc) {
     BooleanQuery* bq1 = _CLNEW BooleanQuery();
-    Term* t = _CLNEW Term(_T("field"), _T("value1"));
+    Term::Pointer t(new Term(_T("field"), _T("value1")));
     bq1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("value2"));
+    t.reset(_CLNEW Term(_T("field"), _T("value2")));
     bq1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
     BooleanQuery* nested1 = _CLNEW BooleanQuery();
-    t = _CLNEW Term(_T("field"), _T("nestedvalue1"));
+    t.reset(new Term(_T("field"), _T("nestedvalue1")));
     nested1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("nestedvalue2"));
+    t.reset(new Term(_T("field"), _T("nestedvalue2")));
     nested1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
     bq1->add(nested1, true, BooleanClause::SHOULD);
 
     BooleanQuery* bq2 = _CLNEW BooleanQuery();
-    t = _CLNEW Term(_T("field"), _T("value1"));
+    t.reset(new Term(_T("field"), _T("value1")));
     bq2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("value2"));
+    t.reset(new Term(_T("field"), _T("value2")));
     bq2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
     BooleanQuery* nested2 = _CLNEW BooleanQuery();
-    t = _CLNEW Term(_T("field"), _T("nestedvalue1"));
+    t.reset(new Term(_T("field"), _T("nestedvalue1")));
     nested2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("nestedvalue2"));
+    t.reset(new Term(_T("field"), _T("nestedvalue2")));
     nested2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
     bq2->add(nested2, true, BooleanClause::SHOULD);
 
     CLUCENE_ASSERT(bq1->equals(bq2));
@@ -74,18 +66,15 @@ void testBooleanScorer(CuTest *tc) {
         _CLLDELETE(writer);
 
         BooleanQuery* booleanQuery1 = _CLNEW BooleanQuery();
-        Term *t = _CLNEW Term(FIELD, _T("1"));
+        Term::Pointer t(new Term(FIELD, _T("1")));
         booleanQuery1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-        _CLDECDELETE(t);
-        t = _CLNEW Term(FIELD, _T("2"));
+        t.reset(new Term(FIELD, _T("2")));
         booleanQuery1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-        _CLDECDELETE(t);
 
         BooleanQuery* query = _CLNEW BooleanQuery();
         query->add(booleanQuery1, true, BooleanClause::MUST);
-        t = _CLNEW Term(FIELD, _T("9"));
+        t.reset(new Term(FIELD, _T("9")));
         query->add(_CLNEW TermQuery(t), true, BooleanClause::MUST_NOT);
-        _CLDECDELETE(t);
 
         IndexSearcher *indexSearcher = _CLNEW IndexSearcher(&directory);
         Hits *hits = indexSearcher->search(query);
@@ -122,9 +111,8 @@ void testBooleanPrefixQuery(CuTest* tc) {
         _CLLDELETE(writer);
 
         IndexReader* reader = IndexReader::open(&directory);
-        Term* t = _CLNEW Term(_T("category"), _T("foo"));
+        Term::Pointer t(new Term(_T("category"), _T("foo")));
         PrefixQuery* query = _CLNEW PrefixQuery(t);
-        _CLDECDELETE(t);
 
         rw1 = query->rewrite(reader);
 

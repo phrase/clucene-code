@@ -11,7 +11,6 @@
 CL_NS_DEF(index)
 
 //predefine
-class Term;
 class TermEnum;
 class TermPositions;
 
@@ -30,7 +29,7 @@ public:
 
 	// Sets this to the data for a term.
 	// The enumeration is reset to the start of the data for this term.
-	virtual void seek(Term* term)=0;
+	virtual void seek(Term::Pointer term)=0;
 
 	/** Sets this to the data for the current term in a {@link TermEnum}.
 	* This may be optimized in some implementations.
@@ -94,10 +93,10 @@ public:
 	virtual bool next()=0;
 
 	// Returns a pointer to the current Term in the enumeration.
-	virtual Term* term()=0;
+	virtual Term::Pointer term()=0;
 
 	/** Returns the current Term in the enumeration.*/
-	virtual Term* term(bool pointer);
+	virtual Term::Pointer term(bool pointer);
 
 	/** Returns the docFreq of the current Term in the enumeration.*/
 	virtual int32_t docFreq() const=0;
@@ -121,7 +120,7 @@ public:
 	* </pre>
 	* Some implementations are considerably more efficient than that.
 	*/
-	virtual bool skipTo(Term* target);
+	virtual bool skipTo(Term::Pointer target);
 };
 
 

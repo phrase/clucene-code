@@ -148,7 +148,7 @@ public:
         this->num = num;
     }
   };
-  typedef CL_NS(util)::CLHashMap<Term*,Num*, Term_Compare,Term_Equals> TermNumMapType;
+  typedef CL_NS(util)::CLHashMap<Term::Pointer, Num*, Term_Compare, Term_Equals, Term::Deletor, CL_NS(util)::Deletor::Object<Num> > TermNumMapType;
 
 private:
   IndexWriter* writer;
@@ -355,7 +355,7 @@ private:
   // current number of documents buffered in ram so that the
   // delete term will be applied to those documents as well
   // as the disk segments.
-  void addDeleteTerm(Term* term, int32_t docCount);
+  void addDeleteTerm(Term::Pointer term, int32_t docCount);
 
   // Buffer a specific docID for deletion.  Currently only
   // used when we hit a exception when adding a document
@@ -862,15 +862,15 @@ public:
    * flush is pending.  If delTerm is non-null then we
    * buffer this deleted term after the thread state has
    * been acquired. */
-  ThreadState* getThreadState(CL_NS(document)::Document* doc, Term* delTerm);
+  ThreadState* getThreadState(CL_NS(document)::Document* doc, Term::Pointer delTerm);
 
   /** Returns true if the caller (IndexWriter) should now
    * flush. */
   bool addDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
-  bool updateDocument(Term* t, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
+  bool updateDocument(Term::Pointer t, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
-  bool updateDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer, Term* delTerm);
+  bool updateDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer, Term::Pointer delTerm);
 
   int32_t getNumBufferedDeleteTerms();
 
@@ -881,9 +881,9 @@ public:
   // Reset buffered deletes.
   void clearBufferedDeletes();
 
-  bool bufferDeleteTerms(const CL_NS(util)::ArrayBase<Term*>* terms);
+  bool bufferDeleteTerms(const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms);
 
-  bool bufferDeleteTerm(Term* term);
+  bool bufferDeleteTerm(Term::Pointer term);
 
   void setMaxBufferedDeleteTerms(int32_t maxBufferedDeleteTerms);
 

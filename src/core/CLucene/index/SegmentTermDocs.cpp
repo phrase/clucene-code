@@ -5,10 +5,11 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_SegmentHeader.h"
 
 #include "CLucene/store/IndexInput.h"
-#include "Term.h"
 #include <assert.h>
 
 CL_NS_DEF(index)
@@ -29,7 +30,7 @@ CL_NS_DEF(index)
 	  return NULL;
   }
 
-  void SegmentTermDocs::seek(Term* term) {
+  void SegmentTermDocs::seek(Term::Pointer term) {
     TermInfo* ti = parent->tis->get(term);
     seek(ti, term);
     _CLDELETE(ti);
@@ -37,7 +38,7 @@ CL_NS_DEF(index)
 
   void SegmentTermDocs::seek(TermEnum* termEnum){
     TermInfo* ti=NULL;
-    Term* term = NULL;
+    Term::Pointer term;
 
       // use comparison of fieldinfos to verify that termEnum belongs to the same segment as this SegmentTermDocs
     if ( termEnum->getObjectName() == SegmentTermEnum::getClassName() &&
@@ -53,7 +54,7 @@ CL_NS_DEF(index)
     seek(ti,term);
     _CLDELETE(ti);
   }
-  void SegmentTermDocs::seek(const TermInfo* ti,Term* term) {
+  void SegmentTermDocs::seek(const TermInfo* ti, Term::Pointer term) {
 	  count = 0;
 	  FieldInfo* fi = parent->_fieldInfos->fieldInfo(term->field());
 	  currentFieldStoresPayloads = (fi != NULL) ? fi->storePayloads : false;

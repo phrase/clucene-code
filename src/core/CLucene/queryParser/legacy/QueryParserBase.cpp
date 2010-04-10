@@ -20,6 +20,7 @@
 #include "CLucene/search/SearchHeader.h"
 #include "CLucene/search/BooleanClause.h"
 #include "CLucene/search/Query.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "QueryToken.h"
 
@@ -175,9 +176,8 @@ Query* QueryParserBase::GetFieldQuery(const TCHAR* field, TCHAR* queryText){
     return NULL;
   }else{
     if (v.size() == 1){
-      Term* t = _CLNEW Term(field, v[0]);
+      Term::Pointer t(new Term(field, v[0]));
       Query* ret = _CLNEW TermQuery( t );
-      _CLDECDELETE(t);
       return ret;
     }else{
       if (severalTokensAtSamePosition) {
@@ -186,9 +186,8 @@ Query* QueryParserBase::GetFieldQuery(const TCHAR* field, TCHAR* queryText){
           BooleanQuery* q = _CLNEW BooleanQuery( true ); //todo: disableCoord=true here, but not implemented in BooleanQuery
           StringArray::iterator itr = v.begin();
           while ( itr != v.end() ){
-            Term* t = _CLNEW Term(field, *itr);
+            Term::Pointer t(_CLNEW Term(field, *itr));
             q->add(_CLNEW TermQuery(t),true, false,false);//should occur...
-            _CLDECDELETE(t);
             ++itr;
           }
           return q;
@@ -202,9 +201,8 @@ Query* QueryParserBase::GetFieldQuery(const TCHAR* field, TCHAR* queryText){
         StringArrayWithDeletor::iterator itr = v.begin();
         while ( itr != v.end() ){
           const TCHAR* data = *itr;
-          Term* t = _CLNEW Term(field, data);
+          Term::Pointer t(new Term(field, data));
           q->add(t);
-          _CLDECDELETE(t);
           ++itr;
         }
         return q;
@@ -290,13 +288,12 @@ Query* QueryParserBase::GetPrefixQuery(const TCHAR* field, TCHAR* termStr){
   if ( lowercaseExpandedTerms )
     _tcslwr(termStr);
 
-  Term* t = _CLNEW Term(field, termStr);
+  Term::Pointer t(_CLNEW Term(field, termStr));
   CND_CONDITION(t != NULL,"Could not allocate memory for term t");
 
   Query *q = _CLNEW PrefixQuery(t);
   CND_CONDITION(q != NULL,"Could not allocate memory for PrefixQuery q");
 
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -314,13 +311,12 @@ Query* QueryParserBase::GetFuzzyQuery(const TCHAR* field, TCHAR* termStr){
   if ( lowercaseExpandedTerms )
     _tcslwr(termStr);
 
-  Term* t = _CLNEW Term(field, termStr);
+  Term::Pointer t(new Term(field, termStr));
   CND_CONDITION(t != NULL,"Could not allocate memory for term t");
 
   Query *q = _CLNEW FuzzyQuery(t);
   CND_CONDITION(q != NULL,"Could not allocate memory for FuzzyQuery q");
 
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -332,10 +328,9 @@ Query* QueryParserBase::GetWildcardQuery(const TCHAR* field, TCHAR* termStr){
   if ( lowercaseExpandedTerms )
     _tcslwr(termStr);
 
-  Term* t = _CLNEW Term(field, termStr);
+  Term::Pointer t(new Term(field, termStr));
   CND_CONDITION(t != NULL,"Could not allocate memory for term t");
   Query* q = _CLNEW WildcardQuery(t);
-  _CLDECDELETE(t);
 
   return q;
 }
@@ -372,11 +367,9 @@ CL_NS(search)::Query* QueryParserBase::GetRangeQuery(const TCHAR* field, TCHAR* 
     _tcslwr(part2);
   }
   //todo: should see if we can parse the strings as dates... currently we leave that up to the end-developer...
-  Term* t1 = _CLNEW Term(field,part1);
-  Term* t2 = _CLNEW Term(field,part2);
+  Term::Pointer t1(new Term(field,part1));
+  Term::Pointer t2(new Term(field,part2));
   Query* ret = _CLNEW RangeQuery(t1, t2, inclusive);
-  _CLDECDELETE(t1);
-  _CLDECDELETE(t2);
 
   return ret;
 }

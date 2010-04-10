@@ -9,10 +9,12 @@
 #define _lucene_CLucene_
 
 #include "CLucene/StdHeader.h"
+#include "CLucene/util/Equators.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/IndexWriter.h"
 #include "CLucene/index/MultiReader.h"
-#include "CLucene/index/Term.h"
 #include "CLucene/search/IndexSearcher.h"
 #include "CLucene/search/MultiSearcher.h"
 #include "CLucene/search/DateFilter.h"

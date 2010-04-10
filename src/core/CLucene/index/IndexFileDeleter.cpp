@@ -1,6 +1,8 @@
 #include "CLucene/_ApiHeader.h"
 #include "_IndexFileDeleter.h"
 #include "IndexFileNameFilter.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_DocumentsWriter.h"
 #include "_SegmentHeader.h"
 #include "CLucene/store/Directory.h"

@@ -7,6 +7,8 @@
 #include "CLucene/_ApiHeader.h"
 #include "MergePolicy.h"
 #include "_SegmentInfos.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "IndexWriter.h"
 #include "CLucene/store/Directory.h"
 #include <assert.h>

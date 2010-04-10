@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "IndexSearcher.h"
 
 #include "SearchHeader.h"
@@ -159,7 +161,7 @@ CL_NS_DEF(search)
   }
 
   // inherit javadoc
-  int32_t IndexSearcher::docFreq(const Term* term) const{
+  int32_t IndexSearcher::docFreq(Term::ConstPointer term) const {
   //Func - 
   //Pre  - reader != NULL
   //Post -

@@ -313,13 +313,11 @@
       _CLLDELETE(writer);
 
       IndexReader* reader = IndexReader::open(&dir);
-      Term* t = _CLNEW Term(_T("partnum"), _T("Q36"));
+      Term::Pointer t(new Term(_T("partnum"), _T("Q36")));
       TermDocs* td = reader->termDocs(t);
-      _CLDECDELETE(t);
       CLUCENE_ASSERT(td->next());
-      t = _CLNEW Term(_T("partnum"), _T("Q37"));
+      t.reset(new Term(_T("partnum"), _T("Q37")));
       td = reader->termDocs(t);
-      _CLDECDELETE(t);
       reader->close();
       CLUCENE_ASSERT(td->next());
       _CLLDELETE(reader);

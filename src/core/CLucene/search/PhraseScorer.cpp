@@ -7,9 +7,13 @@
 #include "CLucene/_ApiHeader.h"
 #include "Scorer.h"
 #include "Explanation.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Similarity.h"
 #include "SearchHeader.h"
 #include "CLucene/util/StringBuffer.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/index/Terms.h"
 #include "_PhraseQueue.h"
 #include "_PhraseScorer.h"

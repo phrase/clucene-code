@@ -7,9 +7,10 @@
 #ifndef _lucene_search_TermQuery_
 #define _lucene_search_TermQuery_
 
-CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(util,StringBuffer)
 
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Query.h"
 
 CL_NS_DEF(search)
@@ -18,20 +19,20 @@ CL_NS_DEF(search)
 	*/
     class CLUCENE_EXPORT TermQuery: public Query {
     private:
-		CL_NS(index)::Term* term;
+		CL_NS(index)::Term::Pointer term;
     protected:
         Weight* _createWeight(Searcher* searcher);
         TermQuery(const TermQuery& clone);
 	public:
 		// Constructs a query for the term <code>t</code>. 
-		TermQuery(CL_NS(index)::Term* t);
+		TermQuery(CL_NS(index)::Term::Pointer t);
 		virtual ~TermQuery();
 
 		static const char* getClassName();
 		const char* getObjectName() const;
 	    
 		/** Returns the term of this query. */
-		CL_NS(index)::Term* getTerm(bool pointer=true) const;
+		CL_NS(index)::Term::Pointer getTerm(bool pointer=true) const;
 	    
 		/** Prints a user-readable version of this query. */
 		TCHAR* toString(const TCHAR* field) const;

@@ -10,7 +10,6 @@
 
 CL_CLASS_DEF(util,StringBuffer)
 //#include "CLucene/index/IndexReader.h"
-CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(search,FilteredTermEnum)
 CL_CLASS_DEF(index,IndexReader)
 //#include "CLucene/index/Terms.h"
@@ -36,7 +35,7 @@ CL_NS_DEF(search)
      */
     class CLUCENE_EXPORT MultiTermQuery: public Query {
     private:
-        CL_NS(index)::Term* term;
+        CL_NS(index)::Term::Pointer term;
     protected:
         MultiTermQuery(const MultiTermQuery& clone);
 
@@ -44,12 +43,12 @@ CL_NS_DEF(search)
 		virtual FilteredTermEnum* getEnum(CL_NS(index)::IndexReader* reader) = 0;
     public:
       /** Constructs a query for terms matching <code>term</code>. */
-      MultiTermQuery(CL_NS(index)::Term* t);
+      MultiTermQuery(CL_NS(index)::Term::Pointer t);
 
       virtual ~MultiTermQuery();
 
 		  /** Returns the pattern term. */
-		  CL_NS(index)::Term* getTerm(bool pointer=true) const;
+		  CL_NS(index)::Term::Pointer getTerm(bool pointer=true) const;
 
 		  Query* combine(CL_NS(util)::ArrayBase<Query*>* queries);
 

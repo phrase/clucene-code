@@ -8,9 +8,10 @@
 #define _lucene_search_PhraseQuery_
 
 #include "Query.h"
-CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(search,Scorer)
 #include "CLucene/util/Array.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 
 CL_NS_DEF(search)
 	/** A Query that matches documents containing a particular sequence of terms.
@@ -21,7 +22,7 @@ CL_NS_DEF(search)
 	class CLUCENE_EXPORT PhraseQuery: public Query {
 	private:
 		const TCHAR* field;
-		CL_NS(util)::CLVector<CL_NS(index)::Term*>* terms;
+		CL_NS(util)::CLVector<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms;
 		CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>* positions;
 		int32_t slop;
 
@@ -57,7 +58,7 @@ CL_NS_DEF(search)
 		* Adds a term to the end of the query phrase.
 		* The relative position of the term is the one immediately after the last term added.
 		*/
-        void add(CL_NS(index)::Term* term);
+        void add(CL_NS(index)::Term::Pointer term);
 
 		/**
 		* Adds a term to the end of the query phrase.
@@ -68,10 +69,13 @@ CL_NS_DEF(search)
 		* @param term
 		* @param position
 		*/
-		void add(CL_NS(index)::Term* term, int32_t position);
+		void add(CL_NS(index)::Term::Pointer term, int32_t position);
 
-		/** Returns the set of terms in this phrase. */
-        CL_NS(index)::Term** getTerms() const;
+		/**
+		 Returns the set of terms in this phrase.
+		 \todo Check, why original a "raw pointer array" was returned.
+		 */
+		CL_NS(util)::CLVector<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* getTerms() const;
 
 		/**
 		* Returns the relative positions of terms in this phrase.

@@ -19,7 +19,7 @@ CL_NS_DEF(index)
  */
 class SegmentTermEnum:public TermEnum{
 private:
-	Term* _term;            ///points to the current Term in the enumeration
+	Term::Pointer _term;            ///points to the current Term in the enumeration
 	TermInfo* termInfo;     ///points to the TermInfo matching the current Term in the enumeration
 
 	bool isIndex;           ///Indicates if the Segment is a an index
@@ -37,7 +37,7 @@ private:
 	int64_t size;			///The size of the enumeration
 	int64_t position;		///The position of the current (term) in the enumeration
 	int64_t indexPointer;
-	Term* prev;				///The previous current 
+	Term::Pointer prev;				///The previous current 
 	int32_t indexInterval;
 	int32_t skipInterval;
 	int32_t maxSkipLevels;
@@ -67,16 +67,16 @@ public:
 	/**
 	 * Returns a pointer to the current term. 
 	 */
-	Term* term();
+	Term::Pointer term();
 	/**
 	 * Returns the current term. 
 	 */
-	Term* term(bool pointer);
+	Term::Pointer term(bool pointer);
 
     /**
 	 * Scan for Term term without allocating new Terms
 	 */
-	void scanTo(const Term *term);
+	void scanTo(Term::ConstPointer term);
 
 	/** 
 	 * Closes the enumeration to further activity, freeing resources. 
@@ -91,7 +91,7 @@ public:
 	/**
 	 * Repositions term and termInfo within the enumeration
 	 */
-	void seek(const int64_t pointer, const int32_t p, Term* t, TermInfo* ti);
+	void seek(const int64_t pointer, const int32_t p, Term::Pointer t, TermInfo* ti);
 	
 	/**
 	 * Returns a clone of the current termInfo
@@ -125,7 +125,7 @@ private:
 	/**
 	 * Reads the next term in the enumeration
 	 */
-	Term* readTerm(Term* reuse);
+	Term::Pointer readTerm(Term::Pointer reuse);
    /** 
 	 * Instantiate a buffer of length length+1
    * TODO: deprecate this...

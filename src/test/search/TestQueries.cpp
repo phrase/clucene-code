@@ -22,21 +22,19 @@ void testPrefixQuery(CuTest *tc){
 	}
 	writer.close();
 
-	Term* t = _CLNEW Term(_T("category"), _T("/Computers"));
+	Term::Pointer t(new Term(_T("category"), _T("/Computers")));
 	PrefixQuery *query = _CLNEW PrefixQuery(t);
 	IndexSearcher searcher(&directory);
 	Hits *hits = searcher.search(query);
 	CLUCENE_ASSERT(3 == hits->length()); // All documents in /Computers category and below
 	_CLDELETE(query);
-	_CLDELETE(t);
 	_CLDELETE(hits);
 
-	t = _CLNEW Term(_T("category"), _T("/Computers/Mac"));
+	t.reset(new Term(_T("category"), _T("/Computers/Mac")));
 	query = _CLNEW PrefixQuery(t);
 	hits = searcher.search(query);
 	CLUCENE_ASSERT(1 == hits->length()); // One in /Computers/Mac
 	_CLDELETE(query);
-	_CLDELETE(t);
 	_CLDELETE(hits);
 }
 
@@ -57,11 +55,10 @@ private:
 	Hits* searchQuery(IndexSearcher* searcher, const TCHAR* field, const TCHAR* text,
 		float_t minSimilarity=FuzzyQuery::defaultMinSimilarity, size_t prefixLen=0){
 
-		Term* t = _CLNEW Term(field, text);
+		Term::Pointer t(new Term(field, text));
 		FuzzyQuery* query = _CLNEW FuzzyQuery(t, minSimilarity, prefixLen);
 		Hits* hits = searcher->search(query);
 		_CLLDELETE(query);
-		_CLLDECDELETE(t);
 		return hits;
 	}
 
@@ -250,13 +247,13 @@ public:
         CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("student"), 0.6f, 0) == 0);
 
         try {
-            Query* q = new FuzzyQuery(_CLNEW Term(_T("field"), _T("student")), 1.1f);
+            Query* q = new FuzzyQuery(Term::Pointer(new Term(_T("field"), _T("student"))), 1.1f);
             CuFail(tc, _T("Expected IllegalArgumentException"));
         } catch (CLuceneError& /*e*/) {
             // expecting exception
         }
         try {
-            Query* q = new FuzzyQuery(_CLNEW Term(_T("field"), _T("student")), -0.1f);
+            Query* q = new FuzzyQuery(Term::Pointer(new Term(_T("field"), _T("student"))), -0.1f);
             CuFail(tc, _T("Expected IllegalArgumentException"));
         } catch (CLuceneError& /*e*/) {
             // expecting exception
@@ -316,7 +313,7 @@ void testFuzzyQuery(CuTest *tc){
 	IndexSearcher searcher (&ram);
 
 	//---
-	Term* term = _CLNEW Term(_T("body"), _T("test~"));
+	Term::Pointer term(new Term(_T("body"), _T("test~")));
 	Query* query = _CLNEW FuzzyQuery(term);
 	Hits* result = searcher.search(query);
 
@@ -325,7 +322,6 @@ void testFuzzyQuery(CuTest *tc){
 	//---
 	_CLDELETE(result);
 	_CLDELETE(query);
-	_CLDECDELETE(term);
 	searcher.close();
 	ram.close();
 }

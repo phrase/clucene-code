@@ -5,9 +5,10 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "DateFilter.h"
 #include "CLucene/document/DateField.h"
-#include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/Terms.h"
 #include "CLucene/util/BitSet.h"
@@ -18,13 +19,11 @@ CL_NS_USE(document)
 CL_NS_DEF(search)
 
   DateFilter::~DateFilter(){
-    _CLDECDELETE( start );
-    _CLDECDELETE( end );
   }
   
   DateFilter::DateFilter(const DateFilter& copy):
-    start( _CL_POINTER(copy.start) ),
-    end ( _CL_POINTER(copy.end) )
+    start(copy.start),
+    end (copy.end)
   {
   }
 
@@ -33,11 +32,11 @@ CL_NS_DEF(search)
   DateFilter::DateFilter(const TCHAR* f, int64_t from, int64_t to)
   {
     TCHAR* tmp = DateField::timeToString(from);
-    start = _CLNEW Term(f, tmp);
+    start.reset(new Term(f, tmp));
     _CLDELETE_CARRAY(tmp);
     
     tmp = DateField::timeToString(to);
-    end = _CLNEW Term(start, tmp);
+    end.reset(new Term(start, tmp));
     _CLDELETE_CARRAY(tmp);
   }
 

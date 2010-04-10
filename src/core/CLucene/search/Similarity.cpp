@@ -5,9 +5,10 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Similarity.h"
 
-#include "CLucene/index/Term.h"
 #include "SearchHeader.h"
 #include "Searchable.h"
 
@@ -180,15 +181,15 @@ CL_NS_DEF(search)
    }
 
 
-   float_t Similarity::idf(Term* term, Searcher* searcher) {
+   float_t Similarity::idf(Term::Pointer term, Searcher* searcher) {
       return idf(searcher->docFreq(term), searcher->maxDoc());
    }
 
    
-   float_t Similarity::idf(CL_NS(util)::CLVector<Term*>* terms, Searcher* searcher) {
+   float_t Similarity::idf(CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>* terms, Searcher* searcher) {
       float_t _idf = 0.0f;
-      for (CL_NS(util)::CLVector<Term*>::iterator i = terms->begin(); i != terms->end(); i++ ) {
-         _idf += idf((Term*)*i, searcher);
+      for (CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>::iterator i = terms->begin(); i != terms->end(); i++ ) {
+         _idf += idf(*i, searcher);
       }
       return _idf;
    }

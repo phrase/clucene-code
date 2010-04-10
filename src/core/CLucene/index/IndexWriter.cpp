@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "IndexWriter.h"
 #include "IndexReader.h"
 #include "CLucene/document/Document.h"
@@ -694,7 +696,7 @@ void IndexWriter::addDocument(Document* doc, Analyzer* analyzer) {
   }
 }
 
-void IndexWriter::deleteDocuments(Term* term) {
+void IndexWriter::deleteDocuments(Term::Pointer term) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerm(term);
@@ -706,7 +708,7 @@ void IndexWriter::deleteDocuments(Term* term) {
   }
 }
 
-void IndexWriter::deleteDocuments(const ArrayBase<Term*>* terms) {
+void IndexWriter::deleteDocuments(const CLArrayList<Term::Pointer, Term::Deletor>* terms) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerms(terms);
@@ -718,12 +720,12 @@ void IndexWriter::deleteDocuments(const ArrayBase<Term*>* terms) {
   }
 }
 
-void IndexWriter::updateDocument(Term* term, Document* doc) {
+void IndexWriter::updateDocument(Term::Pointer term, Document* doc) {
   ensureOpen();
   updateDocument(term, doc, getAnalyzer());
 }
 
-void IndexWriter::updateDocument(Term* term, Document* doc, Analyzer* analyzer)
+void IndexWriter::updateDocument(Term::Pointer term, Document* doc, Analyzer* analyzer)
 {
   ensureOpen();
   try {
@@ -2266,7 +2268,7 @@ void IndexWriter::Internal::applyDeletesSelectively(const DocumentsWriter::TermN
 {
   DocumentsWriter::TermNumMapType::const_iterator iter = deleteTerms.begin();
   while (iter != deleteTerms.end() ) {
-    Term* term = iter->first;
+    Term::Pointer term = iter->first;
     TermDocs* docs = reader->termDocs(term);
     if (docs != NULL) {
       int32_t num = iter->second->getNum();

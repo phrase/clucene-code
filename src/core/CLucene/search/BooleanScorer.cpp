@@ -9,6 +9,8 @@
 #include "_BooleanScorer.h"
 
 #include "Scorer.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Similarity.h"
 #include "CLucene/util/StringBuffer.h"
 

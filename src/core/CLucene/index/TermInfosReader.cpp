@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 
+#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "Terms.h"
 #include "CLucene/util/Misc.h"
@@ -95,7 +96,7 @@ CL_NS_DEF(index)
 	  if (indexDivisor < 1)
 		  _CLTHROWA(CL_ERR_IllegalArgument, "indexDivisor must be > 0");
 
-	  if (indexTerms != NULL)
+	  if (indexTerms.get() != NULL)
 		  _CLTHROWA(CL_ERR_IllegalArgument, "index terms are already loaded");
 
 	  this->indexDivisor = _indexDivisor;
@@ -105,19 +106,17 @@ CL_NS_DEF(index)
   int32_t TermInfosReader::getIndexDivisor() const { return indexDivisor; }
   void TermInfosReader::close() {
 
-	  //Check if indexTerms and indexInfos exist
-     if (indexTerms && indexInfos){
-          //Iterate through arrays indexTerms and indexPointer to
-	      //destroy their elements
-#ifdef _DEBUG
-         for ( int32_t i=0; i<indexTermsLength;++i ){
-            indexTerms[i].__cl_refcount--;
-         }
-#endif
-         //Delete the arrays
-         delete [] indexTerms;
+	//Check if indexInfos exist
+	if (indexInfos) {
+		//Iterate through arrays indexTerms and indexPointer to
+		//destroy their elements
+
+		// iterating not needed for indexTerms anymore, because it contains smart pointers
+		indexTerms.reset(NULL);
+
+		// TODO: Why are elements of indexInfos not deleted?
          _CLDELETE_ARRAY(indexInfos);
-     }
+	}
 
       //Delete the arrays
       _CLDELETE_ARRAY(indexPointers);
@@ -161,14 +160,14 @@ CL_NS_DEF(index)
   }
 
 
-  Term* TermInfosReader::get(const int32_t position) {
+  Term::Pointer TermInfosReader::get(const int32_t position) {
   //Func - Returns the nth term in the set
   //Pre  - position > = 0
   //Post - The n-th term in the set has been returned
 
 	  //Check if the size is 0 because then there are no terms
       if (_size == 0)
-          return NULL;
+          return Term::Pointer();
 
 	  SegmentTermEnum* enumerator = getEnum();
 
@@ -198,7 +197,7 @@ CL_NS_DEF(index)
     return termEnum;
   }
 
-  TermInfo* TermInfosReader::get(const Term* term){
+  TermInfo* TermInfosReader::get(Term::ConstPointer term){
   //Func - Returns a TermInfo for a term
   //Pre  - term holds a valid reference to term
   //Post - if term can be found its TermInfo has been returned otherwise NULL
@@ -233,7 +232,7 @@ CL_NS_DEF(index)
 			//_enum_offset OR
 			indexTermsLength == _enumOffset	 ||
 			//term is positioned in front of term found at _enumOffset in indexTerms
-			term->compareTo(&indexTerms[_enumOffset]) < 0){
+			term->compareTo((*indexTerms)[_enumOffset]) < 0){
 
 			//no need to seek, retrieve the TermInfo for term
 			return scanEnum(term);
@@ -247,7 +246,7 @@ CL_NS_DEF(index)
   }
 
 
-  int64_t TermInfosReader::getPosition(const Term* term) {
+  int64_t TermInfosReader::getPosition(Term::ConstPointer term) {
   //Func - Returns the position of a Term in the set
   //Pre  - term holds a valid reference to a Term
   //       enumerator != NULL
@@ -273,7 +272,7 @@ CL_NS_DEF(index)
           return -1;
   }
 
-  SegmentTermEnum* TermInfosReader::terms(const Term* term) {
+  SegmentTermEnum* TermInfosReader::terms(Term::ConstPointer term) {
   //Func - Returns an enumeration of terms starting at or after the named term.
   //       If term is null then enumerator is set to the beginning
   //Pre  - term holds a valid reference to a Term
@@ -311,15 +310,19 @@ CL_NS_DEF(index)
 
     SCOPED_LOCK_MUTEX(THIS_LOCK)
 
-	  if ( indexTerms != NULL )
+	  if ( indexTerms.get() != NULL )
 		  return;
 
       try {
           indexTermsLength = (size_t)indexEnum->size;
 
-		      //Instantiate an block of Term's,so that each one doesn't have to be new'd
-          indexTerms    = new Term[indexTermsLength];
-          CND_CONDITION(indexTerms != NULL,"No memory could be allocated for indexTerms");//Check if is indexTerms is a valid array
+			//Instantiate an block of Term's,so that each one doesn't have to be new'd
+			indexTerms.reset(_CLNEW CLArrayList<Term::Pointer, Term::Deletor>(false));
+			CND_CONDITION(indexTerms.get() != NULL,"No memory could be allocated for indexTerms");//Check if is indexTerms is a valid array
+
+			for (CLArrayList<Term::Pointer, Term::Deletor>::size_type i = 0; i < indexTermsLength; i++) {
+				indexTerms->push_back(Term::Pointer(new Term));
+			}	
 
 		  //Instantiate an big block of TermInfo's, so that each one doesn't have to be new'd
           indexInfos    = _CL_NEWARRAY(TermInfo,indexTermsLength);
@@ -331,7 +334,7 @@ CL_NS_DEF(index)
 
 		  //Iterate through the terms of indexEnum
           for (int32_t i = 0; indexEnum->next(); ++i){
-              indexTerms[i].set(indexEnum->term(false),indexEnum->term(false)->text());
+              (*indexTerms)[i]->set(indexEnum->term(false),indexEnum->term(false)->text());
               indexEnum->getTermInfo(&indexInfos[i]);
               indexPointers[i] = indexEnum->indexPointer;
 
@@ -348,14 +351,14 @@ CL_NS_DEF(index)
   }
 
 
-  int32_t TermInfosReader::getIndexOffset(const Term* term){
+  int32_t TermInfosReader::getIndexOffset(Term::ConstPointer term){
   //Func - Returns the offset of the greatest index entry which is less than or equal to term.
   //Pre  - term holds a reference to a valid term
   //       indexTerms != NULL
   //Post - The new offset has been returned
 
       //Check if is indexTerms is a valid array
-      CND_PRECONDITION(indexTerms != NULL,"indexTerms is NULL");
+      CND_PRECONDITION(indexTerms.get() != NULL,"indexTerms is NULL");
 
       int32_t lo = 0;
       int32_t hi = indexTermsLength - 1;
@@ -367,11 +370,11 @@ CL_NS_DEF(index)
           mid = (lo + hi) >> 1;
 
           //Check if is indexTerms[mid] is a valid instance of Term
-          CND_PRECONDITION(&indexTerms[mid] != NULL,"indexTerms[mid] is NULL");
+          CND_PRECONDITION((*indexTerms)[mid].get() != NULL,"indexTerms[mid] is NULL");
           CND_PRECONDITION(mid < indexTermsLength,"mid >= indexTermsLength");
 
 		  //Determine if term is before mid or after mid
-          delta = term->compareTo(&indexTerms[mid]);
+          delta = term->compareTo((*indexTerms)[mid]);
           if (delta < 0){
               //Calculate the new hi
               hi = mid - 1;
@@ -396,7 +399,7 @@ CL_NS_DEF(index)
   //Post - The current Term and Terminfo have been repositioned to indexOffset
 
       CND_PRECONDITION(indexOffset >= 0, "indexOffset contains a negative number");
-      CND_PRECONDITION(indexTerms != NULL,    "indexTerms is NULL");
+      CND_PRECONDITION(indexTerms.get() != NULL,    "indexTerms is NULL");
       CND_PRECONDITION(indexInfos != NULL,    "indexInfos is NULL");
       CND_PRECONDITION(indexPointers != NULL, "indexPointers is NULL");
 
@@ -404,13 +407,13 @@ CL_NS_DEF(index)
 	  enumerator->seek(
           indexPointers[indexOffset],
 		  (indexOffset * totalIndexInterval) - 1,
-          &indexTerms[indexOffset],
+          (*indexTerms)[indexOffset],
 		  &indexInfos[indexOffset]
 	      );
   }
 
 
-  TermInfo* TermInfosReader::scanEnum(const Term* term) {
+  TermInfo* TermInfosReader::scanEnum(Term::ConstPointer term) {
   //Func - Scans the Enumeration of terms for term and returns the corresponding TermInfo instance if found.
   //       The search is started from the current term.
   //Pre  - term contains a valid reference to a Term
@@ -431,7 +434,7 @@ CL_NS_DEF(index)
      }
   }
 
-  Term* TermInfosReader::scanEnum(const int32_t position) {
+  Term::Pointer TermInfosReader::scanEnum(const int32_t position) {
   //Func - Scans the enumeration to the requested position and returns the
   //       Term located at that position
   //Pre  - position > = 0
@@ -445,7 +448,7 @@ CL_NS_DEF(index)
 		  //Move the current of enumerator to the next
 		  if (!enumerator->next()){
 			  //If there is no next it means that the requested position was to big
-              return NULL;
+              return Term::Pointer();
           }
 	  }
 

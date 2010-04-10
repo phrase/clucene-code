@@ -12,7 +12,6 @@ CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(document,Document)
 CL_CLASS_DEF(index, IndexWriter)
 CL_CLASS_DEF(index, IndexReader)
-CL_CLASS_DEF(index, Term)
 CL_CLASS_DEF(index, TermDocs)
 CL_CLASS_DEF(index, TermEnum)
 #include "CLucene/analysis/AnalysisHeader.h"
@@ -170,7 +169,7 @@ public:
 	* @see IndexReader#deleteDocuments(Term*)
 	* @throws IllegalStateException if the index is closed
 	*/
-	int32_t deleteDocuments(Term* term);
+	int32_t deleteDocuments(Term::Pointer term);
 
 	/**
 	* Deletes the document numbered <code>docNum</code>.
@@ -296,7 +295,11 @@ public:
 	* while using the TermDocs. If the IndexReader that the modifier manages
 	* is closed, the TermDocs object will fail.
 	*/
-	TermDocs* termDocs(Term* term=NULL);
+	TermDocs* termDocs(Term::Pointer term);
+	TermDocs* termDocs() {
+		Term::Pointer emptyPointer;
+		return termDocs(emptyPointer);
+	}
 
 	/**
 	* Returns an enumeration of all terms after a given term.
@@ -309,7 +312,11 @@ public:
 	* while using the TermDocs. If the IndexReader that the modifier manages
 	* is closed, the Document will be invalid
 	*/
-	TermEnum* terms(Term* term=NULL);
+	TermEnum* terms(Term::Pointer term);
+	TermEnum* terms() {
+		Term::Pointer emptyPointer;
+		return terms(emptyPointer);
+	}
 
 	/**
 	* Returns the stored fields of the n-th Document in this index. 

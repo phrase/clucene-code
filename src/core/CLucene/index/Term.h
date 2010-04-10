@@ -29,7 +29,7 @@ intrn indicates if field and text are interned or not. Interning of Strings is t
 converting duplicated strings to shared ones. 
 
 */
-class CLUCENE_EXPORT Term:LUCENE_REFBASE {
+class CLUCENE_EXPORT Term {
 private:
   size_t cachedHashCode;
 	const TCHAR* _field;
@@ -45,12 +45,42 @@ private:
 	bool    internF; //Indicates if Term Field is interned(and therefore must be uninternd). 
 public:
 	
+	/**
+	 * Shared pointer type for class Term.
+	 */
+	typedef boost::shared_ptr<Term> SharedPtr;
+	/**
+	 Const shared pointer type for class Term.
+	 */
+	typedef boost::shared_ptr<const Term> ConstSharedPtr;
+	/**
+	 Use shared pointer as default pointer type.
+	 */
+	typedef SharedPtr Pointer;
+	/**
+	 Use const shared pointer as const default pointer type.
+	 */
+	typedef ConstSharedPtr ConstPointer;
+
+	/**
+	Dummy Deletor for shared pointers of Term
+	*/
+	class Deletor : public CL_NS(util)::AbstractDeletor {
+	public:
+		void Delete(Term::Pointer obj) {
+			doDelete(obj);
+		}
+		static void doDelete(Term::Pointer obk) {
+			// empty
+		}
+	};
+
 	//uses the specified fieldTerm's field. this saves on intern'ing time.
   /** Constructs a Term with the given field and text.
    * <p>Note that a null field or null text value results in undefined
    * behavior for most Lucene APIs that accept a Term parameter.
   */
-	Term(const Term* fieldTerm, const TCHAR* txt);
+	Term(ConstPointer fieldTerm, const TCHAR* txt);
 		
 	/** Constructs a blank term */
 	Term();
@@ -91,7 +121,7 @@ public:
 	* - avoids field.intern() overhead
 	* @param text The text of the new term (field is implicitly same as this Term instance)
 	*/
-	void set(const Term* term, const TCHAR* txt);
+	void set(ConstPointer term, const TCHAR* txt);
 
 	void set(const TCHAR* fld, const TCHAR* txt, const bool internField);
 
@@ -100,7 +130,7 @@ public:
 	argument, and a positive integer if this term belongs after the argument.
 	
 	The ordering of terms is first by field, then by text.*/
-	int32_t compareTo(const Term* other) const;
+	int32_t compareTo(ConstPointer other) const;
 	
 	/** Compares two terms, returning a negative integer if this
 	term belongs before the argument, zero if this term is equal to the
@@ -109,9 +139,9 @@ public:
 	The ordering of terms is purely on the hashCode, so is not a logical ordering, but is repeatable.
 	Note: can't be const because call the to hashCode is not const
 	*/
-	int32_t hashedCompareTo(Term* other);
+	int32_t hashedCompareTo(Pointer other);
 
-	bool equals(const Term* other) const;
+	bool equals(ConstPointer other) const;
 
 	size_t textLength() const;
 

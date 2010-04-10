@@ -11,7 +11,6 @@
 #include "Searchable.h"
 CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(document,Document)
-CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(search,TopDocs)
 CL_CLASS_DEF(search,TopFieldDocs)
 CL_CLASS_DEF(search,Query)
@@ -61,7 +60,7 @@ public:
 	*/
 	void close();
 
-	int32_t docFreq(const CL_NS(index)::Term* term) const;
+	int32_t docFreq(CL_NS(index)::Term::ConstPointer term) const;
 
 	bool doc(int32_t i, CL_NS(document)::Document& document);
 	bool doc(int32_t i, CL_NS(document)::Document* document);

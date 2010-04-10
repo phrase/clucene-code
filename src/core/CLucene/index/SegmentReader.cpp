@@ -6,6 +6,8 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "CLucene/util/Misc.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_SegmentHeader.h"
 #include "_MultiSegmentReader.h"
 #include "_FieldInfos.h"
@@ -468,19 +470,20 @@ CL_NS_DEF(index)
   //Pre  - tis != NULL
   //Post - An enumeration of all the Terms and TermInfos in the set has been returned
 
-      CND_PRECONDITION(tis != NULL, "tis is NULL");
+	CND_PRECONDITION(tis != NULL, "tis is NULL");
 
-      ensureOpen();
-      return tis->terms();
+	ensureOpen();
+	Term::ConstPointer empty;
+	return tis->terms(empty);
   }
 
-  TermEnum* SegmentReader::terms(const Term* t) {
+  TermEnum* SegmentReader::terms(Term::ConstPointer t) {
   //Func - Returns an enumeration of terms starting at or after the named term t
   //Pre  - t != NULL
   //       tis != NULL
   //Post - An enumeration of terms starting at or after the named term t
 
-      CND_PRECONDITION(t   != NULL, "t is NULL");
+      CND_PRECONDITION(t.get() != NULL, "t is NULL");
       CND_PRECONDITION(tis != NULL, "tis is NULL");
 
       ensureOpen();
@@ -529,8 +532,8 @@ CL_NS_DEF(index)
   //Pre  - true
   //Post - An unpositioned TermDocs enumerator has been returned
 
-        ensureOpen();
-       return _CLNEW SegmentTermDocs(this);
+ 	ensureOpen();
+	return _CLNEW SegmentTermDocs(this);
   }
 
   TermPositions* SegmentReader::termPositions() {
@@ -542,7 +545,7 @@ CL_NS_DEF(index)
       return _CLNEW SegmentTermPositions(this);
   }
 
-  int32_t SegmentReader::docFreq(const Term* t) {
+  int32_t SegmentReader::docFreq(Term::ConstPointer t) {
   //Func - Returns the number of documents which contain the term t
   //Pre  - t holds a valid reference to a Term
   //Post - The number of documents which contain term t has been returned

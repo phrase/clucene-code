@@ -8,6 +8,8 @@
 #include "CLucene/util/Misc.h"
 
 #include "CLucene/search/Sort.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/search/FieldCache.h"
 #include "CLucene/index/TermVector.h"

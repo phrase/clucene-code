@@ -98,10 +98,10 @@ public:
 	void norms(const TCHAR* field, uint8_t* result);
 
 	TermEnum* terms();
-	TermEnum* terms(const Term* term);
+	TermEnum* terms(Term::ConstPointer term);
 
 	//Returns the document frequency of the current term in the set
-	int32_t docFreq(const Term* t=NULL);
+	int32_t docFreq(Term::ConstPointer t);
 	TermDocs* termDocs();
 	TermPositions* termPositions();
 
@@ -128,7 +128,7 @@ protected:
 
   CL_NS(util)::ArrayBase<IndexReader*>* subReaders;
   const int32_t* starts;
-  Term* term;
+  Term::Pointer term;
 
   int32_t base;
   size_t pointer;
@@ -146,7 +146,7 @@ public:
   int32_t freq() const;
 
   void seek(TermEnum* termEnum);
-  void seek(Term* tterm);
+  void seek(Term::Pointer tterm);
   bool next();
 
   /** Optimized implementation. */
@@ -166,12 +166,12 @@ class MultiTermEnum:public TermEnum {
 private:
   SegmentMergeQueue* queue;
 
-  Term* _term;
+  Term::Pointer _term;
   int32_t _docFreq;
 public:
   //Constructor
   //Opens all enumerations of all readers
-  MultiTermEnum(CL_NS(util)::ArrayBase<IndexReader*>* subReaders, const int32_t* starts, const Term* t);
+  MultiTermEnum(CL_NS(util)::ArrayBase<IndexReader*>* subReaders, const int32_t* starts, Term::ConstPointer t);
 
   //Destructor
   ~MultiTermEnum();
@@ -180,8 +180,8 @@ public:
   bool next();
 
   //Returns a pointer to the current term of the set of enumerations
-  Term* term();
-  Term* term(bool pointer);
+  Term::Pointer term();
+  Term::Pointer term(bool pointer);
 
   //Returns the document frequency of the current term in the set
   int32_t docFreq() const;

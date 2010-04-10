@@ -4,6 +4,7 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+#include <boost/shared_ptr.hpp>
 #include "CLucene/_ApiHeader.h"
 #include "_CharStream.h"
 #include "_FastCharStream.h"
@@ -347,9 +348,8 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
   if (v.size() == 0)
     return NULL;
   else if (v.size() == 1) {
-    Term* tm = _CLNEW Term(_field, v.at(0)->termBuffer());
+    Term::Pointer tm(new Term(_field, v.at(0)->termBuffer()));
     Query* ret = _CLNEW TermQuery( tm );
-    _CLDECDELETE(tm);
     return ret;
   } else {
     if (severalTokensAtSamePosition) {
@@ -357,37 +357,33 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
         // no phrase query:
         BooleanQuery* q = _CLNEW BooleanQuery(true);
         for(size_t i=0; i<v.size(); i++ ){
-          Term* tm = _CLNEW Term(_field, v.at(i)->termBuffer());
+          Term::Pointer tm(new Term(_field, v.at(i)->termBuffer()));
           q->add(_CLNEW TermQuery(tm),BooleanClause::SHOULD);
-          _CLDECDELETE(tm);
         }
         return q;
       }else {
 		    MultiPhraseQuery* mpq = _CLNEW MultiPhraseQuery();
 		    mpq->setSlop(phraseSlop);
-		    CLArrayList<Term*> multiTerms;
+		    CLArrayList<Term::Pointer, Term::Deletor> multiTerms(false);
 		    int32_t position = -1;
 		    for (size_t i = 0; i < v.size(); i++) {
 			    t = v.at(i);
 			    if (t->getPositionIncrement() > 0 && multiTerms.size() > 0) {
-            ValueArray<Term*> termsArray(multiTerms.size());
-            multiTerms.toArray(termsArray.values, false);
 				    if (enablePositionIncrements) {
-					    mpq->add(&termsArray,position);
+					    mpq->add(&multiTerms, position);
 				    } else {
-					    mpq->add(&termsArray);
+					    mpq->add(&multiTerms);
 				    }
 				    multiTerms.clear();
 			    }
 			    position += t->getPositionIncrement();
-			    multiTerms.push_back(_CLNEW Term(field, t->termBuffer()));
+			    multiTerms.push_back(Term::Pointer(new Term(field, t->termBuffer())));
 		    }
-        ValueArray<Term*> termsArray(multiTerms.size());
-        multiTerms.toArray(termsArray.values, false);
+
 		    if (enablePositionIncrements) {
-			    mpq->add(&termsArray,position);
+			    mpq->add(&multiTerms, position);
 		    } else {
-			    mpq->add(&termsArray);
+			    mpq->add(&multiTerms);
 		    }
 		    return mpq;
       }
@@ -398,14 +394,13 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
 
       for (size_t i = 0; i < v.size(); i++) {
         t = v.at(i);
-        Term* tm = _CLNEW Term(_field, t->termBuffer());
+        Term::Pointer tm(new Term(_field, t->termBuffer()));
         if (enablePositionIncrements) {
           position += t->getPositionIncrement();
           pq->add(tm,position);
         } else {
           pq->add(tm);
         }
-        _CLDECDELETE(tm);
       }
       return pq;
     }
@@ -464,11 +459,9 @@ Query* QueryParser::getRangeQuery(const TCHAR* _field, TCHAR* part1, TCHAR* part
 
   if(useOldRangeQuery)
   {
-      Term* t1 = _CLNEW Term(_field,part1);
-      Term* t2 = _CLNEW Term(_field,part2);
+      Term::Pointer t1(new Term(_field,part1));
+      Term::Pointer t2(new Term(_field,part2));
       Query* ret = _CLNEW RangeQuery(t1, t2, inclusive);
-      _CLDECDELETE(t1);
-      _CLDECDELETE(t2);
 
       // Make sure to delete the date strings we allocated only if we indeed allocated them
       if (part1 != _part1) _CLDELETE_LCARRAY(_part1);
@@ -515,9 +508,8 @@ Query* QueryParser::getWildcardQuery(const TCHAR* _field, TCHAR* termStr)
     _tcslwr(termStr);
   }
 
-  Term* t = _CLNEW Term(_field, termStr);
+  Term::Pointer t(new Term(_field, termStr));
   Query* q = _CLNEW WildcardQuery(t);
-  _CLDECDELETE(t);
 
   return q;
 }
@@ -531,9 +523,8 @@ Query* QueryParser::getPrefixQuery(const TCHAR* _field, TCHAR* _termStr)
   if (lowercaseExpandedTerms) {
     _tcslwr(_termStr);
   }
-  Term* t = _CLNEW Term(_field, _termStr);
+  Term::Pointer t(new Term(_field, _termStr));
   Query *q = _CLNEW PrefixQuery(t);
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -543,9 +534,8 @@ Query* QueryParser::getFuzzyQuery(const TCHAR* _field, TCHAR* termStr, const flo
     _tcslwr(termStr);
   }
 
-  Term* t = _CLNEW Term(_field, termStr);
+  Term::Pointer t(new Term(_field, termStr));
   Query *q = _CLNEW FuzzyQuery(t, minSimilarity, fuzzyPrefixLength);
-  _CLDECDELETE(t);
   return q;
 }
 

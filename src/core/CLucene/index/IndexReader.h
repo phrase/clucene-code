@@ -21,7 +21,6 @@ CL_NS_DEF(index)
 class SegmentInfos;
 class TermFreqVector;
 class TermEnum;
-class Term;
 class TermDocs;
 class TermPositions;
 class IndexDeletionPolicy;
@@ -558,12 +557,12 @@ public:
   * @throws IOException if there is a low-level IO error
 	* @memory Caller must clean up
 	*/
-	virtual TermEnum* terms(const Term* t) = 0;
+	virtual TermEnum* terms(Term::ConstPointer t) = 0;
 
   /** Returns the number of documents containing the term <code>t</code>.
    * @throws IOException if there is a low-level IO error
    */
-	virtual int32_t docFreq(const Term* t) = 0;
+	virtual int32_t docFreq(Term::ConstPointer t) = 0;
 
 	/* Returns an unpositioned TermPositions enumerator.
    * @throws IOException if there is a low-level IO error
@@ -589,7 +588,7 @@ public:
   * @throws IOException if there is a low-level IO error
   * @memory Caller must clean up
 	*/
-	TermPositions* termPositions(Term* term);
+	TermPositions* termPositions(Term::Pointer term);
 
 	/** Returns an unpositioned {@link TermDocs} enumerator.
    * @throws IOException if there is a low-level IO error
@@ -607,7 +606,7 @@ public:
   * @throws IOException if there is a low-level IO error
   * @memory Caller must clean up
 	*/
-	TermDocs* termDocs(Term* term);
+	TermDocs* termDocs(Term::Pointer term);
 
 	/** Deletes the document numbered <code>docNum</code>.  Once a document is
 	* deleted it will not appear in TermDocs or TermPostitions enumerations.
@@ -644,10 +643,10 @@ public:
   *  be obtained)
   * @throws IOException if there is a low-level IO error
 	*/
-	int32_t deleteDocuments(Term* term);
+	int32_t deleteDocuments(Term::Pointer term);
 
 	///@deprecated. Use deleteDocuments instead.
-	_CL_DEPRECATED( deleteDocuments ) int32_t deleteTerm(Term* term);
+	_CL_DEPRECATED( deleteDocuments ) int32_t deleteTerm(Term::Pointer term);
 
 	/**
 	* Closes files associated with this index and also saves any new deletions to disk.

@@ -8,6 +8,7 @@
 #include "CLucene/store/Directory.h"
 #include "CLucene/store/IndexOutput.h"
 #include "CLucene/util/Misc.h"
+#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "_TermInfo.h"
 #include "IndexWriter.h"
@@ -94,7 +95,7 @@ CL_NS_DEF(index)
 		close();
 	}
 
-  void TermInfosWriter::add(Term* term, TermInfo* ti){
+  void TermInfosWriter::add(Term::Pointer term, TermInfo* ti){
     const size_t length = term->textLength();
     if ( termTextBuffer.values == NULL || termTextBuffer.length < length ){
       termTextBuffer.resize( (int32_t)(length*1.25) );

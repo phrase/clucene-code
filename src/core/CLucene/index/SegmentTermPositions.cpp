@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_SegmentHeader.h"
 
 #include "Terms.h"
@@ -30,7 +32,7 @@ TermPositions* SegmentTermPositions::__asTermPositions(){
     return (TermPositions*) this;
 }
 
-void SegmentTermPositions::seek(const TermInfo* ti, Term* term) {
+void SegmentTermPositions::seek(const TermInfo* ti, Term::Pointer term) {
     SegmentTermDocs::seek(ti, term);
     if (ti != NULL)
     	lazySkipPointer = ti->proxPointer;

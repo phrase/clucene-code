@@ -6,6 +6,8 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "MergeScheduler.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "IndexWriter.h"
 
 

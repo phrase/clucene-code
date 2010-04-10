@@ -14,6 +14,8 @@
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/document/Field.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/document/Document.h"
 #include "_TermInfo.h"
@@ -22,7 +24,6 @@
 #include "IndexWriter.h"
 #include "_IndexFileNames.h"
 #include "_FieldsWriter.h"
-#include "Term.h"
 #include "_Term.h"
 #include "_TermVector.h"
 #include "_TermInfosWriter.h"

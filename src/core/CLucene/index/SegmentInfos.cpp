@@ -8,6 +8,8 @@
 
 #include "_SegmentInfos.h"
 #include "_IndexFileNames.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "_SegmentHeader.h"
 #include "MultiReader.h"
 #include <assert.h>

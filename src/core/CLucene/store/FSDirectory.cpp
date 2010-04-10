@@ -26,6 +26,7 @@
 
 #include "FSDirectory.h"
 #include "LockFactory.h"
+#include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/IndexWriter.h"
 #include "CLucene/util/Misc.h"

@@ -19,7 +19,7 @@ CL_NS_USE(util)
 CL_NS_DEF(search)
 
 
-WildcardQuery::WildcardQuery(Term* term): 
+WildcardQuery::WildcardQuery(Term::Pointer term): 
 MultiTermQuery( term ){
 	//Func - Constructor
 	//Pre  - term != NULL
@@ -81,19 +81,15 @@ Query* WildcardQuery::rewrite(CL_NS(index)::IndexReader* reader) {
 }
 
 
-WildcardFilter::WildcardFilter( Term* term )
-{
-	this->term = _CL_POINTER(term);
+WildcardFilter::WildcardFilter(Term::Pointer term) {
+	this->term = term;
 }
 
-WildcardFilter::~WildcardFilter()
-{
-	_CLDECDELETE(term);
+WildcardFilter::~WildcardFilter() {
 }
 
 WildcardFilter::WildcardFilter( const WildcardFilter& copy ) : 
-term( _CL_POINTER(copy.term) )
-{
+term(copy.term) {
 }
 
 Filter* WildcardFilter::clone() const {

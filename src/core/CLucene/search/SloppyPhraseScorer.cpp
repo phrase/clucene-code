@@ -6,6 +6,8 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "Scorer.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/index/Terms.h"
 #include "SearchHeader.h"
 #include "_PhrasePositions.h"

@@ -8,9 +8,7 @@
 #define _lucene_search_MultiPhraseQuery_
 
 #include "Query.h"
-#include "CLucene/util/Array.h"
-
-CL_CLASS_DEF(index,Term)
+#include "CLucene/util/VoidList.h"
 
 CL_NS_DEF(search)
 
@@ -30,7 +28,15 @@ class MultiPhraseWeight;
 class CLUCENE_EXPORT MultiPhraseQuery : public Query {
 private:
 	TCHAR* field;
-  CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>* termArrays;
+	CL_NS(util)::CLArrayList<
+		CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>*,
+		CL_NS(util)::Deletor::Object<
+			CL_NS(util)::CLArrayList<
+				CL_NS(index)::Term::Pointer,
+				CL_NS(index)::Term::Deletor
+			>
+		>
+	>* termArrays;
 	CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>* positions;
 
 	int32_t slop;
@@ -52,16 +58,16 @@ public:
 
 	/** Add a single term at the next position in the phrase.
 	* @see PhraseQuery#add(Term)
-  * @memory A pointer is taken to term
+	* @memory A pointer is taken to term
 	*/
-	void add(CL_NS(index)::Term* term);
+	void add(CL_NS(index)::Term::Pointer term);
 
 	/** Add multiple terms at the next position in the phrase.  Any of the terms
 	* may match.
 	* @memory A pointer is taken of each term, the array memory must be cleaned up by calle
 	* @see PhraseQuery#add(Term)
 	*/
-	void add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* terms);
+	void add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms);
 
 	/**
 	* Allows to specify the relative position of terms within the phrase.
@@ -69,9 +75,9 @@ public:
 	* @see PhraseQuery#add(Term, int)
 	* @param terms
 	* @param position
-  * @memory A pointer is taken of each term, the array memory must be cleaned up by calle
+	  * @memory A pointer is taken of each term, the array memory must be cleaned up by calle
 	*/
-  void add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* terms, const int32_t position);
+	void add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms, const int32_t position);
 
 	/**
 	* Returns a List<Term[]> of the terms in the multiphrase.

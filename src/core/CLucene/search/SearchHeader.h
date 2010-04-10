@@ -9,7 +9,6 @@
 
 
 //#include "CLucene/index/IndexReader.h"
-CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(index,IndexReader)
 //#include "Filter.h"
 CL_CLASS_DEF(document,Document)

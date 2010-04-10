@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "IndexReader.h"
 #include "IndexWriter.h"
 
@@ -264,7 +266,7 @@ CL_NS_DEF(index)
     return SegmentInfos::getCurrentSegmentGeneration(directory) != -1;
   }
 
-  TermDocs* IndexReader::termDocs(Term* term) {
+  TermDocs* IndexReader::termDocs(Term::Pointer term) {
   //Func - Returns an enumeration of all the documents which contain
   //       term. For each document, the document number, the frequency of
   //       the term in that document is also provided, for use in search scoring.
@@ -277,7 +279,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermDocs containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated TermDocs instance
@@ -288,7 +290,7 @@ CL_NS_DEF(index)
       return _termDocs;
   }
 
-  TermPositions* IndexReader::termPositions(Term* term){
+  TermPositions* IndexReader::termPositions(Term::Pointer term){
   //Func - Returns an enumeration of all the documents which contain  term. For each
   //       document, in addition to the document number and frequency of the term in
   //       that document, a list of all of the ordinal positions of the term in the document
@@ -303,7 +305,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermPositions containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated termPositions instance
@@ -325,7 +327,7 @@ CL_NS_DEF(index)
   void IndexReader::deleteDoc(const int32_t docNum){
     deleteDocument(docNum);
   }
-  int32_t IndexReader::deleteTerm(Term* term){
+  int32_t IndexReader::deleteTerm(Term::Pointer term){
     return deleteDocuments(term);
   }
 
@@ -373,7 +375,7 @@ CL_NS_DEF(index)
     doUndeleteAll();
   }
 
-  int32_t IndexReader::deleteDocuments(Term* term) {
+  int32_t IndexReader::deleteDocuments(Term::Pointer term) {
   //Func - Deletes all documents containing term. This is useful if one uses a
   //       document field to hold a unique ID string for the document.  Then to delete such
   //       a document, one merely constructs a term with the appropriate field and the unique

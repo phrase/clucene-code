@@ -8,6 +8,7 @@
 #define _lucene_index_TermInfosReader_
 
 
+#include <memory>
 //#include "Terms.h"
 #include "_SegmentTermEnum.h"
 CL_CLASS_DEF(store,Directory)
@@ -38,7 +39,7 @@ CL_NS_DEF(index)
 		SegmentTermEnum* indexEnum;
 		int64_t _size;
 
-		Term* indexTerms; //note: this is a list of objects, not arrays!
+		std::auto_ptr<CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor> > indexTerms; //note: this is a list of objects, not arrays!
     int32_t indexTermsLength;
 		TermInfo* indexInfos;
 		int64_t* indexPointers;
@@ -97,16 +98,20 @@ CL_NS_DEF(index)
 		* If no term is specified, an enumeration of all the Terms 
 		* and TermInfos in the set is returned.
 		*/
-		SegmentTermEnum* terms(const Term* term=NULL);
+		SegmentTermEnum* terms(Term::ConstPointer term);
+		SegmentTermEnum* terms() {
+			Term::ConstPointer emptyPointer;
+			return terms(emptyPointer);
+		}
 		
 		/** Returns the TermInfo for a Term in the set, or null. */
-		TermInfo* get(const Term* term);
+		TermInfo* get(Term::ConstPointer term);
 	private:
 		/** Reads the term info index file or .tti file. */
 		void ensureIndexIsRead();
 
 		/** Returns the offset of the greatest index entry which is less than or equal to term.*/
-		int32_t getIndexOffset(const Term* term);
+		int32_t getIndexOffset(Term::ConstPointer term);
 
 		/** Reposition the current Term and TermInfo to indexOffset */
 		void seekEnum(const int32_t indexOffset);  
@@ -114,16 +119,16 @@ CL_NS_DEF(index)
 		/** Scans the Enumeration of terms for term and returns the corresponding TermInfo instance if found.
         * The search is started from the current term.
 		*/
-		TermInfo* scanEnum(const Term* term);
+		TermInfo* scanEnum(Term::ConstPointer term);
 
         /** Scans the enumeration to the requested position and returns the Term located at that position */
-		Term* scanEnum(const int32_t position);
+		Term::Pointer scanEnum(const int32_t position);
 		
 		/** Returns the position of a Term in the set or -1. */
-		int64_t getPosition(const Term* term);
+		int64_t getPosition(Term::ConstPointer term);
 
 		/** Returns the nth term in the set. synchronized */
-		Term* get(const int32_t position);
+		Term::Pointer get(const int32_t position);
 
 	};
 CL_NS_END

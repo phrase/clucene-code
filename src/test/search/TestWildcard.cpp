@@ -9,7 +9,7 @@
 #ifndef NO_WILDCARD_QUERY
 
 void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int expectedLen){
-	Term* term = _CLNEW Term(_T("body"), qt);
+	Term::Pointer term(new Term(_T("body"), qt));
 	Query* query = _CLNEW WildcardQuery(term);
 
 	//test the wildcardquery
@@ -25,8 +25,6 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 	CLUCENE_ASSERT(expectedLen == bits->count());
 	_CLDELETE(filter);
 	_CLDELETE(bits);
-
-	_CLDECDELETE(term);
 }
 
 
@@ -55,9 +53,8 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 		_testWildcard(tc, searcher, _T("m*tal*"), 2);
 			
 
-		Term* term = _CLNEW Term(_T("body"), _T("metal"));
+		Term::Pointer term(new Term(_T("body"), _T("metal")));
 		Query* query1 = _CLNEW TermQuery(term);
-		_CLDECDELETE(term);
 
     	Hits* result = searcher->search(query1);
     	CLUCENE_ASSERT(1 == result->length());

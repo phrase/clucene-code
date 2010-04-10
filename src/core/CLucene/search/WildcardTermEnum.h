@@ -8,7 +8,6 @@
 #define _lucene_search_WildcardTermEnum_
 
 //#include "CLucene/index/IndexReader.h"
-CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(index,IndexReader)
 //#include "CLucene/index/Terms.h"
 #include "FilteredTermEnum.h"
@@ -23,7 +22,7 @@ CL_NS_DEF(search)
      */
 	class CLUCENE_EXPORT WildcardTermEnum: public FilteredTermEnum {
     private:
-        CL_NS(index)::Term* __term;
+        CL_NS(index)::Term::Pointer __term;
         TCHAR* pre;
         int32_t preLen;
         bool fieldMatch;
@@ -34,7 +33,7 @@ CL_NS_DEF(search)
         ********************************************/
 
         protected:
-        bool termCompare(CL_NS(index)::Term* term) ;
+        bool termCompare(CL_NS(index)::Term::Pointer term) ;
 
         public:
 
@@ -44,7 +43,7 @@ CL_NS_DEF(search)
 		* <code>LUCENE_WILDCARDTERMENUM_WILDCARD_STRING</code> or
 		* <code>LUCENE_WILDCARDTERMENUM_WILDCARD_CHAR</code> will cause an exception to be thrown.
 		*/
-        WildcardTermEnum(CL_NS(index)::IndexReader* reader, CL_NS(index)::Term* term);
+        WildcardTermEnum(CL_NS(index)::IndexReader* reader, CL_NS(index)::Term::Pointer term);
         ~WildcardTermEnum();
 
         float_t difference() ;

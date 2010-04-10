@@ -8,7 +8,8 @@
 #define _lucene_search_WildcardQuery_
 
 //#include "CLucene/index/IndexReader.h"
-CL_CLASS_DEF(index,Term)
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "MultiTermQuery.h"
 #include "Filter.h"
 //#include "WildcardTermEnum.h"
@@ -29,7 +30,7 @@ protected:
   FilteredTermEnum* getEnum(CL_NS(index)::IndexReader* reader);
   WildcardQuery(const WildcardQuery& clone);
 public:
-  WildcardQuery(CL_NS(index)::Term* term);
+  WildcardQuery(CL_NS(index)::Term::Pointer term);
   ~WildcardQuery();
 
   const char* getObjectName() const;
@@ -49,12 +50,12 @@ private:
 class CLUCENE_EXPORT WildcardFilter: public Filter 
 {
 private:
-	CL_NS(index)::Term* term;
+	CL_NS(index)::Term::Pointer term;
 protected:
 	WildcardFilter( const WildcardFilter& copy );
 	
 public:
-	WildcardFilter(CL_NS(index)::Term* term);
+	WildcardFilter(CL_NS(index)::Term::Pointer term);
 	~WildcardFilter();
 
 	/** Returns a BitSet with true for documents which should be permitted in

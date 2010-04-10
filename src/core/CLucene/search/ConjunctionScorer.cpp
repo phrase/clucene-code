@@ -6,6 +6,8 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "_ConjunctionScorer.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "Similarity.h"
 #include "CLucene/util/_Arrays.h"
 #include <assert.h>

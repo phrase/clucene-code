@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "Term.h"
 #include "MultipleTermPositions.h"
 
 #include "IndexReader.h"
@@ -83,16 +85,16 @@ public:
 	}
 };
 
-MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<Term*>* terms) : _posList(_CLNEW IntQueue()){
+MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms) : _posList(_CLNEW IntQueue()){
 	CLLinkedList<TermPositions*> termPositions;
-  for ( size_t i=0;i<terms->length;i++){
-    termPositions.push_back( indexReader->termPositions(terms->values[i]));
+  for (size_t i = 0; i < terms->size(); i++){
+    termPositions.push_back( indexReader->termPositions((*terms)[i]));
 	}
 
-	TermPositions** tps = _CL_NEWARRAY(TermPositions*, terms->length+1); // i == tpsSize
+	TermPositions** tps = _CL_NEWARRAY(TermPositions*, terms->size() + 1); // i == tpsSize
 	termPositions.toArray(tps, true);
 
-	_termPositionsQueue = _CLNEW TermPositionsQueue(tps,terms->length);
+	_termPositionsQueue = _CLNEW TermPositionsQueue(tps, terms->size());
 }
 
 bool MultipleTermPositions::next() {

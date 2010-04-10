@@ -7,8 +7,6 @@
 #ifndef _lucene_search_Similarity_
 #define _lucene_search_Similarity_
 
-CL_CLASS_DEF(index,Term)
-
 CL_NS_DEF(search)
 
 class Searcher;
@@ -103,7 +101,7 @@ public:
    * @param searcher the document collection being searched
    * @return a score factor for the phrase
    */
-   float_t idf(CL_NS(util)::CLVector<CL_NS(index)::Term*>* terms, Searcher* searcher);
+   float_t idf(CL_NS(util)::CLVector<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms, Searcher* searcher);
    //float_t idf(Term** terms, Searcher* searcher);
 
    
@@ -122,7 +120,7 @@ public:
    * @param searcher the document collection being searched
    * @return a score factor for the term
    */
-   float_t idf(CL_NS(index)::Term* term, Searcher* searcher);
+   float_t idf(CL_NS(index)::Term::Pointer term, Searcher* searcher);
 
    
    /** Computes a score factor based on a term or phrase's frequency in a

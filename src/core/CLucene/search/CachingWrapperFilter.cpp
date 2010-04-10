@@ -7,6 +7,8 @@
 #include "CLucene/_ApiHeader.h"
 #include "CachingWrapperFilter.h"
 #include "CLucene/util/BitSet.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 
 CL_NS_DEF(search)
