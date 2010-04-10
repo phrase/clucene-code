@@ -72,12 +72,12 @@ SET(clucene_core_Files
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
-	./CLucene/store/MMapDirectory.cpp
+#	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
-	./CLucene/store/RawDirectory.cpp
-	./CLucene/store/RawIndexInput.cpp
-	./CLucene/store/RawIndexOutput.cpp
-	./CLucene/store/SharedHandle.cpp
+#	./CLucene/store/RawDirectory.cpp
+#	./CLucene/store/RawIndexInput.cpp
+#	./CLucene/store/RawIndexOutput.cpp
+#	./CLucene/store/SharedHandle.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp
@@ -129,6 +129,7 @@ SET(clucene_core_Files
 	./CLucene/search/SloppyPhraseScorer.cpp
 	./CLucene/search/DisjunctionSumScorer.cpp
 	./CLucene/search/ConjunctionScorer.cpp
+	./CLucene/search/ConstantScoreQuery.cpp
 	./CLucene/search/PhraseQuery.cpp
 	./CLucene/search/PrefixQuery.cpp
 	./CLucene/search/ExactPhraseScorer.cpp
