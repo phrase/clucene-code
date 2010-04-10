@@ -79,6 +79,7 @@ CL_NS_DEF(search)
 			Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc);
 		};
 
+	public:
 		/** Prints a query to a string, with <code>field</code> assumed to be the 
 		* default field and omitted.
 		* <p>The representation used is one that is supposed to be readable
