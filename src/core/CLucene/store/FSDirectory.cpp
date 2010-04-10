@@ -4,6 +4,9 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+
+#include <boost/shared_ptr.hpp>
+
 #include "CLucene/_ApiHeader.h"
 
 #include <fcntl.h>
@@ -53,8 +56,16 @@ CL_NS_USE(util)
 		* a read.
     * TODO: get rid of this and dup/fctnl or something like that...
 		*/
-		class SharedHandle: LUCENE_REFBASE{
+		class SharedHandle {
 		public:
+			/**
+			 * Shared pointer for class SharedHandle.
+			 */
+			typedef boost::shared_ptr<SharedHandle> SharedPtr;
+			/**
+			 * Use shared pointer as default pointer.
+			 */
+			typedef SharedPtr Pointer;
 			int32_t fhandle;
 			int64_t _length;
 			int64_t _fpos;
@@ -63,9 +74,9 @@ CL_NS_USE(util)
 			SharedHandle(const char* path);
 			~SharedHandle();
 		};
-		SharedHandle* handle;
+		SharedHandle::Pointer handle;
 		int64_t _pos;
-		FSIndexInput(SharedHandle* handle, int32_t __bufferSize):
+		FSIndexInput(SharedHandle::Pointer handle, int32_t __bufferSize):
 			BufferedIndexInput(__bufferSize)
 		{
 			this->_pos = 0;
@@ -119,7 +130,7 @@ CL_NS_USE(util)
 
 	  if ( __bufferSize == -1 )
 		  __bufferSize = CL_NS(store)::BufferedIndexOutput::BUFFER_SIZE;
-	  SharedHandle* handle = _CLNEW SharedHandle(path);
+	  SharedHandle::Pointer handle(new SharedHandle(path));
 
 	  //Open the file
 	  handle->fhandle  = ::_cl_open(path, _O_BINARY | O_RDONLY | _O_RANDOM, _S_IREAD );
@@ -149,7 +160,6 @@ CL_NS_USE(util)
 #ifndef _CL_DISABLE_MULTITHREADING
     delete handle->THIS_LOCK;
 #endif
-	  _CLDECDELETE(handle);
 	  return false;
   }
 
@@ -158,11 +168,11 @@ CL_NS_USE(util)
   //       Uses clone for its initialization
   //Pre  - clone is a valide instance of FSIndexInput
   //Post - The instance has been created and initialized by clone
-	  if ( other.handle == NULL )
+	  if ( other.handle.get() == NULL )
 		  _CLTHROWA(CL_ERR_NullPointer, "other handle is null");
 
 	  SCOPED_LOCK_MUTEX(*other.handle->THIS_LOCK)
-	  handle = _CL_POINTER(other.handle);
+	  handle = other.handle;
 	  _pos = other.handle->_fpos; //note where we are currently...
   }
 
@@ -201,7 +211,7 @@ CL_NS_USE(util)
   void FSDirectory::FSIndexInput::close()  {
 	BufferedIndexInput::close();
 #ifndef _CL_DISABLE_MULTITHREADING
-	if ( handle != NULL ){
+	if ( handle.get() != NULL ){
 		//here we have a bit of a problem... we need to lock the handle to ensure that we can
 		//safely delete the handle... but if we delete the handle, then the scoped unlock,
 		//won't be able to unlock the mutex...
@@ -212,10 +222,10 @@ CL_NS_USE(util)
 		mutex->lock();
 
 		//determine if we are about to delete the handle...
-		bool dounlock = ( handle->__cl_refcount > 1 );
+		bool dounlock = !handle.unique();
 
-    //decdelete (deletes if refcount is down to 0
-		_CLDECDELETE(handle);
+		// deletes handle if unique
+		handle.reset();
 
 		//printf("handle=%d\n", handle->__cl_refcount);
 		if ( dounlock ){
@@ -224,8 +234,6 @@ CL_NS_USE(util)
 			delete mutex;
 		}
 	}
-#else
-	_CLDECDELETE(handle);
 #endif
   }
 
