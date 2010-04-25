@@ -104,23 +104,23 @@ Explanation* MatchAllDocsQuery::MatchAllDocsWeight::explain(CL_NS(index)::IndexR
 	return queryExpl;
 }
 
-MatchAllDocsQuery::MatchAllDocsQuery::MatchAllDocsQuery(){
+MatchAllDocsQuery::MatchAllDocsQuery(){
 }
 
-MatchAllDocsQuery::MatchAllDocsQuery::~MatchAllDocsQuery(){}
+MatchAllDocsQuery::~MatchAllDocsQuery(){}
 
-Weight* MatchAllDocsQuery::MatchAllDocsQuery::_createWeight(Searcher* searcher){
+Weight* MatchAllDocsQuery::_createWeight(Searcher* searcher){
 	return _CLNEW MatchAllDocsWeight(this, searcher);
 }
 
-const char* MatchAllDocsQuery::MatchAllDocsQuery::getClassName() {
+const char* MatchAllDocsQuery::getClassName() {
 	return "MatchAllDocsQuery";
 }
-const char* MatchAllDocsQuery::MatchAllDocsQuery::getObjectName() const{
+const char* MatchAllDocsQuery::getObjectName() const{
 	return getClassName();
 }
 
-TCHAR* MatchAllDocsQuery::MatchAllDocsQuery::toString(const TCHAR* field) const{
+TCHAR* MatchAllDocsQuery::toString(const TCHAR* field) const{
 	CL_NS(util)::StringBuffer buffer(25);
     buffer.append(_T("MatchAllDocsQuery"));
     buffer.appendBoost(getBoost());
