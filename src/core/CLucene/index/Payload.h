@@ -23,7 +23,7 @@ CL_NS_DEF(index)
 *  to retrieve the payloads from the index.<br>
 *
 */
-class CLUCENE_EXPORT Payload:LUCENE_REFBASE {
+class CLUCENE_EXPORT Payload {
 protected:
   CL_NS(util)::ValueArray<uint8_t>& data;
 
@@ -36,6 +36,15 @@ protected:
   bool deleteData;
   bool deleteArray;
 public:
+
+  /** Shared pointer for Payload */
+  typedef boost::shared_ptr<Payload> SharedPtr;
+  /** Constant shared pointer for Payload */
+  typedef boost::shared_ptr<const Payload> ConstSharedPtr;
+  /** Default pointer for Payload */
+  typedef SharedPtr Pointer;
+  /** Constant default pointer for Payload */
+  typedef ConstSharedPtr ConstPointer;
 
   /** Creates an empty payload and does not allocate a byte array. */
   Payload();
@@ -120,7 +129,7 @@ public:
   * Clones this payload by creating a copy of the underlying
   * byte array.
   */
-  Payload* clone() const;
+  Payload::Pointer clone() const;
 
 };
 

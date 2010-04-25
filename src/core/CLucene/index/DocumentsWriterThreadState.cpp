@@ -984,7 +984,7 @@ DocumentsWriter::PostingVector* DocumentsWriter::ThreadState::FieldData::addNewV
 
 void DocumentsWriter::ThreadState::FieldData::addPosition(Token* token) {
 
-  const Payload* payload = token->getPayload();
+  Payload::ConstPointer payload = token->getPayload();
 
   // Get the text of this term.  Term can either
   // provide a String token or offset into a TCHAR*
@@ -1164,7 +1164,7 @@ void DocumentsWriter::ThreadState::FieldData::addPosition(Token* token) {
     threadState->prox = threadState->postingsPool->buffers[threadState->p->proxUpto >> BYTE_BLOCK_SHIFT];
     assert (threadState->prox != NULL);
 
-    if (payload != NULL && payload->length() > 0) {
+    if (payload.get() != NULL && payload->length() > 0) {
       threadState->writeProxVInt((proxCode<<1)|1);
       threadState->writeProxVInt(payload->length());
       threadState->writeProxBytes(payload->getData().values, payload->getOffset(), payload->length());

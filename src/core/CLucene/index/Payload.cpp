@@ -5,6 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
 #include "Payload.h"
 #include <assert.h>
 
@@ -100,8 +101,8 @@ void Payload::copyTo(uint8_t* target, const int32_t targetLen) const {
 	memcpy(target, this->data.values + this->offset, this->_length * sizeof(uint8_t));
 }
 
-Payload* Payload::clone()  const{
-	Payload* clone = _CLNEW Payload(*this->toByteArray(), 0, -1, true);
+Payload::Pointer Payload::clone()  const{
+	Payload::Pointer clone(new Payload(*this->toByteArray(), 0, -1, true));
 	return clone;
 }
 

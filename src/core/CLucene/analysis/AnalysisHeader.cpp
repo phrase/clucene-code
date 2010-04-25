@@ -53,8 +53,7 @@ Token::Token():
 	_startOffset (0),
 	_endOffset (0),
 	_type ( getDefaultType() ),
-	positionIncrement (1),
-	payload(NULL)
+	positionIncrement (1)
 {
   _termTextLen = 0;
 #ifndef LUCENE_TOKEN_WORD_LENGTH
@@ -70,15 +69,13 @@ Token::~Token(){
 #ifndef LUCENE_TOKEN_WORD_LENGTH
   free(_buffer);
 #endif
-	_CLLDELETE(payload);
 }
 
 Token::Token(const TCHAR* text, const int32_t start, const int32_t end, const TCHAR* typ):
 	_startOffset (start),
 	_endOffset (end),
 	_type ( (typ==NULL?getDefaultType():typ) ),
-	positionIncrement (1),
-	payload(NULL)
+	positionIncrement (1)
 {
   _termTextLen = 0;
 #ifndef LUCENE_TOKEN_WORD_LENGTH
@@ -225,13 +222,12 @@ TCHAR* Token::toString() const{
     return sb.toString();
 }
 
-CL_NS(index)::Payload* Token::getPayload() { return this->payload; }
-void Token::setPayload(CL_NS(index)::Payload* payload) {
-	_CLLDELETE(this->payload);
+CL_NS(index)::Payload::Pointer Token::getPayload() { return this->payload; }
+void Token::setPayload(CL_NS(index)::Payload::Pointer payload) {
 	this->payload = payload;
 }
 void Token::clear() {
-	_CLDELETE(payload);
+	payload.reset();
 	// Leave _buffer to allow re-use
 	_termTextLen = 0;
 	positionIncrement = 1;

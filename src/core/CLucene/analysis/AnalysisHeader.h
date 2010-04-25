@@ -7,6 +7,7 @@
 #ifndef _lucene_analysis_AnalysisHeader_
 #define _lucene_analysis_AnalysisHeader_
 
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Payload.h"
 #include "CLucene/util/VoidList.h"
 #include "CLucene/LuceneThreads.h"
@@ -72,7 +73,7 @@ private:
 	#endif
 	int32_t _termTextLen;                                         ///< the length of termText. Internal use only
 
-	CL_NS(index)::Payload* payload;
+	CL_NS(index)::Payload::Pointer payload;
 
 public:
 	static const TCHAR* getDefaultType();
@@ -161,12 +162,12 @@ public:
 	/**
 	* Returns this Token's payload.
 	*/
-	CL_NS(index)::Payload* getPayload();
+	CL_NS(index)::Payload::Pointer getPayload();
 
 	/**
 	* Sets this Token's payload.
 	*/
-	void setPayload(CL_NS(index)::Payload* payload);
+	void setPayload(CL_NS(index)::Payload::Pointer payload);
 
 	/** Resets the term text, payload, and positionIncrement to default.
 	* Other fields such as startOffset, endOffset and the token type are
