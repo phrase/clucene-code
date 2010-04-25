@@ -210,7 +210,7 @@ CL_NS_DEF(search)
 	CL_NS(util)::CLVector<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* PhraseQuery::getTerms() const {
   //Func - added by search highlighter
 
-		CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>* ret = _CLNEW CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>(false)
+		CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>* ret = _CLNEW CL_NS(util)::CLVector<Term::Pointer, Term::Deletor>(false);
 		
 		CND_CONDITION(ret != NULL,"Could not allocated memory for ret");
 
