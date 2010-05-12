@@ -8,6 +8,7 @@
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "WildcardTermEnum.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 
 CL_NS_USE(index)

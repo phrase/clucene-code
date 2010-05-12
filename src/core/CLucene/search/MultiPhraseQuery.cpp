@@ -18,6 +18,7 @@
 
 #include "CLucene/index/_Term.h"
 #include "CLucene/index/Terms.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/MultipleTermPositions.h"
 

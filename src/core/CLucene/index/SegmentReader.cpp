@@ -8,6 +8,7 @@
 #include "CLucene/util/Misc.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/FSDirectory.h"
 #include "_SegmentHeader.h"
 #include "_MultiSegmentReader.h"
 #include "_FieldInfos.h"
@@ -16,7 +17,6 @@
 #include "_TermInfosReader.h"
 #include "Terms.h"
 #include "CLucene/search/Similarity.h"
-#include "CLucene/store/FSDirectory.h"
 #include "CLucene/util/PriorityQueue.h"
 #include "_SegmentMerger.h"
 #include <assert.h>
@@ -131,8 +131,6 @@ CL_NS_DEF(index)
     this->_fieldInfos = NULL;
     this->tis = NULL;
     this->fieldsReader = NULL;
-    this->cfsReader = NULL;
-    this->storeCFSReader = NULL;
 
     this->segment = si->name;
     this->si = si;
@@ -144,18 +142,18 @@ CL_NS_DEF(index)
 
     try {
       // Use compound file directory for some files, if it exists
-      Directory* cfsDir = directory();
+      Directory::Pointer cfsDir = directory();
       if (si->getUseCompoundFile()) {
-        cfsReader = _CLNEW CompoundFileReader(directory(), (segment + "." + IndexFileNames::COMPOUND_FILE_EXTENSION).c_str(), readBufferSize);
+        cfsReader.reset(_CLNEW CompoundFileReader(directory(), (segment + "." + IndexFileNames::COMPOUND_FILE_EXTENSION).c_str(), readBufferSize));
         cfsDir = cfsReader;
       }
 
-      Directory* storeDir;
+      Directory::Pointer storeDir;
 
       if (doOpenStores) {
         if (si->getDocStoreOffset() != -1) {
           if (si->getDocStoreIsCompoundFile()) {
-            storeCFSReader = _CLNEW CompoundFileReader(directory(), (si->getDocStoreSegment() + "." + IndexFileNames::COMPOUND_FILE_STORE_EXTENSION).c_str(), readBufferSize);
+            storeCFSReader.reset(_CLNEW CompoundFileReader(directory(), (si->getDocStoreSegment() + "." + IndexFileNames::COMPOUND_FILE_STORE_EXTENSION).c_str(), readBufferSize));
             storeDir = storeCFSReader;
           } else {
             storeDir = directory();
@@ -164,7 +162,7 @@ CL_NS_DEF(index)
           storeDir = cfsDir;
         }
       } else
-        storeDir = NULL;
+        storeDir.reset();
 
       // No compound file exists - use the multi-file format
       _fieldInfos = _CLNEW FieldInfos(cfsDir, (segment + ".fnm").c_str() );
@@ -265,7 +263,7 @@ CL_NS_DEF(index)
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  SegmentReader* SegmentReader::get(Directory* dir, SegmentInfo* si,
+  SegmentReader* SegmentReader::get(Directory::Pointer dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize) {
@@ -276,7 +274,7 @@ CL_NS_DEF(index)
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  SegmentReader* SegmentReader::get(Directory* dir, SegmentInfo* si,
+  SegmentReader* SegmentReader::get(Directory::Pointer dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize,
@@ -307,7 +305,6 @@ CL_NS_DEF(index)
       _CLDELETE(deletedDocs);
       _CLDELETE_ARRAY(ones);
       _CLDELETE(termVectorsReaderOrig)
-      _CLDECDELETE(cfsReader);
       //termVectorsLocal->unregister(this);
       _norms.clear();
   }
@@ -384,14 +381,14 @@ CL_NS_DEF(index)
           _CLDELETE(termVectorsReaderOrig);
       }
 
-      if (cfsReader != NULL){
-        cfsReader->close();
-        _CLDECDELETE(cfsReader);
+      if (cfsReader.get() != NULL){
+          cfsReader->close();
+          cfsReader.reset();
       }
 
-      if (storeCFSReader != NULL){
-        storeCFSReader->close();
-        _CLDELETE(storeCFSReader);
+      if (storeCFSReader.get() != NULL){
+          storeCFSReader->close();
+          storeCFSReader.reset();
       }
 
       // maybe close directory
@@ -813,7 +810,7 @@ bool SegmentReader::hasNorms(const TCHAR* field){
     return Misc::segmentname(segment.c_str(),ext,x);
   }
 
-  void SegmentReader::openNorms(Directory* cfsDir, int32_t readBufferSize) {
+  void SegmentReader::openNorms(Directory::Pointer cfsDir, int32_t readBufferSize) {
   //Func - Open all norms files for all fields
   //       Creates for each field a norm Instance with an open inputstream to
   //       a corresponding norm file ready to be read
@@ -830,7 +827,7 @@ bool SegmentReader::hasNorms(const TCHAR* field){
         continue;
       }
       if (fi->isIndexed && !fi->omitNorms) {
-        Directory* d = directory();
+        Directory::Pointer d = directory();
         string fileName = si->getNormFileName(fi->number);
         if (!si->hasSeparateNorms(fi->number)) {
           d = cfsDir;
@@ -1010,16 +1007,16 @@ bool SegmentReader::hasNorms(const TCHAR* field){
       // TODO: Change this in case FieldsReader becomes thread-safe in the future
       string fieldsSegment;
 
-      Directory* storeDir = directory();
+      Directory::Pointer storeDir = directory();
 
       if (si->getDocStoreOffset() != -1) {
         fieldsSegment = si->getDocStoreSegment();
-        if (storeCFSReader != NULL) {
+        if (storeCFSReader.get() != NULL) {
           storeDir = storeCFSReader;
         }
       } else {
         fieldsSegment = segment;
-        if (cfsReader != NULL) {
+        if (cfsReader.get() != NULL) {
           storeDir = cfsReader;
         }
       }
@@ -1068,7 +1065,7 @@ bool SegmentReader::hasNorms(const TCHAR* field){
         for (size_t i = 0; i < _fieldInfos->size(); i++) {
           FieldInfo* fi = _fieldInfos->fieldInfo(i);
           if (fi->isIndexed && !fi->omitNorms) {
-            Directory* d = si->getUseCompoundFile() ? cfsReader : directory();
+            Directory::Pointer d = si->getUseCompoundFile() ? cfsReader : directory();
             string fileName = si->getNormFileName(fi->number);
             if (si->hasSeparateNorms(fi->number)) {
               continue;
@@ -1100,14 +1097,13 @@ bool SegmentReader::hasNorms(const TCHAR* field){
     this->deletedDocs = NULL;
     this->ones = NULL;
     this->termVectorsReaderOrig = NULL;
-    this->cfsReader = NULL;
     this->fieldsReader = NULL;
     this->tis = NULL;
     this->freqStream = NULL;
     this->proxStream = NULL;
     this->termVectorsReaderOrig = NULL;
-    this->cfsReader = NULL;
-    this->storeCFSReader = NULL;
+    this->cfsReader.reset();
+    this->storeCFSReader.reset();
     this->singleNormStream = NULL;
 
     return clone;

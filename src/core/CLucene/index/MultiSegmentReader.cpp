@@ -7,6 +7,7 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
 #include "IndexReader.h"
 #include "CLucene/document/Document.h"
 #include "CLucene/document/FieldSelector.h"
@@ -43,7 +44,7 @@ void MultiSegmentReader::initialize(CL_NS(util)::ArrayBase<IndexReader*>* _subRe
   starts[subReaders->length] = _maxDoc;
 }
 
-MultiSegmentReader::MultiSegmentReader(CL_NS(store)::Directory* directory, SegmentInfos* sis, bool closeDirectory):
+MultiSegmentReader::MultiSegmentReader(CL_NS(store)::Directory::Pointer directory, SegmentInfos* sis, bool closeDirectory):
   normsCache(NormsCacheType(true,true)),
   DirectoryIndexReader(directory,sis,closeDirectory)
 {
@@ -76,7 +77,7 @@ MultiSegmentReader::MultiSegmentReader(CL_NS(store)::Directory* directory, Segme
 
 /** This contructor is only used for {@link #reopen()} */
 MultiSegmentReader::MultiSegmentReader(
-      CL_NS(store)::Directory* directory,
+      CL_NS(store)::Directory::Pointer directory,
       SegmentInfos* infos,
       bool closeDirectory,
       CL_NS(util)::ArrayBase<IndexReader*>* oldReaders,

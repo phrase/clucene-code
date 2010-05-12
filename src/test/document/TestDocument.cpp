@@ -132,11 +132,11 @@ public:
   */
 
   void TestFieldSelectors(CuTest *tc){
-    RAMDirectory dir;
+    Directory::Pointer dir(new RAMDirectory());
     const TCHAR* longStrValue = _T("too long a field...");
     {
       WhitespaceAnalyzer a;
-      IndexWriter w(&dir,&a,true);
+      IndexWriter w(dir,&a,true);
       for (int i=0;i<3;i++){
         Document doc;
         doc.add(*_CLNEW Field(_T("f1"), _T("value1"), Field::STORE_YES));
@@ -150,7 +150,7 @@ public:
       w.flush();
     }
 
-    IndexReader* reader = IndexReader::open(&dir);
+    IndexReader* reader = IndexReader::open(dir);
     MapFieldSelector fieldsToLoad;
     fieldsToLoad.add(_T("f2"), FieldSelector::LOAD );
     fieldsToLoad.add(_T("f3"), FieldSelector::LAZY_LOAD );
@@ -173,7 +173,6 @@ public:
     CLUCENE_ASSERT(memcmp(shouldBe.values,bytes.values,4)==0);
 
     _CLDELETE(reader);
-    _CL_DECREF(&dir); //derefence since we are on the stack...
   }
 
   void _TestDocumentWithOptions(CuTest *tc, int storeBit, FieldSelector::FieldSelectorResult fieldSelectorBit){
@@ -186,14 +185,14 @@ public:
     Field* f;
     const TCHAR *_ts, *_ts2;
     const ValueArray<uint8_t>* strm;
-    RAMDirectory ram;
+    Directory::Pointer ram(new RAMDirectory()) ;
 
     const char* areaderString = "a binary field";
     const TCHAR* treaderString = _T("a string reader field");
     size_t readerStringLen = strlen(areaderString);
 
     SimpleAnalyzer an;
-    IndexWriter writer(&ram,&an,true); //no analyzer needed since we are not indexing...
+    IndexWriter writer(ram,&an,true); //no analyzer needed since we are not indexing...
 
     ValueArray<uint8_t> b( (uint8_t*)strdup(areaderString), strlen(areaderString) );
     //use binary utf8
@@ -222,7 +221,7 @@ public:
     writer.optimize();
     writer.close();
 
-    IndexReader* reader = IndexReader::open(&ram);
+    IndexReader* reader = IndexReader::open(ram);
 
     MapFieldSelector fieldsToLoad;
     fieldsToLoad.add(_T("fileField"), fieldSelectorBit );
@@ -268,7 +267,6 @@ public:
 
     reader->close();
     _CLDELETE(reader);
-    _CL_DECREF(&ram); //this is in the stack...
   }
 
 

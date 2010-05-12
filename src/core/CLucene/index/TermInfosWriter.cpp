@@ -5,10 +5,10 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "CLucene/store/IndexOutput.h"
 #include "CLucene/util/Misc.h"
-#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "_TermInfo.h"
 #include "IndexWriter.h"
@@ -20,7 +20,7 @@ CL_NS_USE(util)
 CL_NS_USE(store)
 CL_NS_DEF(index)
 
-	TermInfosWriter::TermInfosWriter(Directory* directory, const char* segment, FieldInfos* fis, int32_t interval):
+	TermInfosWriter::TermInfosWriter(Directory::Pointer directory, const char* segment, FieldInfos* fis, int32_t interval):
         fieldInfos(fis){
     //Func - Constructor
     //Pre  - directory contains a valid reference to a Directory
@@ -39,7 +39,7 @@ CL_NS_DEF(index)
 		other->other = this;
 	}
 
-  TermInfosWriter::TermInfosWriter(Directory* directory, const char* segment, FieldInfos* fis, int32_t interval, bool isIndex):
+  TermInfosWriter::TermInfosWriter(Directory::Pointer directory, const char* segment, FieldInfos* fis, int32_t interval, bool isIndex):
 	    fieldInfos(fis){
     //Func - Constructor
     //Pre  - directory contains a valid reference to a Directory
@@ -52,7 +52,7 @@ CL_NS_DEF(index)
       initialise(directory,segment,interval,isIndex);
   }
 
-  void TermInfosWriter::initialise(Directory* directory, const char* segment, int32_t interval, bool IsIndex){
+  void TermInfosWriter::initialise(Directory::Pointer directory, const char* segment, int32_t interval, bool IsIndex){
     //Func - Helps constructors to initialize Instance
     //Pre  - directory contains a valid reference to a Directory
     //       segment != NULL

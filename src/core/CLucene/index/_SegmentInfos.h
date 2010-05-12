@@ -11,7 +11,6 @@
 //#include "IndexReader.h"
 #include "CLucene/util/Misc.h"
 #include "_IndexFileNames.h"
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,IndexInput)
 CL_CLASS_DEF(store,IndexOutput)
 
@@ -27,7 +26,7 @@ CL_NS_DEF(index)
 
     std::string name;									// unique name in dir
 		int32_t docCount;							// number of docs in seg
-		CL_NS(store)::Directory* dir;				// where segment resides
+		CL_NS(store)::Directory::Pointer dir;				// where segment resides
 
 	private:
 		bool preLockless;						  // true if this is a segments file written before
@@ -80,7 +79,7 @@ CL_NS_DEF(index)
     void addIfExists(std::vector<std::string>& files, const std::string& fileName);
 
 	public:
-		SegmentInfo(const char* _name, const int32_t _docCount, CL_NS(store)::Directory* _dir,
+		SegmentInfo(const char* _name, const int32_t _docCount, CL_NS(store)::Directory::Pointer _dir,
 			bool _isCompoundFile=SegmentInfo::CHECK_DIR,
       bool _hasSingleNormFile=false,
 			int32_t _docStoreOffset = -1,
@@ -95,7 +94,7 @@ CL_NS_DEF(index)
 		* @param format format of the segments info file
 		* @param input input handle to read segment info from
 		*/
-		SegmentInfo(CL_NS(store)::Directory* dir, int32_t format, CL_NS(store)::IndexInput* input);
+		SegmentInfo(CL_NS(store)::Directory::Pointer dir, int32_t format, CL_NS(store)::IndexInput* input);
 
 		~SegmentInfo();
 
@@ -186,12 +185,12 @@ CL_NS_DEF(index)
 		bool equals(const SegmentInfo* obj);
 
 		///Gets the Directory where the segment resides
-		CL_NS(store)::Directory* getDir() const{ return dir; } //todo: since dir is public, consider removing this function
+		CL_NS(store)::Directory::Pointer getDir() const{ return dir; } //todo: since dir is public, consider removing this function
 
 	    friend class SegmentReader;
 
 	    /** Used for debugging */
-	    std::string segString(CL_NS(store)::Directory* dir);
+	    std::string segString(CL_NS(store)::Directory::Pointer dir);
 	};
 
 	typedef CL_NS(util)::CLVector<SegmentInfo*,CL_NS(util)::Deletor::Object<SegmentInfo> > segmentInfosType;
@@ -313,7 +312,7 @@ CL_NS_DEF(index)
 		*
 		* @param directory -- directory to search for the latest segments_N file
 		*/
-		static int64_t getCurrentSegmentGeneration( const CL_NS(store)::Directory* directory );
+		static int64_t getCurrentSegmentGeneration( const CL_NS(store)::Directory::Pointer directory );
 
 		/**
 		* Get the filename of the current segments_N file
@@ -329,7 +328,7 @@ CL_NS_DEF(index)
 		*
 		* @param directory -- directory to search for the latest segments_N file
 		*/
-		static std::string getCurrentSegmentFileName( CL_NS(store)::Directory* directory );
+		static std::string getCurrentSegmentFileName( CL_NS(store)::Directory::Pointer directory );
 
 		/**
 		* Get the segments_N filename in use by this segment infos.
@@ -375,7 +374,7 @@ CL_NS_DEF(index)
 		* @throws CorruptIndexException if the index is corrupt
 		* @throws IOException if there is a low-level IO error
 		*/
-		void read(CL_NS(store)::Directory* directory, const char* segmentFileName);
+		void read(CL_NS(store)::Directory::Pointer directory, const char* segmentFileName);
 
 		/**
 		* This version of read uses the retry logic (for lock-less
@@ -383,11 +382,11 @@ CL_NS_DEF(index)
 		* @throws CorruptIndexException if the index is corrupt
 		* @throws IOException if there is a low-level IO error
 		*/
-		void read(CL_NS(store)::Directory* directory);
+		void read(CL_NS(store)::Directory::Pointer directory);
 
 		//Writes a new segments file based upon the SegmentInfo instances it manages
 		//note: still does not support lock-less writes (still pre-2.1 format)
-        void write(CL_NS(store)::Directory* directory);
+        void write(CL_NS(store)::Directory::Pointer directory);
 
 		/**
 		* Returns a copy of this instance, also copying each
@@ -407,7 +406,7 @@ CL_NS_DEF(index)
 		* @throws CorruptIndexException if the index is corrupt
 		* @throws IOException if there is a low-level IO error
 		*/
-		static int64_t readCurrentVersion(CL_NS(store)::Directory* directory);
+		static int64_t readCurrentVersion(CL_NS(store)::Directory::Pointer directory);
 
 
     /** If non-null, information about retries when loading
@@ -458,7 +457,7 @@ CL_NS_DEF(index)
     class _FindSegmentsFile: LUCENE_BASE{
     protected:
       const char* fileDirectory;
-      CL_NS(store)::Directory* directory;
+      CL_NS(store)::Directory::Pointer directory;
 
       void doRun();
       virtual bool tryDoBody(const char* segmentFileName, CLuceneError& ret_err) = 0;
@@ -491,13 +490,12 @@ CL_NS_DEF(index)
         return false;
       }
     public:
-    		FindSegmentsFile( CL_NS(store)::Directory* dir ){
+    		FindSegmentsFile( CL_NS(store)::Directory::Pointer dir ){
 	        this->directory = dir;
           this->fileDirectory = NULL;
           this->result = 0;
         }
     		FindSegmentsFile( const char* dir ){
-	        this->directory = NULL;
           this->fileDirectory = dir;
           this->result = 0;
         }
@@ -513,7 +511,7 @@ CL_NS_DEF(index)
 
     	class FindSegmentsVersion: public FindSegmentsFile<int64_t> {
     	public:
-    		FindSegmentsVersion( CL_NS(store)::Directory* dir );
+    		FindSegmentsVersion( CL_NS(store)::Directory::Pointer dir );
     		FindSegmentsVersion( const char* dir );
     		int64_t doBody( const char* segmentFileName );
     	};
@@ -522,7 +520,7 @@ CL_NS_DEF(index)
 		class FindSegmentsRead: public FindSegmentsFile<bool> {
       	  SegmentInfos* _this;
     	public:
-		  FindSegmentsRead( CL_NS(store)::Directory* dir, SegmentInfos* _this );
+		  FindSegmentsRead( CL_NS(store)::Directory::Pointer dir, SegmentInfos* _this );
     	  FindSegmentsRead( const char* dir, SegmentInfos* _this );
     	  bool doBody( const char* segmentFileName );
     	};

@@ -12,7 +12,7 @@ void testIWmergePhraseSegments(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	sprintf(fsdir,"%s/%s",cl_tempDir, "test.indexwriter");
 	SimpleAnalyzer a;
-  Directory* dir = FSDirectory::getDirectory(fsdir, true);
+	Directory::Pointer dir = FSDirectory::getDirectory(fsdir, true);
 
 	IndexWriter ndx2(dir,&a,true);
 	ndx2.setUseCompoundFile(false);
@@ -62,19 +62,18 @@ void testIWmergePhraseSegments(CuTest *tc){
 	_CLDELETE(query1);
 	_CLDELETE(hits0);
 	_CLDELETE(hits1);
-	_CLDECDELETE(dir);
 }
 
 //checks that adding more than the min_merge value goes ok...
 //checks for a mem leak that used to occur
 void testIWmergeSegments1(CuTest *tc){
-	RAMDirectory ram;
+	Directory::Pointer ram(new RAMDirectory);
 	SimpleAnalyzer a;
 
-  IndexWriter ndx2(&ram,&a,true);
+	IndexWriter ndx2(ram,&a,true);
 	ndx2.close(); //test immediate closing bug reported
 
-	IndexWriter ndx(&ram,&a,true); //set create to false
+	IndexWriter ndx(ram,&a,true); //set create to false
 
 	ndx.setUseCompoundFile(false);
 	ndx.setMergeFactor(2);
@@ -94,8 +93,8 @@ void testIWmergeSegments1(CuTest *tc){
 	ndx.close();
 
 	//test the ram loading
-	RAMDirectory ram2(&ram);
-	IndexReader* reader2 = IndexReader::open(&ram2);
+	Directory::Pointer ram2(new RAMDirectory(ram));
+	IndexReader* reader2 = IndexReader::open(ram2);
 	Term::Pointer term(new Term(_T("field0"),fld));
 	TermEnum* en = reader2->terms(term);
 	CLUCENE_ASSERT(en->next());
@@ -108,7 +107,7 @@ void testIWmergeSegments2(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	sprintf(fsdir,"%s/%s",cl_tempDir, "test.indexwriter");
 	SimpleAnalyzer a;
-  Directory* dir = FSDirectory::getDirectory(fsdir, true);
+	Directory::Pointer dir = FSDirectory::getDirectory(fsdir, true);
 
 	IndexWriter ndx2(dir,&a,true);
 	ndx2.setUseCompoundFile(false);
@@ -151,8 +150,7 @@ void testIWmergeSegments2(CuTest *tc){
 	_CLDELETE(query0);
 	_CLDELETE(query1);
 	_CLDELETE(hits0);
-  _CLDELETE(hits1);
-	_CLDECDELETE(dir);
+	_CLDELETE(hits1);
 }
 
 void testAddIndexes(CuTest *tc){
@@ -161,36 +159,36 @@ void testAddIndexes(CuTest *tc){
   strcat(reuters_origdirectory, "/reuters-21578-index");
 
   {
-    RAMDirectory dir;
+    Directory::Pointer dir(new RAMDirectory);
     WhitespaceAnalyzer a;
-    IndexWriter w(&dir, &a, true);
-    ValueArray<Directory*> dirs(2);
-    dirs[0] = FSDirectory::getDirectory(reuters_origdirectory);
-    dirs[1] = FSDirectory::getDirectory(reuters_origdirectory);
+    IndexWriter w(dir, &a, true);
+	CLVector<Directory::Pointer, Directory::Deletor> dirs;
+    dirs.push_back(FSDirectory::getDirectory(reuters_origdirectory));
+    dirs.push_back(FSDirectory::getDirectory(reuters_origdirectory));
     w.addIndexesNoOptimize(dirs);
     w.flush();
     CLUCENE_ASSERT(w.docCount()==62); //31 docs in reuters...
 
     // TODO: Currently there is a double ref-counting mechanism in place for Directory objects,
     //      so we need to dec them both
-    dirs[1]->close();_CLDECDELETE(dirs[1]);
-    dirs[0]->close();_CLDECDELETE(dirs[0]);
+    dirs[1]->close();
+    dirs[0]->close();
   }
   {
-    RAMDirectory dir;
+    Directory::Pointer dir(new RAMDirectory);
     WhitespaceAnalyzer a;
-    IndexWriter w(&dir, &a, true);
-    ValueArray<Directory*> dirs(2);
-    dirs[0] = FSDirectory::getDirectory(reuters_origdirectory);
-    dirs[1] = FSDirectory::getDirectory(reuters_origdirectory);
+    IndexWriter w(dir, &a, true);
+	CLVector<Directory::Pointer, Directory::Deletor> dirs;
+    dirs.push_back(FSDirectory::getDirectory(reuters_origdirectory));
+    dirs.push_back(FSDirectory::getDirectory(reuters_origdirectory));
     w.addIndexes(dirs);
     w.flush();
     CLUCENE_ASSERT(w.docCount()==62); //31 docs in reuters...
 
     // TODO: Currently there is a double ref-counting mechanism in place for Directory objects,
     //      so we need to dec them both
-    dirs[1]->close();_CLDECDELETE(dirs[1]);
-    dirs[0]->close();_CLDECDELETE(dirs[0]);
+    dirs[1]->close();
+    dirs[0]->close();
   }
 }
 
@@ -200,8 +198,8 @@ void testHashingBug(CuTest *tc){
   CL_NS(document)::Document doc;
   CL_NS(document)::Field* field;
   CL_NS(analysis::standard)::StandardAnalyzer analyzer;
-  CL_NS(store)::RAMDirectory dir;
-  CL_NS(index)::IndexWriter writer(&dir, &analyzer, true, true );
+  CL_NS(store)::Directory::Pointer dir(new RAMDirectory);
+  CL_NS(index)::IndexWriter writer(dir, &analyzer, true, true );
 
   field = _CLNEW CL_NS(document)::Field( _T("CNS_VERSION"), _T("1"), CL_NS(document)::Field::STORE_NO | CL_NS(document)::Field::INDEX_UNTOKENIZED );
   doc.add( (*field) );
@@ -252,7 +250,6 @@ void testHashingBug(CuTest *tc){
   writer.addDocument( &doc ); // ADDING SECOND DOCUMENT - will never return from this function
   writer.optimize();          // stucks in line 222-223
   writer.close();
-  _CL_DECREF(&dir);
 }
 
 

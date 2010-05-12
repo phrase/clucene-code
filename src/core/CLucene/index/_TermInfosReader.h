@@ -11,7 +11,6 @@
 #include <memory>
 //#include "Terms.h"
 #include "_SegmentTermEnum.h"
-CL_CLASS_DEF(store,Directory)
 //CL_CLASS_DEF(store,IndexInput)
 #include "CLucene/util/_ThreadLocal.h"
 //#include "FieldInfos.h"
@@ -27,7 +26,7 @@ CL_NS_DEF(index)
 */
 	class TermInfosReader :LUCENE_BASE{
 	private:
-		CL_NS(store)::Directory* directory;
+		CL_NS(store)::Directory::Pointer directory;
 		const char* segment;
 		FieldInfos* fieldInfos;
 
@@ -54,7 +53,7 @@ CL_NS_DEF(index)
 		* Constructor.
         * Reads the TermInfos file (.tis) and eventually the Term Info Index file (.tii)
 		*/
-		TermInfosReader(CL_NS(store)::Directory* dir, const char* segment, FieldInfos* fis,
+		TermInfosReader(CL_NS(store)::Directory::Pointer dir, const char* segment, FieldInfos* fis,
 			const int32_t readBufferSize = CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
 		~TermInfosReader();
 

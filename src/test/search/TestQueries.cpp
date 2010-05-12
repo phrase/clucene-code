@@ -10,10 +10,10 @@
 /// Java PrefixQuery test, 2009-06-02
 void testPrefixQuery(CuTest *tc){
 	WhitespaceAnalyzer analyzer;
-	RAMDirectory directory;
+	Directory::Pointer directory(new RAMDirectory);
 	const TCHAR* categories[] = {_T("/Computers"), _T("/Computers/Mac"), _T("/Computers/Windows")};
 
-	IndexWriter writer( &directory, &analyzer, true);
+	IndexWriter writer( directory, &analyzer, true);
 	for (int i = 0; i < 3; i++) {
 		Document *doc = _CLNEW Document();
 		doc->add(*_CLNEW Field(_T("category"), categories[i], Field::STORE_YES | Field::INDEX_UNTOKENIZED));
@@ -24,7 +24,7 @@ void testPrefixQuery(CuTest *tc){
 
 	Term::Pointer t(new Term(_T("category"), _T("/Computers")));
 	PrefixQuery *query = _CLNEW PrefixQuery(t);
-	IndexSearcher searcher(&directory);
+	IndexSearcher searcher(directory);
 	Hits *hits = searcher.search(query);
 	CLUCENE_ASSERT(3 == hits->length()); // All documents in /Computers category and below
 	_CLDELETE(query);
@@ -77,9 +77,9 @@ public:
 	}
 
 	void testFuzziness() {
-		RAMDirectory directory;
+		Directory::Pointer directory(new RAMDirectory);
 		WhitespaceAnalyzer a;
-		IndexWriter writer(&directory, &a, true);
+		IndexWriter writer(directory, &a, true);
 		addDoc(_T("aaaaa"), &writer);
 		addDoc(_T("aaaab"), &writer);
 		addDoc(_T("aaabb"), &writer);
@@ -89,7 +89,7 @@ public:
 		addDoc(_T("ddddd"), &writer);
 		writer.optimize();
 		writer.close();
-		IndexSearcher searcher(&directory);
+		IndexSearcher searcher(directory);
 
 		CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("aaaaa")) == 3);
 
@@ -191,18 +191,18 @@ public:
 		_CLLDELETE(hits);
 
 		searcher.close();
-		directory.close();
+		directory->close();
 	}
 
     void testFuzzinessLong() {
-        RAMDirectory directory;
+        Directory::Pointer directory(new RAMDirectory);
         WhitespaceAnalyzer a;
-        IndexWriter writer(&directory, &a, true);
+        IndexWriter writer(directory, &a, true);
         addDoc(_T("aaaaaaa"), &writer);
         addDoc(_T("segment"), &writer);
         writer.optimize();
         writer.close();
-        IndexSearcher searcher(&directory);
+        IndexSearcher searcher(directory);
         
         // not similar enough:
         CLUCENE_ASSERT( getHitsLength(&searcher, _T("field"), _T("xxxxx")) == 0);
@@ -260,7 +260,7 @@ public:
         }
 
         searcher.close();
-        directory.close();
+        directory->close();
     }
 };
 
@@ -271,11 +271,11 @@ void testFuzzyQuery(CuTest *tc){
 	tester.testFuzziness();
 
 	/// Legacy CLucene tests
-	RAMDirectory ram;
+	Directory::Pointer ram(new RAMDirectory);
 
 	//---
 	WhitespaceAnalyzer an;
-	IndexWriter* writer = _CLNEW IndexWriter(&ram, &an, true);
+	IndexWriter* writer = _CLNEW IndexWriter(ram, &an, true);
 
 	//---  
 	Document *doc = 0;
@@ -310,7 +310,7 @@ void testFuzzyQuery(CuTest *tc){
 	_CLDELETE(writer);
 
 	//---
-	IndexSearcher searcher (&ram);
+	IndexSearcher searcher (ram);
 
 	//---
 	Term::Pointer term(new Term(_T("body"), _T("test~")));
@@ -323,7 +323,7 @@ void testFuzzyQuery(CuTest *tc){
 	_CLDELETE(result);
 	_CLDELETE(query);
 	searcher.close();
-	ram.close();
+	ram->close();
 }
 #else
 	void _NO_FUZZY_QUERY(CuTest *tc){

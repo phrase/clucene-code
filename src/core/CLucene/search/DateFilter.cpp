@@ -9,6 +9,7 @@
 #include "CLucene/index/Term.h"
 #include "DateFilter.h"
 #include "CLucene/document/DateField.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/Terms.h"
 #include "CLucene/util/BitSet.h"

@@ -125,8 +125,8 @@
    void testEmptyStopList(CuTest *tc)
    {
        StandardAnalyzer a((const TCHAR**)_T("\0"));
-       RAMDirectory ram;
-       IndexWriter writer(&ram, &a, true);
+       Directory::Pointer ram(_CLNEW RAMDirectory());
+       IndexWriter writer(ram, &a, true);
        
        Document doc;
        doc.add(*(_CLNEW lucene::document::Field(
@@ -134,7 +134,7 @@
        writer.addDocument(&doc);
        writer.close();
 
-       IndexSearcher searcher(&ram);
+       IndexSearcher searcher(ram);
        Query* q = QueryParser::parse(_T("blah"), _T("First"), &a);
        Hits* h = searcher.search(q);
        _CLLDELETE(h);
@@ -300,9 +300,9 @@
   }
 
   void testMutipleDocument(CuTest *tc) {
-      RAMDirectory dir;
+      Directory::Pointer dir(_CLNEW RAMDirectory());
       KeywordAnalyzer a;
-      IndexWriter* writer = _CLNEW IndexWriter(&dir,&a, true);
+      IndexWriter* writer = _CLNEW IndexWriter(dir,&a, true);
       Document* doc = _CLNEW Document();
       doc->add(*_CLNEW Field(_T("partnum"), _T("Q36"), Field::STORE_YES | Field::INDEX_TOKENIZED));
       writer->addDocument(doc);
@@ -312,7 +312,7 @@
       writer->close();
       _CLLDELETE(writer);
 
-      IndexReader* reader = IndexReader::open(&dir);
+      IndexReader* reader = IndexReader::open(dir);
       Term::Pointer t(new Term(_T("partnum"), _T("Q36")));
       TermDocs* td = reader->termDocs(t);
       CLUCENE_ASSERT(td->next());

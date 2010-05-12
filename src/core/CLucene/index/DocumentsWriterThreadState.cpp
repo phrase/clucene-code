@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "CLucene/store/IndexOutput.h"
 #include "CLucene/store/_RAMDirectory.h"
@@ -14,7 +15,6 @@
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/document/Field.h"
-#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/document/Document.h"

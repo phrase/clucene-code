@@ -58,7 +58,7 @@ FieldInfos::~FieldInfos(){
 	byNumber.clear();
 }
 
-FieldInfos::FieldInfos(Directory* d, const char* name):
+FieldInfos::FieldInfos(Directory::Pointer d, const char* name):
 	byName(false,false),byNumber(true) 
 {
 	IndexInput* input = d->openInput(name);
@@ -187,7 +187,7 @@ bool FieldInfos::hasVectors() const{
 	return false;
 }
 
-void FieldInfos::write(Directory* d, const char* name) const{
+void FieldInfos::write(Directory::Pointer d, const char* name) const{
 	IndexOutput* output = d->createOutput(name);
 	try {
 		write(output);

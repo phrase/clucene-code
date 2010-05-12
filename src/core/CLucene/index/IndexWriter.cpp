@@ -7,10 +7,10 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
 #include "IndexWriter.h"
 #include "IndexReader.h"
 #include "CLucene/document/Document.h"
-#include "CLucene/store/Directory.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/util/Misc.h"
 
@@ -87,7 +87,6 @@ IndexWriter::~IndexWriter(){
   _CLLDELETE(mergePolicy);
   _CLLDELETE(deleter);
   _CLLDELETE(docWriter);
-  if (bOwnsDirectory) _CLLDECDELETE(directory);
   delete _internal;
 }
 
@@ -155,19 +154,19 @@ IndexWriter::IndexWriter(const char* path, Analyzer* a, bool create):bOwnsDirect
     init(FSDirectory::getDirectory(path), a, create, true, (IndexDeletionPolicy*)NULL, true);
 }
 
-IndexWriter::IndexWriter(Directory* d, Analyzer* a, bool create, bool closeDir):bOwnsDirectory(false){
+IndexWriter::IndexWriter(Directory::Pointer d, Analyzer* a, bool create, bool closeDir):bOwnsDirectory(true){
   init(d, a, create, closeDir, NULL, true);
 }
 
-IndexWriter::IndexWriter(Directory* d, bool autoCommit, Analyzer* a, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(false){
+IndexWriter::IndexWriter(Directory::Pointer d, bool autoCommit, Analyzer* a, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(true){
   init(d, a, closeDirOnShutdown, deletionPolicy, autoCommit);
 }
 
-IndexWriter::IndexWriter(Directory* d, bool autoCommit, Analyzer* a, bool create, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(false){
+IndexWriter::IndexWriter(Directory::Pointer d, bool autoCommit, Analyzer* a, bool create, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(true){
   init(d, a, create, closeDirOnShutdown, deletionPolicy, autoCommit);
 }
 
-void IndexWriter::init(Directory* d, Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit){
+void IndexWriter::init(Directory::Pointer d, Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit){
   if (IndexReader::indexExists(d)) {
     init(d, a, false, closeDir, deletionPolicy, autoCommit);
   } else {
@@ -175,7 +174,7 @@ void IndexWriter::init(Directory* d, Analyzer* a, bool closeDir, IndexDeletionPo
   }
 }
 
-void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool closeDir,
+void IndexWriter::init(Directory::Pointer d, Analyzer* a, const bool create, const bool closeDir,
                        IndexDeletionPolicy* deletionPolicy, const bool autoCommit){
   this->_internal = new Internal(this);
   this->termIndexInterval = IndexWriter::DEFAULT_TERM_INDEX_INTERVAL;
@@ -640,7 +639,7 @@ bool IndexWriter::flushDocStores() {
   return useCompoundDocStore;
 }
 
-Directory* IndexWriter::getDirectory() {
+Directory::Pointer IndexWriter::getDirectory() {
   ensureOpen();
   return directory;
 }
@@ -1151,7 +1150,7 @@ void IndexWriter::checkpoint() {
   }
 }
 
-void IndexWriter::addIndexes(CL_NS(util)::ArrayBase<CL_NS(store)::Directory*>& dirs){
+void IndexWriter::addIndexes(CL_NS(util)::CLVector<CL_NS(store)::Directory::Pointer, CL_NS(store)::Directory::Deletor>& dirs){
 
   ensureOpen();
 
@@ -1171,7 +1170,7 @@ void IndexWriter::addIndexes(CL_NS(util)::ArrayBase<CL_NS(store)::Directory*>& d
     try {
 
       { SCOPED_LOCK_MUTEX(this->THIS_LOCK)
-        for (int32_t i = 0; i< dirs.length; i++) {
+        for (int32_t i = 0; i< dirs.size(); i++) {
           SegmentInfos sis;	  // read infos from dir
           sis.read(dirs[i]);
           segmentInfos->insert(&sis,true);	  // add each info
@@ -1202,7 +1201,7 @@ void IndexWriter::resetMergeExceptions() {
   mergeGen++;
 }
 
-void IndexWriter::addIndexesNoOptimize(CL_NS(util)::ArrayBase<CL_NS(store)::Directory*>& dirs)
+void IndexWriter::addIndexesNoOptimize(CL_NS(util)::CLVector<CL_NS(store)::Directory::Pointer, CL_NS(store)::Directory::Deletor>& dirs)
 {
   ensureOpen();
 
@@ -1221,7 +1220,7 @@ void IndexWriter::addIndexesNoOptimize(CL_NS(util)::ArrayBase<CL_NS(store)::Dire
     try {
 
       { SCOPED_LOCK_MUTEX(this->THIS_LOCK)
-        for (int32_t i = 0; i< dirs.length; i++) {
+        for (int32_t i = 0; i< dirs.size(); i++) {
           if (directory == dirs[i]) {
             // cannot add this index: segments may be deleted in merge before added
             _CLTHROWA(CL_ERR_IllegalArgument,"Cannot add this index to itself");
@@ -1888,7 +1887,7 @@ void IndexWriter::_mergeInit(MergePolicy::OneMerge* _merge) {
   // of IO) that can only be applied with
   // autoCommit=false.
 
-  Directory* lastDir = directory;
+  Directory::Pointer lastDir = directory;
   string lastDocStoreSegment;
   int32_t next = -1;
 

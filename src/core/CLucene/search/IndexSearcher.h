@@ -9,7 +9,6 @@
 
 
 #include "Searchable.h"
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(document,Document)
 CL_CLASS_DEF(search,TopDocs)
 CL_CLASS_DEF(search,TopFieldDocs)
@@ -45,7 +44,7 @@ public:
 	* @throws CorruptIndexException if the index is corrupt
 	* @throws IOException if there is a low-level IO error
 	*/
-    IndexSearcher(CL_NS(store)::Directory* directory);
+    IndexSearcher(CL_NS(store)::Directory::Pointer directory);
 
 	/** Creates a searcher searching the provided index. */
 	IndexSearcher(CL_NS(index)::IndexReader* r);

@@ -13,6 +13,8 @@
 #include "Similarity.h"
 #include "Searchable.h"
 #include "_TermScorer.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/index/Terms.h"

@@ -38,7 +38,7 @@ CL_NS_DEF(store)
 		* @param dir a <code>Directory</code> value
 		* @exception IOException if an error occurs
 		*/
-		void _copyFromDir(Directory* dir, bool closeDir);
+		void _copyFromDir(Directory::Pointer dir, bool closeDir);
 		FileMap* files; // unlike the java Hashtable, FileMap is not synchronized, and all access must be protected by a lock
 	public:
 		int64_t sizeInBytes; //todo
@@ -56,7 +56,7 @@ CL_NS_DEF(store)
 	  ///facilities of dir->close
 		virtual ~RAMDirectory();
 
-		RAMDirectory(Directory* dir);
+		RAMDirectory(Directory::Pointer dir);
 
 	  /**
 	   * Creates a new <code>RAMDirectory</code> instance from the {@link FSDirectory}.

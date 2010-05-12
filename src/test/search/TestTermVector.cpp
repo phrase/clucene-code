@@ -7,7 +7,7 @@
 #include "test.h"
 
 IndexSearcher* tv_searcher = NULL;
-RAMDirectory* tv_directory = NULL;
+RAMDirectory::Pointer tv_directory;
 
 void testTermPositionVectors(CuTest *tc) {
     CLUCENE_ASSERT(tv_searcher!=NULL);
@@ -72,7 +72,7 @@ void testTermVectors(CuTest *tc) {
 
 void testTVSetup(CuTest *tc) {
     SimpleAnalyzer a;
-    tv_directory = _CLNEW RAMDirectory();
+    tv_directory.reset(new RAMDirectory());
     IndexWriter writer(tv_directory, &a, true);
     writer.setUseCompoundFile(false);
 
@@ -102,7 +102,7 @@ void testTVSetup(CuTest *tc) {
 void testTVCleanup(CuTest *tc) {
     _CLDELETE(tv_searcher);
     tv_directory->close();
-    _CLDELETE(tv_directory);
+    tv_directory.reset();
 }
 
 void setupDoc(Document& doc, const TCHAR* text)
@@ -147,11 +147,11 @@ void testKnownSetOfDocuments(CuTest *tc) {
     Document testDoc4;
     setupDoc(testDoc4, test4);
 
-    RAMDirectory dir;
+    Directory::Pointer dir(new RAMDirectory);
 
     try {
       SimpleAnalyzer a;
-      IndexWriter writer(&dir, &a, true);
+      IndexWriter writer(dir, &a, true);
 
       writer.addDocument(&testDoc1);
       writer.addDocument(&testDoc2);
@@ -159,7 +159,7 @@ void testKnownSetOfDocuments(CuTest *tc) {
       writer.addDocument(&testDoc4);
       writer.close();
 
-      IndexSearcher knownSearcher(&dir);
+      IndexSearcher knownSearcher(dir);
       TermEnum* termEnum = knownSearcher.getReader()->terms();
       TermDocs* termDocs = knownSearcher.getReader()->termDocs();
 

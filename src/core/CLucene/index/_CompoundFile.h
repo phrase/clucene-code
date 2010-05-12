@@ -9,6 +9,7 @@
 
 
 CL_CLASS_DEF(store,Lock)
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "CLucene/store/IndexInput.h"
 #include "_SegmentMerger.h"
@@ -29,7 +30,7 @@ private:
     int32_t readBufferSize;
 
 	// Base info
-	CL_NS(store)::Directory* directory;
+	CL_NS(store)::Directory::Pointer directory;
 	char* fileName;
 
 	CL_NS(store)::IndexInput* stream;
@@ -45,9 +46,19 @@ protected:
 	bool doDeleteFile(const char* name);
 
 public:
-	CompoundFileReader(CL_NS(store)::Directory* dir, const char* name, int32_t _readBufferSize=CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
+
+	/** Shared pointer for CompoundFileReader */
+	typedef boost::shared_ptr<CompoundFileReader> SharedPtr;
+	/** Constant shared pointer for CompoundFileReader */
+	typedef boost::shared_ptr<const CompoundFileReader> ConstSharedPtr;
+	/** Default pointer */
+	typedef SharedPtr Pointer;
+	/** Default constant pointer */
+	typedef ConstSharedPtr ConstPointer;
+
+	CompoundFileReader(CL_NS(store)::Directory::Pointer dir, const char* name, int32_t _readBufferSize=CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
 	~CompoundFileReader();
-	CL_NS(store)::Directory* getDirectory();
+	CL_NS(store)::Directory::Pointer getDirectory();
 	const char* getName() const;
 
 	void close();
@@ -116,10 +127,10 @@ public:
 	/** Create the compound stream in the specified file. The file name is the
 	*  entire name (no extensions are added).
 	*/
-	CompoundFileWriter(CL_NS(store)::Directory* dir, const char* name, SegmentMerger::CheckAbort* checkAbort = NULL);
+	CompoundFileWriter(CL_NS(store)::Directory::Pointer dir, const char* name, SegmentMerger::CheckAbort* checkAbort = NULL);
 	~CompoundFileWriter();
 	/** Returns the directory of the compound file. */
-	CL_NS(store)::Directory* getDirectory();
+	CL_NS(store)::Directory::Pointer getDirectory();
 	const char* getName() const ;
 	/** Add a source stream. <code>file</code> is the string by which the
 	*  sub-stream will be known in the compound stream.

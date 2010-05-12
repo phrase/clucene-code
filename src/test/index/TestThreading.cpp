@@ -47,7 +47,7 @@ bool atomicSearchFailed = false;
   }
 
   _LUCENE_THREAD_FUNC(atomicSearchTest, _directory){
-  	Directory* directory = (Directory*)_directory;
+  	Directory::Pointer directory = *((Directory::Pointer*)_directory);
     
   	 uint64_t stopTime = Misc::currentTimeMillis() + 1000*ATOMIC_SEARCH_RUN_TIME_SEC;
 		 int count = 0;
@@ -79,10 +79,10 @@ bool atomicSearchFailed = false;
   Run one indexer and 2 searchers against single index as
   stress test.
 */
-void runThreadingTests(CuTest* tc, Directory& directory){
+void runThreadingTests(CuTest* tc, Directory::Pointer directory){
 
 	SimpleAnalyzer ANALYZER;
-  IndexWriter writer(&directory, &ANALYZER, true);
+  IndexWriter writer(directory, &ANALYZER, true);
 
   // Establish a base index of 100 docs:
   StringBuffer sb;
@@ -123,9 +123,9 @@ void runThreadingTests(CuTest* tc, Directory& directory){
 */
 void testRAMThreading(CuTest *tc){
   // First in a RAM directory:
-  RAMDirectory directory; //todo: use MockRAMDirectory?
+  Directory::Pointer directory(new RAMDirectory); //todo: use MockRAMDirectory?
   runThreadingTests(tc,directory);
-  directory.close();
+  directory->close();
 }
 
 /*
@@ -138,16 +138,15 @@ void testFSThreading(CuTest *tc){
 	strcat(tmpfsdirectory,"/threading-index");
 
   // Second in an FSDirectory:
-  Directory* directory = FSDirectory::getDirectory(tmpfsdirectory, true);
-  runThreadingTests(tc,*directory);
+  Directory::Pointer directory = FSDirectory::getDirectory(tmpfsdirectory, true);
+  runThreadingTests(tc,directory);
   directory->close();
-  _CLDECDELETE(directory);
 }
 
 CuSuite *testatomicupdates(void)
 {
   srand ( (unsigned int)Misc::currentTimeMillis() );
-	CuSuite *suite = CuSuiteNew(_T("CLucene Atomic Updates Test"));
+  CuSuite *suite = CuSuiteNew(_T("CLucene Atomic Updates Test"));
   SUITE_ADD_TEST(suite, testRAMThreading);
   SUITE_ADD_TEST(suite, testFSThreading);
 

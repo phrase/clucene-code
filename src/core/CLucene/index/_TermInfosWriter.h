@@ -9,7 +9,6 @@
 
 #include "CLucene/util/Array.h"
 
-CL_CLASS_DEF(store,Directory)
 //#include "FieldInfos.h"
 //#include "TermInfo.h"
 //#include "Term.h"
@@ -38,7 +37,7 @@ class TermInfo;
 		TermInfosWriter* other;
 
 		//inititalize
-		TermInfosWriter(CL_NS(store)::Directory* directory, const char* segment, FieldInfos* fis, int32_t interval, bool isIndex);
+		TermInfosWriter(CL_NS(store)::Directory::Pointer directory, const char* segment, FieldInfos* fis, int32_t interval, bool isIndex);
 
     int32_t compareToLastTerm(int32_t fieldNumber, const TCHAR* termText, int32_t length);
 	public:
@@ -76,7 +75,7 @@ class TermInfo;
 		*/
 		int32_t skipInterval;// = 16
 
-		TermInfosWriter(CL_NS(store)::Directory* directory, const char* segment, FieldInfos* fis, int32_t interval);
+		TermInfosWriter(CL_NS(store)::Directory::Pointer directory, const char* segment, FieldInfos* fis, int32_t interval);
 
 		~TermInfosWriter();
 
@@ -93,7 +92,7 @@ class TermInfo;
 
 	private:
         /** Helps constructors to initialize instances */
-		void initialise(CL_NS(store)::Directory* directory, const char* segment, int32_t interval, bool IsIndex);
+		void initialise(CL_NS(store)::Directory::Pointer directory, const char* segment, int32_t interval, bool IsIndex);
 		void writeTerm(int32_t fieldNumber, const TCHAR* termText, int32_t termTextLength);
 	};
 CL_NS_END

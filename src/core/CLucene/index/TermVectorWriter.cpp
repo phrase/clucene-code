@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "_TermVector.h"
 #include "_IndexFileNames.h"
 #include "CLucene/util/Misc.h"
@@ -15,7 +17,7 @@
 CL_NS_USE(util)
 CL_NS_DEF(index)
 
- TermVectorsWriter::TermVectorsWriter(CL_NS(store)::Directory* directory,
+ TermVectorsWriter::TermVectorsWriter(CL_NS(store)::Directory::Pointer directory,
     const char* segment,FieldInfos* fieldInfos)
  {
     // Open files for TermVector storage

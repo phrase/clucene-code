@@ -7,7 +7,6 @@
 #ifndef _lucene_index_FieldsWriter_
 #define _lucene_index_FieldsWriter_
 
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,IndexOutput)
 CL_CLASS_DEF(store,IndexInput)
 CL_CLASS_DEF(index,FieldInfo)
@@ -34,7 +33,7 @@ public:
 	LUCENE_STATIC_CONSTANT(uint8_t, FIELD_IS_BINARY = 0x2);
 	LUCENE_STATIC_CONSTANT(uint8_t, FIELD_IS_COMPRESSED = 0x4);
 
-	FieldsWriter(CL_NS(store)::Directory* d, const char* segment, FieldInfos* fn);
+	FieldsWriter(CL_NS(store)::Directory::Pointer d, const char* segment, FieldInfos* fn);
 	FieldsWriter(CL_NS(store)::IndexOutput* fdx, CL_NS(store)::IndexOutput* fdt, FieldInfos* fn);
 	~FieldsWriter();
 

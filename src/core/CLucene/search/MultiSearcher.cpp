@@ -7,6 +7,7 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "MultiSearcher.h"
 #include "SearchHeader.h"

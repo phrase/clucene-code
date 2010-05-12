@@ -12,7 +12,6 @@
 #include "CLucene/util/VoidList.h"
 #include "CLucene/LuceneThreads.h"
 
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,LuceneLock)
 CL_CLASS_DEF(document,Document)
 CL_CLASS_DEF(document,FieldSelector)
@@ -71,7 +70,7 @@ protected:
   * @see #directory()
   * @deprecated - use IndexReader()
   */
-  IndexReader(CL_NS(store)::Directory* dir);
+  IndexReader(CL_NS(store)::Directory::Pointer dir);
 
   IndexReader();
 
@@ -168,7 +167,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static IndexReader* open(CL_NS(store)::Directory* directory, bool closeDirectoryOnCleanup=false, IndexDeletionPolicy* deletionPolicy=NULL);
+  static IndexReader* open(CL_NS(store)::Directory::Pointer directory, bool closeDirectoryOnCleanup=false, IndexDeletionPolicy* deletionPolicy=NULL);
 
 
   /**
@@ -212,7 +211,7 @@ public:
    * UnsupportedOperationException if one was not specified.
    * @throws UnsupportedOperationException if no directory
    */
-  virtual CL_NS(store)::Directory* directory();
+  virtual CL_NS(store)::Directory::Pointer directory();
 
 	DEFINE_MUTEX(THIS_LOCK)
 
@@ -328,7 +327,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
 	*/
-	static uint64_t lastModified(CL_NS(store)::Directory* directory);
+	static uint64_t lastModified(CL_NS(store)::Directory::Pointer directory);
 
 
 	/**
@@ -341,7 +340,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
 	*/
-	static int64_t getCurrentVersion(CL_NS(store)::Directory* directory);
+	static int64_t getCurrentVersion(CL_NS(store)::Directory::Pointer directory);
 
 	/**
    * Reads version number from segments files. The version number is
@@ -480,7 +479,7 @@ public:
 	* @return <code>true</code> if an index exists; <code>false</code> otherwise
 	* @throws IOException if there is a problem with accessing the index
 	*/
-	static bool indexExists(const CL_NS(store)::Directory* directory);
+	static bool indexExists(CL_NS(store)::Directory::ConstPointer directory);
 
 	/** Returns the number of documents in this index. */
   	virtual int32_t numDocs() = 0;
@@ -661,7 +660,7 @@ public:
    * @param directory the directory to check for a lock
    * @throws IOException if there is a low-level IO error
    */
-	static bool isLocked(CL_NS(store)::Directory* directory);
+	static bool isLocked(CL_NS(store)::Directory::Pointer directory);
 
   /**
    * Returns <code>true</code> iff the index in the named directory is
@@ -676,11 +675,11 @@ public:
 	///Caution: this should only be used by failure recovery code,
 	///when it is known that no other process nor thread is in fact
 	///currently accessing this index.
-	static void unlock(CL_NS(store)::Directory* directory);
+	static void unlock(CL_NS(store)::Directory::Pointer directory);
 	static void unlock(const char* path);
 
 	 /** Returns the directory this index resides in. */
-	_CL_DEPRECATED( directory() ) CL_NS(store)::Directory* getDirectory();
+	_CL_DEPRECATED( directory() ) CL_NS(store)::Directory::Pointer getDirectory();
 
 	/** Returns true if the file is a lucene filename (based on extension or filename) */
 	static bool isLuceneFile(const char* filename);

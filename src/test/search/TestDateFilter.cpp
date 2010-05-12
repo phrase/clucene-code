@@ -11,7 +11,7 @@
 		char fsdir[CL_MAX_PATH];
 		sprintf(fsdir,"%s/%s",cl_tempDir, "dfindex");
 		
-		FSDirectory* indexStore = FSDirectory::getDirectory( fsdir,true);
+		FSDirectory::Pointer indexStore = FSDirectory::getDirectory( fsdir,true);
 		Analyzer* a = _CLNEW SimpleAnalyzer();
 		IndexWriter* writer = _CLNEW IndexWriter(indexStore, a, true);
      	int64_t now = Misc::currentTimeMillis()/1000;
@@ -82,12 +82,11 @@
 		_CLDELETE(df2);
 		
 		indexStore->close();
-		_CLDECDELETE(indexStore);
 	}
 
 	void testAfter(CuTest *tc) {
 		// create an index
-		RAMDirectory* indexStore = _CLNEW RAMDirectory;
+		Directory::Pointer indexStore(new RAMDirectory);
 		Analyzer* a = _CLNEW SimpleAnalyzer();
 		IndexWriter* writer = _CLNEW IndexWriter(indexStore, a, true);
 		int64_t now = Misc::currentTimeMillis()/1000;
@@ -163,7 +162,6 @@
 		_CLDELETE(searcher);
 		_CLDELETE(a);
 		indexStore->close();
-		_CLDECDELETE(indexStore);
 	}
 
 	void testDateFilterDestructor(CuTest *tc){

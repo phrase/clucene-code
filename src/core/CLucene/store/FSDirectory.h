@@ -55,6 +55,15 @@ CL_CLASS_DEF(util,StringBuffer)
 		bool doDeleteFile(const char* name);
 
 	public:
+		/// Shared pointer for FSDirectory
+		typedef boost::shared_ptr<FSDirectory> SharedPtr;
+		/// Constant shared pointer for FSDirectory 
+		typedef boost::shared_ptr<const FSDirectory> ConstSharedPtr;
+		/// Default pointer for FSDirectory
+		typedef SharedPtr Pointer;
+		/// Constant default pointer for FSDirectory
+		typedef ConstSharedPtr ConstPointer;
+
 	  ///Destructor - only call this if you are sure the directory
 	  ///is not being used anymore. Otherwise use the ref-counting
 	  ///facilities of _CLDECDELETE
@@ -84,7 +93,7 @@ CL_CLASS_DEF(util,StringBuffer)
     @param create if true, create, or erase any existing contents.
     @return the FSDirectory for the named file.
     */
-		static FSDirectory* getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL);
+		static FSDirectory::Pointer getDirectory(const char* file, const bool create=false, LockFactory* lockFactory=NULL);
 
 		/// Returns the time the named file was last modified.
 		int64_t fileModified(const char* name) const;

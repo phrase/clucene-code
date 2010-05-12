@@ -7,6 +7,7 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "CLucene/store/Directory.h"
 #include "IndexSearcher.h"
 
 #include "SearchHeader.h"
@@ -15,7 +16,6 @@
 #include "Query.h"
 #include "Filter.h"
 #include "_FieldDocSortedHitQueue.h"
-#include "CLucene/store/Directory.h"
 #include "CLucene/document/Document.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/Term.h"
@@ -120,13 +120,13 @@ CL_NS_DEF(search)
       readerOwner = true;
   }
   
-  IndexSearcher::IndexSearcher(CL_NS(store)::Directory* directory){
+  IndexSearcher::IndexSearcher(CL_NS(store)::Directory::Pointer directory){
   //Func - Constructor
   //       Creates a searcher searching the index in the specified directory.  */
   //Pre  - path != NULL
   //Post - The instance has been created
 
-      CND_PRECONDITION(directory != NULL, "directory is NULL");
+      CND_PRECONDITION(directory.get() != NULL, "directory is NULL");
 
       reader = IndexReader::open(directory);
       readerOwner = true;

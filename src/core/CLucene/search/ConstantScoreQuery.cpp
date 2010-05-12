@@ -12,6 +12,7 @@
 #include "RangeFilter.h"
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/BitSet.h"
 #include "CLucene/util/StringBuffer.h"

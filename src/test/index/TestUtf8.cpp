@@ -45,9 +45,9 @@ CL_NS_USE(util)
   }
 
   void testUTF8(CuTest *tc) {
-    RAMDirectory ram;
+	  Directory::Pointer ram(new RAMDirectory);
 	  StandardAnalyzer a;
-	  IndexWriter ndx(&ram,&a,true);
+	  IndexWriter ndx(ram,&a,true);
 	  _Index(tc, &ndx,"arabic");
 	  _Index(tc, &ndx,"chinese");
 	  _Index(tc, &ndx,"czech");
@@ -62,7 +62,7 @@ CL_NS_USE(util)
 	  _Index(tc, &ndx,"russian");
     ndx.close();
 
-    IndexSearcher srch(&ram);
+	  IndexSearcher srch(ram);
 	  _Search(tc,&srch,&a,"arabic", "\xef\xbb\x9e\xef\xbb\xb4\xef\xbb\xa4\xef\xbb\xb3\xef\xba\xad"); //????? - arabic
 	  _Search(tc,&srch,&a,"chinese", "\xe5\x95\xa4\xe9\x85\x92"); //?? - chinese
 	  _Search(tc,&srch,&a,"czech", "Bud\xc4\x9bjovick\xc3\xbd" ); //Budejovick� - czech

@@ -7,6 +7,7 @@
 #ifndef _lucene_index_SkipListWriter_
 #define _lucene_index_SkipListWriter_
 
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/IndexInput.h"
 #include "CLucene/store/_RAMDirectory.h"
 #include "CLucene/util/Array.h"

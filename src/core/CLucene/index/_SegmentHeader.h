@@ -236,8 +236,8 @@ class SegmentReader: public DirectoryIndexReader {
 	CL_NS(store)::IndexInput* singleNormStream;
 
 	// Compound File Reader when based on a compound file segment
-	CompoundFileReader* cfsReader;
-  CompoundFileReader* storeCFSReader;
+	CompoundFileReader::Pointer cfsReader;
+	CompoundFileReader::Pointer storeCFSReader;
 
 	///Reads the Field Info file
 	FieldsReader* fieldsReader;
@@ -312,7 +312,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(CL_NS(store)::Directory* dir, SegmentInfo* si,
+  static SegmentReader* get(CL_NS(store)::Directory::Pointer dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize);
@@ -321,7 +321,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(CL_NS(store)::Directory* dir, SegmentInfo* si,
+  static SegmentReader* get(CL_NS(store)::Directory::Pointer dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize,
@@ -420,7 +420,7 @@ public:
 
 private:
 	//Open all norms files for all fields
-	void openNorms(CL_NS(store)::Directory* cfsDir, int32_t readBufferSize);
+	void openNorms(CL_NS(store)::Directory::Pointer cfsDir, int32_t readBufferSize);
 
 	///a bitVector that manages which documents have been deleted
 	CL_NS(util)::BitSet* deletedDocs;

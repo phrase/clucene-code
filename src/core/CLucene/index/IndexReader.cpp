@@ -7,11 +7,11 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
+#include "CLucene/store/FSDirectory.h"
 #include "IndexReader.h"
 #include "IndexWriter.h"
 
-#include "CLucene/store/Directory.h"
-#include "CLucene/store/FSDirectory.h"
 #include "CLucene/store/_Lock.h"
 #include "CLucene/document/Document.h"
 #include "CLucene/search/Similarity.h"
@@ -29,7 +29,7 @@ CL_NS_DEF(index)
 
   class IndexReaderFindSegmentsFile: public SegmentInfos::FindSegmentsFile<uint64_t>{
   public:
-		IndexReaderFindSegmentsFile( CL_NS(store)::Directory* dir ):
+		IndexReaderFindSegmentsFile( CL_NS(store)::Directory::Pointer dir ):
 			SegmentInfos::FindSegmentsFile<uint64_t>(dir){
 		}
 		IndexReaderFindSegmentsFile( const char* dir ):
@@ -56,29 +56,27 @@ CL_NS_DEF(index)
     * @deprecated will be deleted when IndexReader(Directory) is deleted
     * @see #directory()
     */
-    CL_NS(store)::Directory* directory;
+    CL_NS(store)::Directory::Pointer directory;
 
     typedef CL_NS(util)::CLSet<IndexReader::CloseCallback, void*,
       CloseCallbackCompare,
       CloseCallbackCompare> CloseCallbackMap;
     CloseCallbackMap closeCallbacks;
 
-    Internal(Directory* directory, IndexReader* _this)
+    Internal(Directory::Pointer directory, IndexReader* _this)
     {
-      if ( directory != NULL )
-        this->directory = _CL_POINTER(directory);
-      else
-        this->directory = NULL;
+      if ( directory.get() != NULL )
+        this->directory = directory;
       _this->refCount = 1;
       _this->closed = false;
       _this->hasChanges = false;
     }
     ~Internal(){
-      _CLDECDELETE(directory);
+		// empty
     }
   };
 
-  IndexReader::IndexReader(Directory* dir){
+  IndexReader::IndexReader(Directory::Pointer dir){
   //Constructor.
   //Func - Creates an instance of IndexReader
   //Pre  - true
@@ -91,7 +89,8 @@ CL_NS_DEF(index)
   //Func - Creates an instance of IndexReader
   //Pre  - true
   //Post - An instance has been created with writeLock = NULL
-    _internal = _CLNEW Internal(NULL, this);
+    Directory::Pointer empty;
+    _internal = _CLNEW Internal(empty, this);
   }
 
   IndexReader::~IndexReader(){
@@ -112,16 +111,12 @@ CL_NS_DEF(index)
 
 	  CND_PRECONDITION(path != NULL, "path is NULL");
 
-	   Directory* dir = FSDirectory::getDirectory(path);
-     IndexReader* reader = open(dir,closeDirectoryOnCleanup,deletionPolicy);
-     //because fsdirectory will now have a refcount of 1 more than
-     //if the reader had been opened with a directory object,
-     //we need to do a refdec
-     _CLDECDELETE(dir);
-     return reader;
+	   Directory::Pointer dir = FSDirectory::getDirectory(path);
+	   IndexReader* reader = open(dir,closeDirectoryOnCleanup,deletionPolicy);
+	   return reader;
   }
 
-  IndexReader* IndexReader::open( Directory* directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy){
+  IndexReader* IndexReader::open( Directory::Pointer directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy){
   //Func - Static method.
   //       Returns an IndexReader reading the index in an FSDirectory in the named path.
   //Pre  - directory represents a directory
@@ -134,9 +129,9 @@ CL_NS_DEF(index)
   IndexReader* IndexReader::reopen(){
 	  _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support reopen().");
   }
-  CL_NS(store)::Directory* IndexReader::directory() {
+  CL_NS(store)::Directory::Pointer IndexReader::directory() {
     ensureOpen();
-    if (NULL != _internal->directory) {
+    if (NULL != _internal->directory.get()) {
       return _internal->directory;
     } else {
 	  _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support this method.");
@@ -189,16 +184,15 @@ CL_NS_DEF(index)
 	  return (uint64_t)runner.run();
   }
 
-  int64_t IndexReader::getCurrentVersion(Directory* directory) {
+  int64_t IndexReader::getCurrentVersion(Directory::Pointer directory) {
 		return SegmentInfos::readCurrentVersion(directory);
   }
 
 
    int64_t IndexReader::getCurrentVersion(const char* directory){
-      Directory* dir = FSDirectory::getDirectory(directory);
+      Directory::Pointer dir = FSDirectory::getDirectory(directory);
       int64_t version = getCurrentVersion(dir);
       dir->close();
-      _CLDECDELETE(dir);
       return version;
    }
     int64_t IndexReader::getVersion() {
@@ -220,7 +214,7 @@ CL_NS_DEF(index)
     _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support this method.");
   }
 
-  uint64_t IndexReader::lastModified(Directory* directory2) {
+  uint64_t IndexReader::lastModified(Directory::Pointer directory2) {
   //Func - Static method
   //       Returns the time the index in this directory was last modified.
   //Pre  - directory contains a valid reference
@@ -255,7 +249,7 @@ CL_NS_DEF(index)
     return SegmentInfos::getCurrentSegmentGeneration(files) != -1;
   }
 
-  bool IndexReader::indexExists(const Directory* directory){
+  bool IndexReader::indexExists(Directory::ConstPointer directory){
   //Func - Static method
   //       Checks if an index exists in the directory
   //Pre  - directory is a valid reference
@@ -263,7 +257,7 @@ CL_NS_DEF(index)
   //       If the directory does not exist or if there is no index in it.
   //       false is returned.
 
-    return SegmentInfos::getCurrentSegmentGeneration(directory) != -1;
+    return SegmentInfos::getCurrentSegmentGeneration(boost::const_pointer_cast<Directory>(directory)) != -1;
   }
 
   TermDocs* IndexReader::termDocs(Term::Pointer term) {
@@ -436,7 +430,7 @@ CL_NS_DEF(index)
     }
   }
 
-  bool IndexReader::isLocked(Directory* directory) {
+  bool IndexReader::isLocked(Directory::Pointer directory) {
   //Func - Static method
   //       Checks if the index in the directory is currently locked.
   //Pre  - directory is a valid reference to a directory to check for a lock
@@ -458,10 +452,9 @@ CL_NS_DEF(index)
 
       CND_PRECONDITION(directory != NULL, "directory is NULL");
 
-      Directory* dir = FSDirectory::getDirectory(directory);
+      Directory::Pointer dir = FSDirectory::getDirectory(directory);
       bool ret = isLocked(dir);
       dir->close();
-      _CLDECDELETE(dir);
 
 	  return ret;
   }
@@ -474,12 +467,11 @@ bool IndexReader::hasNorms(const TCHAR* field) {
 }
 
 void IndexReader::unlock(const char* path){
-	FSDirectory* dir = FSDirectory::getDirectory(path);
+	FSDirectory::Pointer dir = FSDirectory::getDirectory(path);
 	unlock(dir);
 	dir->close();
-	_CLDECDELETE(dir);
 }
-  void IndexReader::unlock(Directory* directory){
+  void IndexReader::unlock(Directory::Pointer directory){
   //Func - Static method
   //       Forcibly unlocks the index in the named directory->
   //       Caution: this should only be used by failure recovery code,
@@ -545,7 +537,7 @@ bool IndexReader::isLuceneFile(const char* filename){
 	return false;
 }
 
-CL_NS(store)::Directory* IndexReader::getDirectory() {
+CL_NS(store)::Directory::Pointer IndexReader::getDirectory() {
     return directory();
 }
 

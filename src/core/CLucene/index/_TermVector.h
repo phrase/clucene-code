@@ -20,7 +20,7 @@ private:
 	FieldInfos* fieldInfos;
 
 public:
-	TermVectorsWriter(CL_NS(store)::Directory* directory, const char* segment,
+	TermVectorsWriter(CL_NS(store)::Directory::Pointer directory, const char* segment,
 						   FieldInfos* fieldInfos);
 	~TermVectorsWriter();
 
@@ -101,7 +101,7 @@ private:
   int32_t tvfFormat;
 
 public:
-	TermVectorsReader(CL_NS(store)::Directory* d, const char* segment, FieldInfos* fieldInfos,
+	TermVectorsReader(CL_NS(store)::Directory::Pointer d, const char* segment, FieldInfos* fieldInfos,
 		int32_t readBufferSize=LUCENE_STREAM_BUFFER_SIZE, int32_t docStoreOffset=-1, int32_t size=0);
 	~TermVectorsReader();
 

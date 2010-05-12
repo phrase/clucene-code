@@ -10,6 +10,7 @@
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/_StringIntern.h"
 #include "CLucene/util/CLStreams.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "CLucene/store/IndexInput.h"
 #include "CLucene/document/Document.h"
@@ -25,7 +26,7 @@ CL_NS_USE(document)
 CL_NS_USE(util)
 CL_NS_DEF(index)
 
-FieldsReader::FieldsReader(Directory* d, const char* segment, FieldInfos* fn, int32_t _readBufferSize, int32_t _docStoreOffset, int32_t size):
+FieldsReader::FieldsReader(Directory::Pointer d, const char* segment, FieldInfos* fn, int32_t _readBufferSize, int32_t _docStoreOffset, int32_t size):
 	fieldInfos(fn), closed(false)
 {
 //Func - Constructor

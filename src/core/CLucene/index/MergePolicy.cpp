@@ -5,12 +5,12 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "MergePolicy.h"
 #include "_SegmentInfos.h"
-#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "IndexWriter.h"
-#include "CLucene/store/Directory.h"
 #include <assert.h>
 
 CL_NS_USE(util)
@@ -68,13 +68,13 @@ bool MergePolicy::OneMerge::isAborted() {
   return aborted;
 }
 
-void MergePolicy::OneMerge::checkAborted(CL_NS(store)::Directory* dir){
+void MergePolicy::OneMerge::checkAborted(CL_NS(store)::Directory::Pointer dir){
   SCOPED_LOCK_MUTEX(THIS_LOCK)
   if (aborted)
     _CLTHROWA(CL_ERR_MergeAborted, (string("merge is aborted: ") + segString(dir)).c_str() );
 }
 
-std::string MergePolicy::OneMerge::segString(CL_NS(store)::Directory* dir) const{
+std::string MergePolicy::OneMerge::segString(CL_NS(store)::Directory::Pointer dir) const{
   std::string b;
   const int32_t numSegments = segments->size();
   for(int32_t i=0;i<numSegments;i++) {
@@ -99,7 +99,7 @@ void MergePolicy::MergeSpecification::add(OneMerge* merge) {
   merges->push_back(merge);
 }
 
-std::string MergePolicy::MergeSpecification::segString(CL_NS(store)::Directory* dir) {
+std::string MergePolicy::MergeSpecification::segString(CL_NS(store)::Directory::Pointer dir) {
   std::string b = "MergeSpec:\n";
   int32_t count = merges->size();
   for(int32_t i=0;i<count;i++){

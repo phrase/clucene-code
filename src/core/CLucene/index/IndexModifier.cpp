@@ -7,6 +7,7 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
 #include "IndexModifier.h"
 
 #include "IndexWriter.h"
@@ -20,16 +21,16 @@ CL_NS_USE(store)
 CL_NS_USE(analysis)
 CL_NS_USE(document)
 
-IndexModifier::IndexModifier(Directory* directory, Analyzer* analyzer, bool create) {
+IndexModifier::IndexModifier(Directory::Pointer directory, Analyzer* analyzer, bool create) {
 	init(directory, analyzer, create);
 }
 
 IndexModifier::IndexModifier(const char* dirName, Analyzer* analyzer, bool create) {
-	Directory* dir = FSDirectory::getDirectory(dirName, create);
+	Directory::Pointer dir = FSDirectory::getDirectory(dirName, create);
 	init(dir, analyzer, create);
 }
 
-void IndexModifier::init(Directory* directory, Analyzer* analyzer, bool create) {
+void IndexModifier::init(Directory::Pointer directory, Analyzer* analyzer, bool create) {
 	indexWriter = NULL;
 	indexReader = NULL;
 	this->analyzer = analyzer;
@@ -40,7 +41,7 @@ void IndexModifier::init(Directory* directory, Analyzer* analyzer, bool create) 
 	this->maxFieldLength = IndexWriter::DEFAULT_MAX_FIELD_LENGTH;
 	this->mergeFactor = IndexWriter::DEFAULT_MERGE_FACTOR;
 
-	this->directory = _CL_POINTER(directory);
+	this->directory = directory;
 	createIndexReader();
 	open = true;
 }
@@ -203,7 +204,7 @@ void IndexModifier::close() {
 		indexReader->close();
 		_CLDELETE(indexReader);
 	}
-	_CLDECDELETE(directory)
+	directory.reset();
 	open = false;
 }
 
@@ -254,7 +255,7 @@ bool IndexModifier::document(int32_t n, CL_NS(document)::Document& doc){
 	createIndexReader();
 	return indexReader->document(n, doc);
 }
-CL_NS(store)::Directory* IndexModifier::getDirectory(){
+CL_NS(store)::Directory::Pointer IndexModifier::getDirectory(){
 	return directory;
 }
 

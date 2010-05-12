@@ -8,7 +8,6 @@
 #define _lucene_index_SegmentMerger_
 
 
-CL_CLASS_DEF(store,Directory)
 #include "CLucene/store/_RAMDirectory.h"
 #include "_SegmentMergeInfo.h"
 #include "_SegmentMergeQueue.h"
@@ -34,7 +33,7 @@ class SegmentMerger:LUCENE_BASE {
   CL_NS(util)::ValueArray<uint8_t> payloadBuffer;
 	
 	//Directory of the segment
-	CL_NS(store)::Directory* directory;     
+	CL_NS(store)::Directory::Pointer directory;     
 	//name of the new segment
   std::string segment;
 	//Set of IndexReaders
@@ -123,9 +122,9 @@ public:
   private:
     float_t workCount;
     MergePolicy::OneMerge* merge;
-    CL_NS(store)::Directory* dir;
+    CL_NS(store)::Directory::Pointer dir;
   public:
-    CheckAbort(MergePolicy::OneMerge* merge, CL_NS(store)::Directory* dir);
+    CheckAbort(MergePolicy::OneMerge* merge, CL_NS(store)::Directory::Pointer dir);
 
     /**
      * Records the fact that roughly units amount of work

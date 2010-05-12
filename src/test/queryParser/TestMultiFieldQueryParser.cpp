@@ -169,3 +169,4 @@ CuSuite *testMultiFieldQueryParser(void)
 
 	return suite; 
 }
+

@@ -5,13 +5,14 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
+#include "CLucene/store/_RAMDirectory.h"
 #include "_FieldsWriter.h"
 
 //#include "CLucene/util/VoidMap.h"
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/util/Misc.h"
-#include "CLucene/store/Directory.h"
-#include "CLucene/store/_RAMDirectory.h"
 #include "CLucene/store/IndexOutput.h"
 #include "CLucene/document/Document.h"
 #include "CLucene/document/Field.h"
@@ -24,7 +25,7 @@ CL_NS_USE(util)
 CL_NS_USE(document)
 CL_NS_DEF(index)
 
-FieldsWriter::FieldsWriter(Directory* d, const char* segment, FieldInfos* fn):
+FieldsWriter::FieldsWriter(Directory::Pointer d, const char* segment, FieldInfos* fn):
 	fieldInfos(fn)
 {
 //Func - Constructor

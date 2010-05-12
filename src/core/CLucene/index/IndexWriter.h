@@ -12,7 +12,6 @@
 CL_CLASS_DEF(search,Similarity)
 CL_CLASS_DEF(store,Lock)
 CL_CLASS_DEF(analysis,Analyzer)
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,LuceneLock)
 CL_CLASS_DEF(document,Document)
 
@@ -230,11 +229,11 @@ class CLUCENE_EXPORT IndexWriter:LUCENE_BASE {
 
 	CL_NS(store)::LuceneLock* writeLock;
 
-  void init(CL_NS(store)::Directory* d, CL_NS(analysis)::Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
-  void init(CL_NS(store)::Directory* d, CL_NS(analysis)::Analyzer* a, bool create, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
+  void init(CL_NS(store)::Directory::Pointer d, CL_NS(analysis)::Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
+  void init(CL_NS(store)::Directory::Pointer d, CL_NS(analysis)::Analyzer* a, bool create, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
 
 	// where this index resides
-	CL_NS(store)::Directory* directory;
+	CL_NS(store)::Directory::Pointer directory;
     bool bOwnsDirectory;
 
 
@@ -492,7 +491,7 @@ public:
   *  <code>false</code> or if there is any other low-level
   *  IO error
   */
-  explicit IndexWriter(CL_NS(store)::Directory* d, CL_NS(analysis)::Analyzer* a, const bool create, const bool closeDirOnShutdown=false);
+  explicit IndexWriter(CL_NS(store)::Directory::Pointer d, CL_NS(analysis)::Analyzer* a, const bool create, const bool closeDirOnShutdown=false);
 
   /**
   * Expert: constructs an IndexWriter with a custom {@link
@@ -512,7 +511,7 @@ public:
   *  read/written to or if there is any other low-level
   *  IO error
   */
-  explicit IndexWriter(CL_NS(store)::Directory* d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
+  explicit IndexWriter(CL_NS(store)::Directory::Pointer d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
 
   /**
   * Expert: constructs an IndexWriter with a custom {@link
@@ -538,7 +537,7 @@ public:
   *  <code>false</code> or if there is any other low-level
   *  IO error
   */
-  explicit IndexWriter(CL_NS(store)::Directory* d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, const bool create, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
+  explicit IndexWriter(CL_NS(store)::Directory::Pointer d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, const bool create, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
 
 	/**Returns the number of documents currently in this index.
 	*  synchronized
@@ -547,7 +546,7 @@ public:
 
 
 	/** Returns the directory this index resides in. */
-	CL_NS(store)::Directory* getDirectory();
+	CL_NS(store)::Directory::Pointer getDirectory();
 
 	/** Get the current setting of whether to use the compound file format.
 	*  Note that this just returns the value you set with setUseCompoundFile(boolean)
@@ -1002,7 +1001,7 @@ public:
   * @throws CorruptIndexException if the index is corrupt
   * @throws IOException if there is a low-level IO error
   */
-  void addIndexesNoOptimize(CL_NS(util)::ArrayBase<CL_NS(store)::Directory*>& dirs);
+  void addIndexesNoOptimize(CL_NS(util)::CLVector<CL_NS(store)::Directory::Pointer, CL_NS(store)::Directory::Deletor>& dirs);
 
   /** Merges the provided indexes into this index.
    * <p>After this completes, the index is optimized. </p>
@@ -1083,7 +1082,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void addIndexes(CL_NS(util)::ArrayBase<CL_NS(store)::Directory*>& dirs);
+  void addIndexes(CL_NS(util)::CLVector<CL_NS(store)::Directory::Pointer, CL_NS(store)::Directory::Deletor>& dirs);
 
   /** Expert:  Return the total size of all index files currently cached in memory.
    * Useful for size management with flushRamDocs()
@@ -1130,7 +1129,7 @@ private:
 	* process, and queue the file for subsequent deletion.
 	*/
 	void deleteSegments(CL_NS(util)::CLVector<SegmentReader*>* segments);
-	void deleteFiles(std::vector<std::string>& files, CL_NS(store)::Directory* directory);
+	void deleteFiles(std::vector<std::string>& files, CL_NS(store)::Directory::Pointer directory);
 	void deleteFiles(std::vector<std::string>& files, std::vector<std::string>& deletable);
 
   /**

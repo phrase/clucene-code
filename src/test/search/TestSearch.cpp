@@ -227,11 +227,11 @@ void SearchTest(CuTest *tc, bool bram) {
 
 	char fsdir[CL_MAX_PATH];
 	sprintf(fsdir,"%s/%s",cl_tempDir, "test.search");
-	Directory* ram = (bram?(Directory*)_CLNEW RAMDirectory():(Directory*)FSDirectory::getDirectory(fsdir, true) );
+	Directory::Pointer ram = (bram ? Directory::Pointer(new RAMDirectory) : FSDirectory::getDirectory(fsdir, true) );
 
 	IndexWriter writer( ram, &analyzer, true);
 	writer.setUseCompoundFile(false);
-  writer.setMaxBufferedDocs(3);
+	writer.setMaxBufferedDocs(3);
 
 	const TCHAR* docs[] = { _T("a b c d e asdf"),
 		_T("a b c d e a b c d e asdg"),
@@ -254,8 +254,7 @@ void SearchTest(CuTest *tc, bool bram) {
 
 	if (!bram){
 		ram->close();
-		_CLDECDELETE(ram);
-		ram = (Directory*)FSDirectory::getDirectory(fsdir, false);
+		ram = FSDirectory::getDirectory(fsdir, false);
 	}
 
 	IndexReader* reader = IndexReader::open(ram);
@@ -311,7 +310,6 @@ void SearchTest(CuTest *tc, bool bram) {
 	_CLDELETE( reader );
 
 	ram->close();
-	_CLDECDELETE(ram);
 
 	CuMessageA (tc,"took %d milliseconds\n", (int32_t)(Misc::currentTimeMillis()-start));
 }
@@ -349,9 +347,9 @@ void testNormEncoding(CuTest *tc) {
 }
 
 void testSrchManyHits(CuTest *tc) {
-  SimpleAnalyzer analyzer;
-	RAMDirectory ram;
-	IndexWriter writer( &ram, &analyzer, true);
+	SimpleAnalyzer analyzer;
+	Directory::Pointer ram(new RAMDirectory);
+	IndexWriter writer( ram, &analyzer, true);
 
 	const TCHAR* docs[] = { _T("a b c d e"),
 		_T("a b c d e a b c d e"),
@@ -373,7 +371,7 @@ void testSrchManyHits(CuTest *tc) {
 	}
 	writer.close();
 
-	IndexSearcher searcher(&ram);
+	IndexSearcher searcher(ram);
 
 	BooleanQuery query;
 	Term::Pointer t(new Term(_T("contents"), _T("a")));
@@ -388,8 +386,8 @@ void testSrchManyHits(CuTest *tc) {
 
 void testSrchMulti(CuTest *tc) {
     SimpleAnalyzer analyzer;
-	RAMDirectory ram0;
-	IndexWriter writer0( &ram0, &analyzer, true);
+	Directory::Pointer ram0(new RAMDirectory);
+	IndexWriter writer0( ram0, &analyzer, true);
 
 	const TCHAR* docs0[] = {
 		_T("a")
@@ -403,8 +401,8 @@ void testSrchMulti(CuTest *tc) {
 	_CLDELETE(d);
 	writer0.close();
 
-	RAMDirectory ram1;
-	IndexWriter writer1( &ram1, &analyzer, true);
+	Directory::Pointer ram1(new RAMDirectory);
+	IndexWriter writer1( ram1, &analyzer, true);
 
 	const TCHAR* docs1[] = {
 		_T("e")
@@ -418,8 +416,8 @@ void testSrchMulti(CuTest *tc) {
 	_CLDELETE(d);
 	writer1.close();
 
-	IndexSearcher searcher0(&ram0);
-	IndexSearcher searcher1(&ram1);
+	IndexSearcher searcher0(ram0);
+	IndexSearcher searcher1(ram1);
 
 	Searchable* searchers[3];
 
@@ -453,7 +451,7 @@ void fsSearchTest(CuTest *tc) { SearchTest(tc, false); }
 CuSuite *testsearch(void)
 {
 	CuSuite *suite = CuSuiteNew(_T("CLucene Search Test"));
-  SUITE_ADD_TEST(suite, ramSearchTest);
+	SUITE_ADD_TEST(suite, ramSearchTest);
 	SUITE_ADD_TEST(suite, fsSearchTest);
 
 	SUITE_ADD_TEST(suite, testNormEncoding);

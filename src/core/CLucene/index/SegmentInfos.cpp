@@ -6,16 +6,16 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "_SegmentInfos.h"
 #include "_IndexFileNames.h"
-#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "_SegmentHeader.h"
 #include "MultiReader.h"
 #include <assert.h>
 #include <iostream>
 
-#include "CLucene/store/Directory.h"
 //#include "CLucene/util/VoidMap.h"
 #include "CLucene/util/Misc.h"
 
@@ -24,7 +24,7 @@ CL_NS_USE(util)
 
 CL_NS_DEF(index)
 
-SegmentInfo::SegmentInfo(const char* _name, const int32_t _docCount, CL_NS(store)::Directory* _dir,
+SegmentInfo::SegmentInfo(const char* _name, const int32_t _docCount, CL_NS(store)::Directory::Pointer _dir,
 			bool _isCompoundFile, bool _hasSingleNormFile,
 			int32_t _docStoreOffset, const char* _docStoreSegment, bool _docStoreIsCompoundFile)
 			:
@@ -44,7 +44,7 @@ SegmentInfo::SegmentInfo(const char* _name, const int32_t _docCount, CL_NS(store
 	this->dir = _dir;
 }
 
-string SegmentInfo::segString(Directory* dir) {
+string SegmentInfo::segString(Directory::Pointer dir) {
   string cfs;
   try {
     if (getUseCompoundFile())
@@ -68,7 +68,7 @@ string SegmentInfo::segString(Directory* dir) {
     string(this->dir == dir ? "" : "x") +
     Misc::toString(docCount) + docStore;
 }
-   SegmentInfo::SegmentInfo(CL_NS(store)::Directory* _dir, int32_t format, CL_NS(store)::IndexInput* input):
+   SegmentInfo::SegmentInfo(CL_NS(store)::Directory::Pointer _dir, int32_t format, CL_NS(store)::IndexInput* input):
      _sizeInBytes(-1)
    {
 	   this->dir = _dir;
@@ -619,7 +619,7 @@ string SegmentInfo::segString(Directory* dir) {
 	  return max;
   }
 
-  int64_t SegmentInfos::getCurrentSegmentGeneration( const CL_NS(store)::Directory* directory ) {
+  int64_t SegmentInfos::getCurrentSegmentGeneration( const CL_NS(store)::Directory::Pointer directory ) {
 	  vector<string> files;
     if ( !directory->list(&files) ){
 		  _CLTHROWA(CL_ERR_IO, (string("cannot read directory ") + directory->toString() + string(": list() returned NULL")).c_str() );
@@ -632,7 +632,7 @@ string SegmentInfo::segString(Directory* dir) {
 	  return IndexFileNames::fileNameFromGeneration( IndexFileNames::SEGMENTS, "", getCurrentSegmentGeneration( files ));
   }
 
-  std::string SegmentInfos::getCurrentSegmentFileName( CL_NS(store)::Directory* directory ) {
+  std::string SegmentInfos::getCurrentSegmentFileName( CL_NS(store)::Directory::Pointer directory ) {
 	  return IndexFileNames::fileNameFromGeneration( IndexFileNames::SEGMENTS, "", getCurrentSegmentGeneration( directory ));
   }
 
@@ -731,7 +731,7 @@ string SegmentInfo::segString(Directory* dir) {
     infos.remove(index, dontDelete);
   }
 
-  void SegmentInfos::read(Directory* directory, const char* segmentFileName){
+  void SegmentInfos::read(Directory::Pointer directory, const char* segmentFileName){
 	  bool success = false;
 
 	  // Clear any previous segments:
@@ -781,7 +781,7 @@ string SegmentInfo::segString(Directory* dir) {
 	  });
   }
 
-  void SegmentInfos::read(Directory* directory) {
+  void SegmentInfos::read(Directory::Pointer directory) {
 	  generation = lastGeneration = -1;
 
 	  FindSegmentsRead find(directory, this);
@@ -790,7 +790,7 @@ string SegmentInfo::segString(Directory* dir) {
   }
 
 
-  void SegmentInfos::write(Directory* directory){
+  void SegmentInfos::write(Directory::Pointer directory){
   //Func - Writes a new segments file based upon the SegmentInfo instances it manages
   //Pre  - directory is a valid reference to a Directory
   //Post - The new segment has been written to disk
@@ -862,7 +862,7 @@ string SegmentInfo::segString(Directory* dir) {
   int64_t SegmentInfos::getGeneration() const { return generation; }
   int64_t SegmentInfos::getLastGeneration() const { return lastGeneration; }
 
-  int64_t SegmentInfos::readCurrentVersion(Directory* directory){
+  int64_t SegmentInfos::readCurrentVersion(Directory::Pointer directory){
 	  FindSegmentsVersion find(directory);
 	  return find.run();
   }
@@ -1081,7 +1081,7 @@ string SegmentInfo::segString(Directory* dir) {
       }
     }
   }
-  SegmentInfos::FindSegmentsRead::FindSegmentsRead( CL_NS(store)::Directory* dir, SegmentInfos* _this ) :
+  SegmentInfos::FindSegmentsRead::FindSegmentsRead( CL_NS(store)::Directory::Pointer dir, SegmentInfos* _this ) :
     SegmentInfos::FindSegmentsFile<bool>(dir) {
       this->_this = _this;
   }
@@ -1091,7 +1091,7 @@ string SegmentInfo::segString(Directory* dir) {
     return true;
   }
 
-  SegmentInfos::FindSegmentsVersion::FindSegmentsVersion( CL_NS(store)::Directory* dir ) :
+  SegmentInfos::FindSegmentsVersion::FindSegmentsVersion( CL_NS(store)::Directory::Pointer dir ) :
     SegmentInfos::FindSegmentsFile<int64_t>(dir) {
   }
 

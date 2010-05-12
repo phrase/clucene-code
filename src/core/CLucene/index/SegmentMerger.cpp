@@ -7,6 +7,7 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
 #include "_SegmentHeader.h"
 #include "CLucene/util/PriorityQueue.h"
 #include "CLucene/util/Misc.h"
@@ -802,7 +803,7 @@ void SegmentMerger::mergeNorms() {
 }
 
 
-SegmentMerger::CheckAbort::CheckAbort(MergePolicy::OneMerge* merge, Directory* dir) {
+SegmentMerger::CheckAbort::CheckAbort(MergePolicy::OneMerge* merge, Directory::Pointer dir) {
   this->merge = merge;
   this->dir = dir;
   this->workCount = 0;

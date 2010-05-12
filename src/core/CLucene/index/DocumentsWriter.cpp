@@ -5,7 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
-
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "CLucene/store/IndexOutput.h"
 #include "CLucene/store/_RAMDirectory.h"
@@ -14,7 +14,6 @@
 #include "CLucene/util/Misc.h"
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/document/Field.h"
-#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/document/Document.h"
@@ -79,7 +78,7 @@ AbortException::AbortException(CLuceneError& _err, DocumentsWriter* docWriter):
   docWriter->setAborting();
 }
 
-DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory* directory, IndexWriter* writer):
+DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory::Pointer directory, IndexWriter* writer):
   bufferedDeleteTerms(_CLNEW CL_NS(util)::CLHashMap<Term::Pointer, Num*, Term_Compare, Term_Equals, Term::Deletor, Deletor::Object<Num> >),
 	waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) ),
   freeByteBlocks(FreeByteBlocksType(true)), freeCharBlocks(FreeCharBlocksType(true))

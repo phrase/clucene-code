@@ -9,7 +9,9 @@
 #include "TermQuery.h"
 #include "WildcardTermEnum.h"
 #include "Similarity.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/util/BitSet.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/index/IndexReader.h"

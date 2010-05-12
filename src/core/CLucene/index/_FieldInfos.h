@@ -7,6 +7,7 @@
 #ifndef _lucene_index_FieldInfos_
 #define _lucene_index_FieldInfos_
 
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 
 CL_CLASS_DEF(document,Document)
@@ -100,7 +101,7 @@ public:
 	* @param name The name of the file to open the IndexInput from in the Directory
 	* @throws IOException
 	*/
-	FieldInfos(CL_NS(store)::Directory* d, const char* name);
+	FieldInfos(CL_NS(store)::Directory::Pointer d, const char* name);
 
 	/**
 	* Returns a deep clone of this FieldInfos instance.
@@ -187,7 +188,7 @@ public:
   	bool hasVectors() const;
 
 
-	void write(CL_NS(store)::Directory* d, const char* name) const;
+	void write(CL_NS(store)::Directory::Pointer d, const char* name) const;
 	void write(CL_NS(store)::IndexOutput* output) const;
 
 private:

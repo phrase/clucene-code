@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 
+#include <boost/shared_ptr.hpp>
 #include "Directory.h"
 #include "LockFactory.h"
 #include "CLucene/util/Misc.h"

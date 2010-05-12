@@ -45,7 +45,7 @@ const TCHAR* data[11][6] = {
 	};
 
 Searcher* sort_getIndex (bool even, bool odd){
-	RAMDirectory* indexStore = _CLNEW RAMDirectory;
+	Directory::Pointer indexStore(new RAMDirectory);
 	IndexWriter writer(indexStore, &sort_analyser, true);
 	for (int i=0; i<11; ++i) {
 		if (((i%2)==0 && even) || ((i%2)==1 && odd)) {
@@ -65,7 +65,6 @@ Searcher* sort_getIndex (bool even, bool odd){
 	}
 	writer.close ();
 	IndexSearcher* res = _CLNEW IndexSearcher(indexStore);
-	_CLDECDELETE(indexStore);
 	return res;
 }
 

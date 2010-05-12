@@ -49,13 +49,13 @@ void testException(CuTest *tc) {
 /// TestBooleanScorer.java, ported 5/9/2009
 void testBooleanScorer(CuTest *tc) {
     const TCHAR* FIELD = _T("category");
-    RAMDirectory directory;
+    Directory::Pointer directory(new RAMDirectory());
 
     TCHAR* values[] = { _T("1"), _T("2"), _T("3"), _T("4"), NULL};
 
     try {
         WhitespaceAnalyzer a;
-        IndexWriter* writer = _CLNEW IndexWriter(&directory, &a, true);
+        IndexWriter* writer = _CLNEW IndexWriter(directory, &a, true);
         for (size_t i = 0; values[i]!=NULL; i++) {
             Document* doc = _CLNEW Document();
             doc->add(*_CLNEW Field(FIELD, values[i], Field::STORE_YES | Field::INDEX_TOKENIZED));
@@ -76,7 +76,7 @@ void testBooleanScorer(CuTest *tc) {
         t.reset(new Term(FIELD, _T("9")));
         query->add(_CLNEW TermQuery(t), true, BooleanClause::MUST_NOT);
 
-        IndexSearcher *indexSearcher = _CLNEW IndexSearcher(&directory);
+        IndexSearcher *indexSearcher = _CLNEW IndexSearcher(directory);
         Hits *hits = indexSearcher->search(query);
         CLUCENE_ASSERT(2 == hits->length()); // Number of matched documents
         _CLLDELETE(hits);
@@ -91,7 +91,7 @@ void testBooleanScorer(CuTest *tc) {
 
 /// TestBooleanPrefixQuery.java, ported 5/9/2009
 void testBooleanPrefixQuery(CuTest* tc) {
-    RAMDirectory directory;
+    Directory::Pointer directory(new RAMDirectory());
     WhitespaceAnalyzer a;
 
     TCHAR* categories[] = {_T("food"), _T("foodanddrink"),
@@ -100,7 +100,7 @@ void testBooleanPrefixQuery(CuTest* tc) {
     Query* rw1 = NULL;
     Query* rw2 = NULL;
     try {
-        IndexWriter* writer = _CLNEW IndexWriter(&directory, &a, true);
+        IndexWriter* writer = _CLNEW IndexWriter(directory, &a, true);
         for (size_t i = 0; categories[i]!=NULL; i++) {
             Document* doc = new Document();
             doc->add(*_CLNEW Field(_T("category"), categories[i], Field::STORE_YES | Field::INDEX_UNTOKENIZED));
@@ -110,7 +110,7 @@ void testBooleanPrefixQuery(CuTest* tc) {
         writer->close();
         _CLLDELETE(writer);
 
-        IndexReader* reader = IndexReader::open(&directory);
+        IndexReader* reader = IndexReader::open(directory);
         Term::Pointer t(new Term(_T("category"), _T("foo")));
         PrefixQuery* query = _CLNEW PrefixQuery(t);
 

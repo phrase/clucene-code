@@ -10,7 +10,6 @@
 #include "CLucene/util/Equators.h"
 #include "IndexDeletionPolicy.h"
 
-CL_CLASS_DEF(store,Directory)
 CL_NS_DEF(index)
 class SegmentInfos;
 class DocumentsWriter;
@@ -137,7 +136,7 @@ private:
   CL_NS(util)::CLArrayList<CommitPoint*> commitsToDelete;
 
   std::ostream* infoStream;
-  CL_NS(store)::Directory* directory;
+  CL_NS(store)::Directory::Pointer directory;
   IndexDeletionPolicy* policy;
   DocumentsWriter* docWriter;
 
@@ -170,7 +169,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  IndexFileDeleter(CL_NS(store)::Directory* directory, IndexDeletionPolicy* policy, SegmentInfos* segmentInfos, std::ostream* infoStream, DocumentsWriter* docWriter);
+  IndexFileDeleter(CL_NS(store)::Directory::Pointer directory, IndexDeletionPolicy* policy, SegmentInfos* segmentInfos, std::ostream* infoStream, DocumentsWriter* docWriter);
   ~IndexFileDeleter();
 
   /**

@@ -122,7 +122,7 @@ void CSIndexInput::close(){
 
 
 
-CompoundFileReader::CompoundFileReader(Directory* dir, const char* name, int32_t _readBufferSize):
+CompoundFileReader::CompoundFileReader(Directory::Pointer dir, const char* name, int32_t _readBufferSize):
 	entries(_CLNEW EntriesType(true,true))
 {
    directory = dir;
@@ -180,7 +180,7 @@ CompoundFileReader::~CompoundFileReader(){
 	_CLDELETE(entries);
 }
 
-Directory* CompoundFileReader::getDirectory(){
+Directory::Pointer CompoundFileReader::getDirectory(){
    return directory;
 }
 
@@ -281,7 +281,7 @@ string CompoundFileReader::toString() const{
 
 class CompoundFileWriter::Internal{
 public:
-	CL_NS(store)::Directory* directory;
+	CL_NS(store)::Directory::Pointer directory;
 	string fileName;
 
 	CL_NS(util)::CLHashSet<char*,
@@ -304,7 +304,7 @@ public:
 	_CLDELETE(entries);
   }
 };
-CompoundFileWriter::CompoundFileWriter(Directory* dir, const char* name, SegmentMerger::CheckAbort* checkAbort){
+CompoundFileWriter::CompoundFileWriter(Directory::Pointer dir, const char* name, SegmentMerger::CheckAbort* checkAbort){
   _internal = _CLNEW Internal;
   if (dir == NULL)
       _CLTHROWA(CL_ERR_NullPointer,"directory cannot be null");
@@ -320,7 +320,7 @@ CompoundFileWriter::~CompoundFileWriter(){
   _CLDELETE(_internal);
 }
 
-Directory* CompoundFileWriter::getDirectory(){
+Directory::Pointer CompoundFileWriter::getDirectory(){
   return _internal->directory;
 }
 

@@ -7,13 +7,13 @@
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
 #include "DirectoryIndexReader.h"
 #include "_IndexFileDeleter.h"
 #include "IndexDeletionPolicy.h"
 #include "_MultiSegmentReader.h"
 #include "_SegmentHeader.h"
 #include "IndexWriter.h"
-#include "CLucene/store/Directory.h"
 #include "CLucene/store/Lock.h"
 #include "_SegmentInfos.h"
 
@@ -27,7 +27,7 @@ CL_NS_DEF(index)
     if(closeDirectory && _directory){
       _directory->close();
     }
-    _CLDECDELETE(_directory);
+    _directory.reset();
   }
 
   void DirectoryIndexReader::doCommit() {
@@ -106,12 +106,12 @@ CL_NS_DEF(index)
     }
   }
 
-  void DirectoryIndexReader::init(Directory* __directory, SegmentInfos* segmentInfos, bool closeDirectory) {
+  void DirectoryIndexReader::init(Directory::Pointer __directory, SegmentInfos* segmentInfos, bool closeDirectory) {
     this->deletionPolicy = NULL;
     this->stale = false;
     this->writeLock = NULL;
     this->rollbackSegmentInfos = NULL;
-    this->_directory = _CL_POINTER(__directory);
+    this->_directory = __directory;
     this->segmentInfos = segmentInfos;
     this->closeDirectory = closeDirectory;
   }
@@ -130,7 +130,7 @@ CL_NS_DEF(index)
     }
      _CLDELETE(segmentInfos);
   }
-  DirectoryIndexReader::DirectoryIndexReader(Directory* __directory, SegmentInfos* segmentInfos, bool closeDirectory):
+  DirectoryIndexReader::DirectoryIndexReader(Directory::Pointer __directory, SegmentInfos* segmentInfos, bool closeDirectory):
     IndexReader()
   {
     init(__directory, segmentInfos, closeDirectory);
@@ -157,7 +157,7 @@ CL_NS_DEF(index)
     }
   public:
     FindSegmentsFile_Open( bool closeDirectory, IndexDeletionPolicy* deletionPolicy, 
-        CL_NS(store)::Directory* dir ):
+        CL_NS(store)::Directory::Pointer dir ):
       SegmentInfos::FindSegmentsFile<DirectoryIndexReader*>(dir)
     {
       this->closeDirectory = closeDirectory;
@@ -165,7 +165,7 @@ CL_NS_DEF(index)
     }
   };
 
-  DirectoryIndexReader* DirectoryIndexReader::open(Directory* __directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy) {
+  DirectoryIndexReader* DirectoryIndexReader::open(Directory::Pointer __directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy) {
     DirectoryIndexReader::FindSegmentsFile_Open runner(closeDirectory, deletionPolicy, __directory);
     return runner.run();
   }
@@ -191,7 +191,7 @@ CL_NS_DEF(index)
     }
   public:
     FindSegmentsFile_Reopen( bool closeDirectory, IndexDeletionPolicy* deletionPolicy, 
-        CL_NS(store)::Directory* dir, DirectoryIndexReader* _this ):
+        CL_NS(store)::Directory::Pointer dir, DirectoryIndexReader* _this ):
       SegmentInfos::FindSegmentsFile<DirectoryIndexReader*>(dir)
     {
       this->closeDirectory = closeDirectory;
@@ -213,7 +213,7 @@ CL_NS_DEF(index)
 
     //disown this memory...
     this->writeLock = NULL;
-    this->_directory = NULL;
+    this->_directory.reset();
     this->deletionPolicy = NULL;
 
     return ret;
@@ -225,7 +225,7 @@ CL_NS_DEF(index)
 
   /** Returns the directory this index resides in.
    */
-  Directory* DirectoryIndexReader::directory() {
+  Directory::Pointer DirectoryIndexReader::directory() {
     ensureOpen();
     return _directory;
   }

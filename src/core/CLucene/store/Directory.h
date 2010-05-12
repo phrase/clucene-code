@@ -30,7 +30,7 @@ CL_NS_DEF(store)
    * </ul>
    *
    */
-class CLUCENE_EXPORT Directory: LUCENE_REFBASE, public CL_NS(util)::NamedObject {
+class CLUCENE_EXPORT Directory: public CL_NS(util)::NamedObject {
 	protected:
 		LockFactory* lockFactory;
 
@@ -38,6 +38,29 @@ class CLUCENE_EXPORT Directory: LUCENE_REFBASE, public CL_NS(util)::NamedObject 
 		// Removes an existing file in the directory.
 		virtual bool doDeleteFile(const char* name) = 0;
 	public:
+		/** Shared pointer for Directory */
+		typedef boost::shared_ptr<Directory> SharedPtr;
+		/** Constant shared pointer for Directory */
+		typedef boost::shared_ptr<const Directory> ConstSharedPtr;
+		/** Default pointer for Directory */
+		typedef SharedPtr Pointer;
+		/** Constant default pointer for Directory */
+		typedef ConstSharedPtr ConstPointer;
+
+		/// Dummy deletor to be used in list containing shared pointers
+		/// of Directory.
+		class Deletor : public CL_NS(util)::AbstractDeletor {
+		public:
+			void Delete(Directory::Pointer obj) {
+				doDelete(obj);
+			}
+
+			/// This method does nothing.
+			static void doDelete(Directory::Pointer obk) {
+				// empty
+			}
+		};
+
 		DEFINE_MUTEX(THIS_LOCK)
 
 		virtual ~Directory();

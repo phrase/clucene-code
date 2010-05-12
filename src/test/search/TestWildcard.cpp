@@ -31,9 +31,9 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 
 
 	void testAsterisk(CuTest *tc){
-		RAMDirectory indexStore;
+		Directory::Pointer indexStore(new RAMDirectory);
 		SimpleAnalyzer an;
-		IndexWriter* writer = _CLNEW IndexWriter(&indexStore, &an, true);
+		IndexWriter* writer = _CLNEW IndexWriter(indexStore, &an, true);
 		Document doc1;
 		Document doc2;
 		doc1.add(*_CLNEW Field(_T("body"), _T("metal"),Field::STORE_YES | Field::INDEX_TOKENIZED));
@@ -45,7 +45,7 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 		_CLDELETE(writer);
         //////////////////////////////////////////////////
 		
-		IndexReader* reader = IndexReader::open(&indexStore);
+		IndexReader* reader = IndexReader::open(indexStore);
 		IndexSearcher* searcher = _CLNEW IndexSearcher(reader);
 
 		_testWildcard(tc, searcher, _T("metal*"), 2);
@@ -62,7 +62,7 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 		_CLDELETE(query1);
 
 	
-		indexStore.close();
+		indexStore->close();
 		searcher->close();
 		reader->close();
 		_CLDELETE(reader);
@@ -70,9 +70,9 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 	}
 
 	void testQuestionmark(CuTest *tc){
-		RAMDirectory indexStore;
+		Directory::Pointer indexStore(new RAMDirectory);
 		SimpleAnalyzer an;
-		IndexWriter* writer = _CLNEW IndexWriter(&indexStore, &an, true);
+		IndexWriter* writer = _CLNEW IndexWriter(indexStore, &an, true);
 		Document doc1;
 		Document doc2;
 		Document doc3;
@@ -89,7 +89,7 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 		_CLDELETE(writer);
         //////////////////////////////////////////////////////
     	
-		IndexReader* reader = IndexReader::open(&indexStore);
+		IndexReader* reader = IndexReader::open(indexStore);
 		IndexSearcher* searcher = _CLNEW IndexSearcher(reader);
 		
 
@@ -100,7 +100,7 @@ void _testWildcard(CuTest* tc, IndexSearcher* searcher, const TCHAR* qt, int exp
 		_testWildcard(tc, searcher, _T("metals?"), 0);
 		_testWildcard(tc, searcher, _T("m?t?ls"), 3);
 
-		indexStore.close();
+		indexStore->close();
 		reader->close();
 		searcher->close();
 		_CLDELETE(reader);

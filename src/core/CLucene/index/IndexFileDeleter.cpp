@@ -1,11 +1,11 @@
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "_IndexFileDeleter.h"
 #include "IndexFileNameFilter.h"
-#include <boost/shared_ptr.hpp>
 #include "Term.h"
 #include "_DocumentsWriter.h"
 #include "_SegmentHeader.h"
-#include "CLucene/store/Directory.h"
 #include "CLucene/LuceneThreads.h"
 #include <algorithm>
 #include <assert.h>
@@ -102,7 +102,7 @@ IndexFileDeleter::~IndexFileDeleter(){
   commits.clear();
   refCounts.clear();
 }
-IndexFileDeleter::IndexFileDeleter(Directory* directory, IndexDeletionPolicy* policy,
+IndexFileDeleter::IndexFileDeleter(Directory::Pointer directory, IndexDeletionPolicy* policy,
   SegmentInfos* segmentInfos, std::ostream* infoStream, DocumentsWriter* docWriter):
   refCounts( RefCountsType(true,true) ), commits(CommitsType(true))
 {

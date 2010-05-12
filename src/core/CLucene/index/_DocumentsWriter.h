@@ -22,7 +22,6 @@ CL_CLASS_DEF(util,StringReader)
 
 CL_NS_DEF(index)
 
-class DocumentsWriter;
 class DefaultSkipListWriter;
 class FieldInfos;
 class FieldsWriter;
@@ -152,7 +151,7 @@ public:
 
 private:
   IndexWriter* writer;
-  CL_NS(store)::Directory* directory;
+  CL_NS(store)::Directory::Pointer directory;
   DEFINE_MUTEX(THIS_LOCK)
   DEFINE_CONDITION(THIS_WAIT_CONDITION)
 
@@ -767,7 +766,7 @@ private:
 
 
 public:
-  DocumentsWriter(CL_NS(store)::Directory* directory, IndexWriter* writer);
+  DocumentsWriter(CL_NS(store)::Directory::Pointer directory, IndexWriter* writer);
   ~DocumentsWriter();
 
   /** If non-null, various details of indexing are printed

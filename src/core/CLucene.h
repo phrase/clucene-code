@@ -12,6 +12,7 @@
 #include "CLucene/util/Equators.h"
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/index/IndexWriter.h"
 #include "CLucene/index/MultiReader.h"

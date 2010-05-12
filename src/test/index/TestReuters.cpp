@@ -84,7 +84,7 @@ CL_NS_USE(util)
 		strcat(reuters_origdirectory, "/reuters-21578-index");
 		CuAssert(tc,_T("Index does not exist"),Misc::dir_Exists(reuters_origdirectory));
 
-		FSDirectory* fsdir = FSDirectory::getDirectory(reuters_fsdirectory,true);
+		FSDirectory::Pointer fsdir = FSDirectory::getDirectory(reuters_fsdirectory,true);
 		ReutersAnalyzer a;
 
 		IndexWriter writer(fsdir,&a,true);
@@ -123,7 +123,6 @@ CL_NS_USE(util)
 
 		writer.close();
 		fsdir->close();
-		_CLDECDELETE(fsdir);
 
 		//note: for those comparing 0.9.16 to later, the optimize() has been removed so
 		//we can do certain tests with the multi-* classes (reader,etc)

@@ -8,7 +8,6 @@
 #define _lucene_index_IndexModifier_
 
 
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(document,Document)
 CL_CLASS_DEF(index, IndexWriter)
 CL_CLASS_DEF(index, IndexReader)
@@ -81,7 +80,7 @@ protected:
 	IndexWriter* indexWriter;
 	IndexReader* indexReader;
 
-	CL_NS(store)::Directory* directory;
+	CL_NS(store)::Directory::Pointer directory;
 	CL_NS(analysis)::Analyzer* analyzer;
 	bool open;
 
@@ -101,7 +100,7 @@ public:
 	* @param create <code>true</code> to create the index or overwrite the existing one;
 	* 	<code>false</code> to append to the existing index
 	*/
-	IndexModifier(CL_NS(store)::Directory* directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
+	IndexModifier(CL_NS(store)::Directory::Pointer directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
 		
 	~IndexModifier();
 
@@ -121,7 +120,7 @@ protected:
 	* Initialize an IndexWriter.
 	* @throws IOException
 	*/
-	void init(CL_NS(store)::Directory* directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
+	void init(CL_NS(store)::Directory::Pointer directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
 
 	/**
 	* Throw an IllegalStateException if the index is closed.
@@ -332,7 +331,7 @@ public:
 	/**
 	* Returns the directory used by this index.
 	*/
-	CL_NS(store)::Directory* getDirectory();
+	CL_NS(store)::Directory::Pointer getDirectory();
 };
 CL_NS_END
 #endif

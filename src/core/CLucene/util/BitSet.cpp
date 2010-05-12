@@ -5,8 +5,9 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
-#include "BitSet.h"
+#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
+#include "BitSet.h"
 #include "CLucene/store/IndexInput.h"
 #include "CLucene/store/IndexOutput.h"
 
@@ -50,7 +51,7 @@ BitSet::BitSet ( int32_t size ):
 	memset(bits,0,len);
 }
 
-BitSet::BitSet(CL_NS(store)::Directory* d, const char* name)
+BitSet::BitSet(CL_NS(store)::Directory::Pointer d, const char* name)
 {
 	_count=-1;
 	CL_NS(store)::IndexInput* input = d->openInput( name );
@@ -67,7 +68,7 @@ BitSet::BitSet(CL_NS(store)::Directory* d, const char* name)
 	);
 }
 	
-void BitSet::write(CL_NS(store)::Directory* d, const char* name) {
+void BitSet::write(CL_NS(store)::Directory::Pointer d, const char* name) {
 	CL_NS(store)::IndexOutput* output = d->createOutput(name);
 	try {
     if (isSparse()) {

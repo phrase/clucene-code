@@ -19,11 +19,11 @@
 		const int MAX_DOCS=1500;
 		const char *strBody[10] = {"test", "value", "why not", "computer", "clucene",
 			"sun", "program", "main", "database", "code"};
-		RAMDirectory ram;
+		Directory::Pointer ram(new RAMDirectory);
 
 		//---
 		WhitespaceAnalyzer an;
-		IndexWriter* writer = _CLNEW IndexWriter(&ram, &an, true);
+		IndexWriter* writer = _CLNEW IndexWriter(ram, &an, true);
 		Document *doc = 0;
 
 		//---
@@ -54,7 +54,7 @@
 
 
 
-		IndexSearcher searcher(&ram);
+		IndexSearcher searcher(ram);
 		//---
 		int32_t dupl = 0;
 		Query* query = QueryParser::parse(_T("test"), _T("body"), &an);
@@ -85,13 +85,13 @@
 		_CLDELETE(result);
 		_CLDELETE(query);
 		searcher.close();
-		ram.close();
+		ram->close();
 	}
 
    void testSearchTestForDuplicates(CuTest *tc) {
-      RAMDirectory directory;
+      Directory::Pointer directory(new RAMDirectory);
       SimpleAnalyzer analyzer;
-      IndexWriter* writer = _CLNEW IndexWriter(&directory, &analyzer, true);
+      IndexWriter* writer = _CLNEW IndexWriter(directory, &analyzer, true);
       const int32_t MAX_DOCS = 255;
 
       for (int32_t j = 0; j < MAX_DOCS; j++) {
@@ -109,7 +109,7 @@
 	    _CLDELETE(writer);
 
       // try a search without OR
-      Searcher* searcher = _CLNEW IndexSearcher( &directory );
+      Searcher* searcher = _CLNEW IndexSearcher( directory );
       QueryParser* parser = _CLNEW QueryParser(_T("priority"), &analyzer);
       Hits* hits = NULL;
 
@@ -130,7 +130,7 @@
 
 
       // try a new search with OR
-      searcher = _CLNEW IndexSearcher( &directory );
+      searcher = _CLNEW IndexSearcher( directory );
       parser = _CLNEW QueryParser(_T("priority"), &analyzer);
       hits = NULL;
 
@@ -148,7 +148,7 @@
       searcher->close();
       _CLDELETE(searcher);
 
-      directory.close();
+      directory->close();
    }
 
 

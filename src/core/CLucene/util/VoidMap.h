@@ -26,6 +26,21 @@
 
 CL_NS_DEF(util)
 
+template <bool isSharedPointer, typename _type>
+struct _NullValue {
+	static _type get() {
+		_type result;
+		return result;
+	}
+};
+
+template <typename _type>
+struct _NullValue<false, _type> {
+	static _type get() {
+		return (_type)NULL;
+	}
+};
+
 /**
 * A template to encapsulate various map type classes
 * @internal
@@ -33,7 +48,8 @@ CL_NS_DEF(util)
 template<typename _kt, typename _vt,
 	typename _base,
 	typename _KeyDeletor=CL_NS(util)::Deletor::Dummy,
-	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy>
+	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy,
+	bool _isValueSharedPointer = false>
 class CLUCENE_INLINE_EXPORT __CLMap:public _base,LUCENE_BASE {
 protected:
 	bool dk;
@@ -83,7 +99,7 @@ public:
 	_vt get( _kt k) const {
 		const_iterator itr = base::find(k);
 		if ( itr==base::end() )
-			return (_vt)NULL;
+			return _NullValue<_isValueSharedPointer, _vt>::get();
 		else
 			return itr->second;
 	}
@@ -152,14 +168,15 @@ template<typename _kt, typename _vt,
 	typename _Compare,
 	typename _EqualDummy,
 	typename _KeyDeletor=CL_NS(util)::Deletor::Dummy,
-	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy>
+	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy,
+	bool _isValueSharedPointer = false>
 class CLUCENE_INLINE_EXPORT CLHashMap:public __CLMap<_kt,_vt,
 	CL_NS_STD(map)<_kt,_vt, _Compare>,
-	_KeyDeletor,_ValueDeletor>
+	_KeyDeletor,_ValueDeletor, _isValueSharedPointer>
 {
 	typedef typename CL_NS_STD(map)<_kt,_vt,_Compare> _base;
 	typedef __CLMap<_kt, _vt, CL_NS_STD(map)<_kt,_vt, _Compare>,
-		_KeyDeletor,_ValueDeletor> _this;
+		_KeyDeletor,_ValueDeletor, _isValueSharedPointer> _this;
 public:
 	CLHashMap ( const bool deleteKey=false, const bool deleteValue=false )
 	{

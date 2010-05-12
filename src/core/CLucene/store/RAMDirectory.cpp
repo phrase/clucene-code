@@ -5,13 +5,13 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
 #include "RAMDirectory.h"
 #include "_RAMDirectory.h"
 #include "Lock.h"
 #include "LockFactory.h"
 #include "Directory.h"
 #include "FSDirectory.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/index/IndexReader.h"
 //#include "CLucene/util/VoidMap.h"
@@ -386,7 +386,7 @@ CL_NS_DEF(store)
 	  _CLDELETE( files );
   }
 
-  void RAMDirectory::_copyFromDir(Directory* dir, bool closeDir)
+  void RAMDirectory::_copyFromDir(Directory::Pointer dir, bool closeDir)
   {
   	vector<string> names;
     dir->list(&names);
@@ -417,7 +417,7 @@ CL_NS_DEF(store)
     if (closeDir)
        dir->close();
   }
-  RAMDirectory::RAMDirectory(Directory* dir):
+  RAMDirectory::RAMDirectory(Directory::Pointer dir):
    Directory(),files( _CLNEW FileMap(true,true) )
   {
     this->sizeInBytes = 0;
@@ -429,10 +429,10 @@ CL_NS_DEF(store)
       Directory(),files( _CLNEW FileMap(true,true) )
    {
       this->sizeInBytes = 0;
-      Directory* fsdir = FSDirectory::getDirectory(dir,false);
+      Directory::Pointer fsdir = FSDirectory::getDirectory(dir,false);
       try{
          _copyFromDir(fsdir,false);
-      }_CLFINALLY(fsdir->close();_CLDECDELETE(fsdir););
+      }_CLFINALLY(fsdir->close(););
 
    }
 

@@ -43,7 +43,7 @@ CL_NS_USE(util)
    * instance per path, so that synchronization on the Directory can be used to
    * synchronize access between readers and writers.
    */
-	static CL_NS(util)::CLHashMap<const char*,FSDirectory*,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char> DIRECTORIES(false,false);
+	static CL_NS(util)::CLHashMap<const char*,FSDirectory::Pointer,CL_NS(util)::Compare::Char,CL_NS(util)::Equals::Char, CL_NS(util)::Deletor::Dummy, Directory::Deletor, true> DIRECTORIES(false,false);
 	STATIC_DEFINE_MUTEX(DIRECTORIES_LOCK)
 
 	bool FSDirectory::disableLocks=false;
@@ -475,26 +475,26 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
   }
 
   //static
-  FSDirectory* FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory){
-    FSDirectory* dir = NULL;
+  FSDirectory::Pointer FSDirectory::getDirectory(const char* file, const bool _create, LockFactory* lockFactory){
+	FSDirectory::Pointer dir;
 	{
 		if ( !file || !*file )
 			_CLTHROWA(CL_ERR_IO,"Invalid directory");
 
-    char buf[CL_MAX_PATH];
-  	char* tmpdirectory = _realpath(file,buf);//set a realpath so that if we change directory, we can still function
-  	if ( !tmpdirectory || !*tmpdirectory ){
-  		strncpy(buf,file, CL_MAX_PATH);
-      tmpdirectory = buf;
-  	}
+		char buf[CL_MAX_PATH];
+		char* tmpdirectory = _realpath(file,buf);//set a realpath so that if we change directory, we can still function
+		if ( !tmpdirectory || !*tmpdirectory ){
+			strncpy(buf,file, CL_MAX_PATH);
+			tmpdirectory = buf;
+		}
 
 		SCOPED_LOCK_MUTEX(DIRECTORIES_LOCK)
 		dir = DIRECTORIES.get(tmpdirectory);
-		if ( dir == NULL  ){
-			dir = _CLNEW FSDirectory(tmpdirectory,_create,lockFactory);
+		if ( dir.get() == NULL  ){
+			dir.reset(new  FSDirectory(tmpdirectory,_create,lockFactory));
 			DIRECTORIES.put( dir->directory.c_str(), dir);
 		} else if ( _create ) {
-	    	dir->create();
+			dir->create();
 		} else {
 			if ( lockFactory != NULL && lockFactory != dir->getLockFactory() ) {
 				_CLTHROWA(CL_ERR_IO,"Directory was previously created with a different LockFactory instance, please pass NULL as the lockFactory instance and use setLockFactory to change it");
@@ -507,7 +507,7 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 		}
 	}
 
-    return _CL_POINTER(dir); // TODO: Isn't this a double ref increment?
+    return dir;
   }
 
   int64_t FSDirectory::fileModified(const char* name) const {
@@ -589,10 +589,9 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	    CND_PRECONDITION(directory[0]!=0,"directory is not open");
 
 	    if (--refCount <= 0 ) {//refcount starts at 1
-	        Directory* dir = DIRECTORIES.get(getDirName());
-	        if(dir){
-	            DIRECTORIES.remove( getDirName() ); //this will be removed in ~FSDirectory
-	            _CLDECDELETE(dir);
+	        Directory::Pointer dir = DIRECTORIES.get(getDirName());
+	        if (dir.get() != NULL) {
+	            DIRECTORIES.remove(getDirName()); //this will be removed in ~FSDirectory
 	        }
 	    }
 	}

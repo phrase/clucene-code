@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "Term.h"
 #include "_SegmentHeader.h"
 #include "_SegmentMergeInfo.h"

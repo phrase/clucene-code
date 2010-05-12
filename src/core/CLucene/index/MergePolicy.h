@@ -8,7 +8,6 @@
 #define _lucene_index_MergePolicy_
 
 #include "CLucene/util/VoidList.h"
-CL_CLASS_DEF(store,Directory)
 CL_NS_DEF(index)
 
 class SegmentInfo;
@@ -92,9 +91,9 @@ public:
     /** Returns true if this merge was aborted. */
     bool isAborted();
 
-    void checkAborted(CL_NS(store)::Directory* dir);
+    void checkAborted(CL_NS(store)::Directory::Pointer dir);
 
-    std::string segString(CL_NS(store)::Directory* dir) const;
+    std::string segString(CL_NS(store)::Directory::Pointer dir) const;
 
 		static const char* getClassName();
 		virtual const char* getObjectName() const;
@@ -118,7 +117,7 @@ public:
 
     void add(OneMerge* merge);
 
-    std::string segString(CL_NS(store)::Directory* dir);
+    std::string segString(CL_NS(store)::Directory::Pointer dir);
   };
 
 

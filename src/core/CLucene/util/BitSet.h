@@ -8,7 +8,6 @@
 #define _lucene_util_BitSet_
 
 
-CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(store,IndexInput)
 CL_CLASS_DEF(store,IndexOutput)
 
@@ -45,8 +44,8 @@ protected:
 public:
 	///Create a bitset with the specified size
 	BitSet ( int32_t size );
-	BitSet(CL_NS(store)::Directory* d, const char* name);
-	void write(CL_NS(store)::Directory* d, const char* name);
+	BitSet(CL_NS(store)::Directory::Pointer d, const char* name);
+	void write(CL_NS(store)::Directory::Pointer d, const char* name);
 	
 	///Destructor for the bit set
 	~BitSet();

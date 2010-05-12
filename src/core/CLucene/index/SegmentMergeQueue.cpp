@@ -8,6 +8,7 @@
 #include "CLucene/util/PriorityQueue.h"
 #include <boost/shared_ptr.hpp>
 #include "Term.h"
+#include "CLucene/store/Directory.h"
 #include "_SegmentHeader.h"
 #include "_SegmentMergeInfo.h"
 #include "_SegmentMergeQueue.h"

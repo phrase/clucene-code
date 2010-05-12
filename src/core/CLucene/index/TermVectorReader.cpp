@@ -5,6 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/shared_ptr.hpp>
+#include "CLucene/store/Directory.h"
 #include "_TermVector.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/store/IndexInput.h"
@@ -14,7 +16,7 @@
 CL_NS_USE(util)
 CL_NS_DEF(index)
 
-TermVectorsReader::TermVectorsReader(CL_NS(store)::Directory* d, const char* segment, FieldInfos* fieldInfos,
+TermVectorsReader::TermVectorsReader(CL_NS(store)::Directory::Pointer d, const char* segment, FieldInfos* fieldInfos,
 									 int32_t readBufferSize, int32_t docStoreOffset, int32_t size):
 	fieldInfos(NULL), tvx(NULL), tvd(NULL), tvf(NULL), _size(0), docStoreOffset(0)
 	{
