@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #ifndef TEST_H
 #define TEST_H
+#include <cstdlib>
 #include "CLucene.h"
 #include "CLucene/_clucene-config.h"
 #include "CLucene/config/repl_tchar.h"
