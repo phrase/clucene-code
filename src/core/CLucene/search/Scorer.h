@@ -150,9 +150,9 @@ public:
 	/** Returns a string which explains the object */
 	virtual TCHAR* toString() = 0;
 
-	/** Overloaded less operator, so Scorer object can be sorted in STL containers. */
+	/** Overloaded less than operator, so Scorer object can be sorted in STL containers. */
 	bool operator<(const Scorer& scorer) const {
-		return doc() - scorer.doc();
+		return doc() < scorer.doc();
 	}
 
 	static bool sort(const Scorer* elem1, const Scorer* elem2);
