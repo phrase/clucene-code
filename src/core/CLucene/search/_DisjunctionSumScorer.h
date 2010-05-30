@@ -16,7 +16,6 @@ CL_NS_DEF(search)
 */
 class DisjunctionSumScorer : public Scorer {
 private:
-	typedef CL_NS(util)::CLVector<Scorer*,CL_NS(util)::Deletor::Object<Scorer> > ScorersType;
 
 	/** The minimum number of scorers that should match. */
 	int32_t minimumNrMatchers;
@@ -50,7 +49,7 @@ protected:
 	int32_t nrScorers;
 
 	/** The subscorers. */
-	DisjunctionSumScorer::ScorersType subScorers;
+	Scorer::Vector subScorers;
 
 	/** The number of subscorers that provide the current match. */
 	int32_t _nrMatchers;
@@ -97,7 +96,7 @@ public:
 	* <br>When minimumNrMatchers equals the number of subScorers,
 	* it more efficient to use <code>ConjunctionScorer</code>.
 	*/
-	DisjunctionSumScorer( CL_NS(util)::CLVector<Scorer*,CL_NS(util)::Deletor::Object<Scorer> >* _subScorers, const int32_t _minimumNrMatchers = 1);
+	DisjunctionSumScorer(Scorer::Vector& _subScorers, const int32_t _minimumNrMatchers = 1);
 	virtual ~DisjunctionSumScorer();
 
 	/** Scores and collects all matching documents.

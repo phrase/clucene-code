@@ -6,6 +6,8 @@
 ------------------------------------------------------------------------------*/
 
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "Scorer.h"
 #include "ScorerDocQueue.h"
 #include "SearchHeader.h"
@@ -18,7 +20,7 @@
 
 CL_NS_DEF(search)
 
-DisjunctionSumScorer::DisjunctionSumScorer( DisjunctionSumScorer::ScorersType* _subScorers
+DisjunctionSumScorer::DisjunctionSumScorer(Scorer::Vector& _subScorers
 										   , const int32_t _minimumNrMatchers ) : Scorer( NULL ), nrScorers(0),
 										   minimumNrMatchers(_minimumNrMatchers),scorerDocQueue(NULL),queueSize(-1),
 										   currentDoc(-1),_nrMatchers(-1),currentScore(-1.0f)
@@ -27,15 +29,14 @@ DisjunctionSumScorer::DisjunctionSumScorer( DisjunctionSumScorer::ScorersType* _
 		_CLTHROWA(CL_ERR_IllegalArgument,"Minimum nr of matchers must be positive");
 	}
 
-	nrScorers = _subScorers->size();
+	nrScorers = _subScorers.size();
 	
 	if ( nrScorers <= 1 ) {
 		_CLTHROWA(CL_ERR_IllegalArgument,"There must be at least 2 subScorers");
 	}
 	
-	for ( DisjunctionSumScorer::ScorersType::iterator itr = _subScorers->begin(); itr != _subScorers->end(); itr++ ) {
-		subScorers.push_back( *itr );
-	}
+	// transfer ownership of all subScorers from _subScorer to subScorer
+	subScorers.transfer(subScorers.end(), _subScorers.begin(), _subScorers.end(), _subScorers);
 }
 
 DisjunctionSumScorer::~DisjunctionSumScorer()
@@ -103,9 +104,9 @@ Explanation* DisjunctionSumScorer::explain( int32_t doc ){
 	Explanation* res = _CLNEW Explanation();
 	float_t sumScore = 0.0f;
 	int32_t nrMatches = 0;
-	ScorersType::iterator ssi = subScorers.begin();
+	Scorer::Vector::iterator ssi = subScorers.begin();
 	while (ssi != subScorers.end()) {
-		Explanation* es = reinterpret_cast<Scorer*>(*ssi)->explain(doc);
+		Explanation* es = ssi->explain(doc);
 		if (es->getValue() > 0.0f) { // indicates match
 			sumScore += es->getValue();
 			nrMatches++;
@@ -183,10 +184,11 @@ void DisjunctionSumScorer::initScorerDocQueue()
 	scorerDocQueue = _CLNEW ScorerDocQueue( nrScorers );
 	queueSize = 0;
 	
-	for ( ScorersType::iterator it = subScorers.begin(); it != subScorers.end(); ++it ) {
-		Scorer* scorer = (Scorer*)(*it);
-		if ( scorer->next() ) { // doc() method will be used in scorerDocQueue.
-			if ( scorerDocQueue->insert( scorer )) {
+	for ( Scorer::Vector::iterator it = subScorers.begin(); it != subScorers.end(); ++it ) {
+		// ownership isn't transfered here
+		Scorer& scorer = *it;
+		if ( scorer.next() ) { // doc() method will be used in scorerDocQueue.
+			if ( scorerDocQueue->insert( &scorer )) {
 				queueSize++;
 			}
 		}

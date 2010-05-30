@@ -5,22 +5,24 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "BooleanQuery.h"
 
 #include "BooleanClause.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/util/_Arrays.h"
+#include "CLucene/util/Cast.h"
+#include "Scorer.h"
 #include "SearchHeader.h"
 #include "_BooleanScorer.h"
 #include "_ConjunctionScorer.h"
 #include "Similarity.h"
 #include "Explanation.h"
 #include "_BooleanScorer2.h"
-#include "Scorer.h"
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -51,7 +53,7 @@ CL_NS_DEF(search)
 		float_t getValue();
 		float_t sumOfSquaredWeights();
 		void normalize(float_t norm);
-		Scorer* scorer(CL_NS(index)::IndexReader* reader);
+		Scorer::AutoPtr scorer(CL_NS(index)::IndexReader* reader);
 		Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc);
 	};// BooleanWeight
 
@@ -335,23 +337,24 @@ CL_NS_DEF(search)
       }
     }
 
-    Scorer* BooleanWeight::scorer(IndexReader* reader){
-      BooleanScorer2* result = _CLNEW BooleanScorer2(similarity,
+    Scorer::AutoPtr BooleanWeight::scorer(IndexReader* reader){
+      BooleanScorer2::AutoPtr result(new BooleanScorer2(similarity,
                                                  parentQuery->minNrShouldMatch,
-                                                 parentQuery->allowDocsOutOfOrder);
+                                                 parentQuery->allowDocsOutOfOrder));
 
       for (size_t i = 0 ; i < weights.size(); i++) {
         BooleanClause* c = (*clauses)[i];
         Weight* w = weights[i];
-        Scorer* subScorer = w->scorer(reader);
-        if (subScorer != NULL)
+        Scorer::AutoPtr subScorer = w->scorer(reader);
+        if (subScorer.get() != NULL)
           result->add(subScorer, c->isRequired(), c->isProhibited());
-        else if (c->isRequired())
-          return NULL;
+        else if (c->isRequired()) {
+					Scorer::AutoPtr empty;
+          return empty;
+				}
       }
 
-      return result;
-
+      return auto_ptr_static_cast<Scorer>(result);
     }
 
 	Explanation* BooleanWeight::explain(IndexReader* reader, int32_t doc){

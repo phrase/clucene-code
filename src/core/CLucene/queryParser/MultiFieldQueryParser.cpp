@@ -5,11 +5,14 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "MultiFieldQueryParser.h"
 #include "CLucene/analysis/AnalysisHeader.h"
 #include "CLucene/search/BooleanQuery.h"
 #include "CLucene/search/BooleanClause.h"
 #include "CLucene/search/PhraseQuery.h"
+#include "CLucene/search/Scorer.h"
 #include "CLucene/search/SearchHeader.h"
 #include "QueryParser.h"
 

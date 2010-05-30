@@ -14,8 +14,7 @@ CL_NS_DEF(search)
 /** Scorer for conjunctions, sets of queries, all of which are required. */
 class ConjunctionScorer: public Scorer {
 private:
-  CL_NS(util)::ArrayBase<Scorer*>* scorers;
-  typedef CL_NS(util)::CLVector<Scorer*,CL_NS(util)::Deletor::Object<Scorer> > ScorersType;
+  Scorer::Vector scorers;
   bool firstTime;
   bool more;
   float_t coord;
@@ -26,8 +25,8 @@ private:
 
   bool init(int32_t target);
 public:
-  ConjunctionScorer(Similarity* similarity, ScorersType* scorers);
-  ConjunctionScorer(Similarity* similarity, const CL_NS(util)::ArrayBase<Scorer*>* scorers);
+  ConjunctionScorer(Similarity* similarity, Scorer::Vector& scorers);
+  //ConjunctionScorer(Similarity* similarity, Scorer::ObjectArray& scorers);
   virtual ~ConjunctionScorer();
   virtual TCHAR* toString();
   int32_t doc() const;

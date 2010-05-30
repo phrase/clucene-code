@@ -11,6 +11,7 @@
 #include "CLucene/StdHeader.h"
 #include "CLucene/util/Equators.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
@@ -26,6 +27,7 @@
 #include "CLucene/search/RangeQuery.h"
 #include "CLucene/search/BooleanQuery.h"
 #include "CLucene/search/TermQuery.h"
+#include "CLucene/search/Scorer.h"
 #include "CLucene/search/SearchHeader.h"
 #include "CLucene/search/Similarity.h"
 #include "CLucene/search/Sort.h"

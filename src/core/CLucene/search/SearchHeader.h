@@ -21,7 +21,6 @@ CL_CLASS_DEF(util,Comparable)
 CL_NS_DEF(search)
 
 	class Query;
-	class Scorer;
 	class Explanation;
 	class Hits;
 	class Sort;
@@ -123,7 +122,7 @@ CL_NS_DEF(search)
       virtual void normalize(float_t norm) = 0;
 
       /** Constructs a scorer for this. */
-      virtual Scorer* scorer(CL_NS(index)::IndexReader* reader) = 0;
+      virtual Scorer::AutoPtr scorer(CL_NS(index)::IndexReader* reader) = 0;
 
       /** An explanation of the score computation for the named document. */
       virtual Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc) = 0;

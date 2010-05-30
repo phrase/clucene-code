@@ -7,8 +7,10 @@
 #include "CLucene/_ApiHeader.h"
 #include "PhraseQuery.h"
 
-#include "SearchHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "Scorer.h"
+#include "SearchHeader.h"
 #include "BooleanQuery.h"
 #include "TermQuery.h"
 #include "Similarity.h"
@@ -16,7 +18,6 @@
 #include "Explanation.h"
 
 #include "CLucene/index/_Term.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/Terms.h"
@@ -54,7 +55,7 @@ CL_NS_DEF(search)
 
 		float_t sumOfSquaredWeights();
 		void normalize(float_t queryNorm);
-		Scorer* scorer(CL_NS(index)::IndexReader* reader);
+		Scorer::AutoPtr scorer(CL_NS(index)::IndexReader* reader);
 		Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc);
 		TCHAR* toString(TCHAR* f);
 		bool equals(PhraseWeight* o);
@@ -296,17 +297,19 @@ CL_NS_DEF(search)
    value = queryWeight * idf;                  // idf for document
  }
 
-  Scorer* PhraseWeight::scorer(IndexReader* reader)  {
+  Scorer::AutoPtr PhraseWeight::scorer(IndexReader* reader)  {
   //Func -
   //Pre  -
   //Post -
+
+    Scorer::AutoPtr ret;
 
 	  //Get the length of terms
       const size_t tpsLength = parentQuery->terms->size();
 
 	  //optimize zero-term case
       if (tpsLength == 0)
-          return NULL;
+          return ret; // ret.get() == NULL
 
     TermPositions** tps = _CL_NEWARRAY(TermPositions*,tpsLength+1);
 
@@ -327,7 +330,7 @@ CL_NS_DEF(search)
 				_CLVDELETE(tps[i]);  //todo: not a clucene object... should be
 			}
             _CLDELETE_ARRAY(tps);
-            return NULL;
+            return ret; // ret.get() == NULL
         }
 
         //Store p at i in tps
@@ -335,24 +338,22 @@ CL_NS_DEF(search)
     }
 	tps[tpsLength] = NULL;
 
-    Scorer* ret = NULL;
-
     ValueArray<int32_t> positions;
 	parentQuery->getPositions(positions);
 	int32_t slop = parentQuery->getSlop();
 	if ( slop != 0)
 		 // optimize exact case
 		 //todo: need to pass these: this, tps,
-         ret = _CLNEW SloppyPhraseScorer(this,tps,positions.values,
+         ret.reset(new SloppyPhraseScorer(this,tps,positions.values,
 								parentQuery->getSimilarity(searcher),
-								slop, reader->norms(parentQuery->field));
+								slop, reader->norms(parentQuery->field)));
 	else
-	    ret = _CLNEW ExactPhraseScorer(this, tps, positions.values,
+	    ret.reset(new ExactPhraseScorer(this, tps, positions.values,
 									parentQuery->getSimilarity(searcher),
-                                    reader->norms(parentQuery->field));
+                                    reader->norms(parentQuery->field)));
 	positions.deleteArray();
 
-    CND_CONDITION(ret != NULL,"Could not allocate memory for ret");
+    CND_CONDITION(ret.get() != NULL,"Could not allocate memory for ret");
 
 	//tps can be deleted safely. SloppyPhraseScorer or ExactPhraseScorer will take care
 	//of its values

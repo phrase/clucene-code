@@ -5,18 +5,20 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "ConstantScoreQuery.h"
 
-#include "SearchHeader.h"
 #include "Scorer.h"
+#include "SearchHeader.h"
 #include "RangeFilter.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/BitSet.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/util/_StringIntern.h"
+#include "CLucene/util/Cast.h"
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -28,6 +30,10 @@ class ConstantScorer : public Scorer {
     int32_t _doc;
 
 public:
+
+		/** Auto pointer for ConstantScorer */
+		typedef std::auto_ptr<ConstantScorer> AutoPtr;
+
     ConstantScorer(Similarity* similarity, IndexReader* reader, Weight* w, Filter* filter) : Scorer(similarity),
         bits(filter->bits(reader)), theScore(w->getValue()), _doc(-1)
     {
@@ -95,12 +101,13 @@ public:
         queryWeight *= this->queryNorm;
     }
 
-    Scorer* scorer(IndexReader* reader) {
-        return _CLNEW ConstantScorer(similarity, reader, this, parentQuery->filter);
+    Scorer::AutoPtr scorer(IndexReader* reader) {
+        Scorer::AutoPtr result(new ConstantScorer(similarity, reader, this, parentQuery->filter));
+				return result;
     }
 
     Explanation* explain(IndexReader* reader, int32_t doc) {
-        ConstantScorer* cs = (ConstantScorer*)scorer(reader);
+        ConstantScorer::AutoPtr cs = auto_ptr_static_cast<ConstantScorer>(scorer(reader));
         bool exists = cs->bits->get(doc);
 
         ComplexExplanation* result = _CLNEW ComplexExplanation();

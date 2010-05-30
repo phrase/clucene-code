@@ -5,15 +5,16 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "Hits.h"
+#include "Scorer.h"
 #include "SearchHeader.h"
 #include "CLucene/document/Document.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "Filter.h"
-#include "CLucene/search/SearchHeader.h"
 #include "CLucene/search/IndexSearcher.h"
 
 CL_NS_USE(document)

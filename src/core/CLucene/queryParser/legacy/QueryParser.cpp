@@ -9,6 +9,9 @@
 
 #include "CLucene/analysis/AnalysisHeader.h"
 #include "CLucene/util/CLStreams.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
+#include "CLucene/search/Scorer.h"
 #include "CLucene/search/SearchHeader.h"
 #include "CLucene/search/BooleanClause.h"
 #include "CLucene/search/Query.h"

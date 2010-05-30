@@ -6,9 +6,11 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "CLucene/index/Term.h"
 #include "Similarity.h"
 
+#include "Scorer.h"
 #include "SearchHeader.h"
 #include "Searchable.h"
 

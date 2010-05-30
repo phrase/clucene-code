@@ -6,10 +6,12 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "MultiSearcher.h"
+#include "Scorer.h"
 #include "SearchHeader.h"
 #include "Query.h"
 #include "_HitQueue.h"

@@ -13,6 +13,11 @@
 CL_NS_DEF(search)
 	
 	class BooleanScorer: public Scorer {
+	public:
+
+		/** Auto pointer for BooleanScorer */
+		typedef std::auto_ptr<BooleanScorer> AutoPtr;
+
 	private:
 			
 		class Bucket {
@@ -30,12 +35,12 @@ CL_NS_DEF(search)
 		class SubScorer {
 		public:
 			bool done;
-			Scorer* scorer;
+			const Scorer::AutoPtr scorer;
 			bool required;
 			bool prohibited;
 			HitCollector* collector;
 			SubScorer* next;
-			SubScorer(Scorer* scr, const bool r, const bool p, HitCollector* c, SubScorer* nxt);
+			SubScorer(Scorer::AutoPtr scr, const bool r, const bool p, HitCollector* c, SubScorer* nxt);
 			virtual ~SubScorer();
 		};
 
@@ -69,7 +74,7 @@ CL_NS_DEF(search)
 		int32_t maxCoord;
 		int32_t nextMask;
 
-      	int32_t end;
+		int32_t end;
 		Bucket* current;
 		
 		int32_t minNrShouldMatch;
@@ -80,9 +85,9 @@ CL_NS_DEF(search)
 		int32_t prohibitedMask;
 		float_t* coordFactors;
 
-    	BooleanScorer( Similarity* similarity, int32_t minNrShouldMatch = 1 );
+		BooleanScorer( Similarity* similarity, int32_t minNrShouldMatch = 1 );
 		virtual ~BooleanScorer();
-		void add(Scorer* scorer, const bool required, const bool prohibited);
+		void add(Scorer::AutoPtr scorer, const bool required, const bool prohibited);
 		int32_t doc() const { return current->doc; }
 		bool next();
 		float_t score();

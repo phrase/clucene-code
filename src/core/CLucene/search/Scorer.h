@@ -37,6 +37,28 @@ protected:
 	Scorer(Similarity* _similarity);
 
 public:
+
+	/** Auto pointer for Scorer */
+	typedef std::auto_ptr<Scorer> AutoPtr;
+	/** Shared pointer for Scorer */
+	typedef boost::shared_ptr<Scorer> SharedPtr;
+
+	/** Dummy Deletor for CLucene vectors with shared pointers of Scorers */
+	class Deletor : public CL_NS(util)::AbstractDeletor {
+	public:
+		void Delete(Scorer::SharedPtr obj) {
+			// empty
+		}
+		static void doDelete(Scorer::SharedPtr obk) {
+			// empty
+		}
+	};
+
+	/** Vector container owning pointers to Scorer objects */
+	typedef boost::ptr_vector<Scorer> Vector;
+	/** Vector with shared pointers of Scorer objects */
+	typedef CL_NS(util)::CLVector<SharedPtr, Deletor> SharedVector;
+
 	virtual ~Scorer();
 
 	/** Returns the Similarity implementation used by this scorer. */
@@ -128,7 +150,13 @@ public:
 	/** Returns a string which explains the object */
 	virtual TCHAR* toString() = 0;
 
+	/** Overloaded less operator, so Scorer object can be sorted in STL containers. */
+	bool operator<(const Scorer& scorer) const {
+		return doc() - scorer.doc();
+	}
+
 	static bool sort(const Scorer* elem1, const Scorer* elem2);
 };
+
 CL_NS_END
 #endif

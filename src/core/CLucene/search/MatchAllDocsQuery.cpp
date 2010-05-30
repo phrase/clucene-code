@@ -91,8 +91,9 @@ void MatchAllDocsQuery::MatchAllDocsWeight::normalize(float_t _queryNorm) {
 	queryWeight *= this->queryNorm;
 }
 
-Scorer* MatchAllDocsQuery::MatchAllDocsWeight::scorer(CL_NS(index)::IndexReader* reader) {
-	return _CLNEW MatchAllScorer(reader, similarity, this);
+Scorer::AutoPtr MatchAllDocsQuery::MatchAllDocsWeight::scorer(CL_NS(index)::IndexReader* reader) {
+	Scorer::AutoPtr result(new MatchAllScorer(reader, similarity, this));
+	return result;
 }
 
 Explanation* MatchAllDocsQuery::MatchAllDocsWeight::explain(CL_NS(index)::IndexReader* reader, int32_t doc) {

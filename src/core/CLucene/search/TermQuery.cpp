@@ -5,15 +5,16 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "TermQuery.h"
 
-#include "SearchHeader.h"
 #include "Scorer.h"
+#include "SearchHeader.h"
 #include "Explanation.h"
 #include "Similarity.h"
 #include "Searchable.h"
 #include "_TermScorer.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/StringBuffer.h"
@@ -46,7 +47,7 @@ CL_NS_DEF(search)
 
 		float_t sumOfSquaredWeights();
 		void normalize(float_t queryNorm);
-		Scorer* scorer(CL_NS(index)::IndexReader* reader);
+		Scorer::AutoPtr scorer(CL_NS(index)::IndexReader* reader);
 		Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc);
 	};
 
@@ -137,14 +138,15 @@ CL_NS_DEF(search)
 		value = queryWeight * idf;                  // idf for document 
 	}
 
-	Scorer* TermWeight::scorer(IndexReader* reader) {
+	Scorer::AutoPtr TermWeight::scorer(IndexReader* reader) {
 		TermDocs* termDocs = reader->termDocs(_term);
+		Scorer::AutoPtr result;
 		    
 		if (termDocs == NULL)
-			return NULL;
+			return result; // result.get() == NULL
 		    
-		return _CLNEW TermScorer(this, termDocs, similarity,
-								reader->norms(_term->field()));
+		result.reset(new TermScorer(this, termDocs, similarity, reader->norms(_term->field())));
+		return result;
 	}
 
 	Explanation* TermWeight::explain(IndexReader* reader, int32_t doc){
@@ -197,9 +199,8 @@ CL_NS_DEF(search)
         _CLDELETE_LCARRAY(tmp);
 		fieldExpl->setDescription(buf);
 
-        Scorer* sc = scorer(reader);
+		Scorer::AutoPtr sc = scorer(reader);
 		Explanation* tfExpl = sc->explain(doc);
-        _CLLDELETE(sc);
 		fieldExpl->addDetail(tfExpl);
 		fieldExpl->addDetail(idfExpl);
 

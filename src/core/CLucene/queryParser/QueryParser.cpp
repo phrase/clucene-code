@@ -5,6 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "CLucene/_ApiHeader.h"
 #include "_CharStream.h"
 #include "_FastCharStream.h"
@@ -14,6 +15,7 @@
 
 #include "CLucene/analysis/AnalysisHeader.h"
 
+#include "CLucene/search/Scorer.h"
 #include "CLucene/search/SearchHeader.h"
 
 #include "CLucene/search/Query.h"

@@ -13,10 +13,15 @@
 CL_NS_DEF(search)
 	
 	class BooleanScorer2: public Scorer {
+	public:
+
+			/** Auto pointer for BooleanScorer2 */
+			typedef std::auto_ptr<BooleanScorer2> AutoPtr;
+
 	private:
 	    class Internal;
-		  friend class Internal;
-	    Internal* _internal;
+	    friend class Internal;
+	    std::auto_ptr<Internal> _internal;
 	    
 	    class Coordinator;
 	    class SingleMatchScorer;
@@ -32,7 +37,7 @@ CL_NS_DEF(search)
 		BooleanScorer2( Similarity* similarity, int32_t minNrShouldMatch = 0, bool allowDocsOutOfOrder = false );
 		virtual ~BooleanScorer2();
 		
-		void add( Scorer* scorer, bool required, bool prohibited );
+		void add( Scorer::AutoPtr scorer, bool required, bool prohibited );
 		void score( HitCollector* hc );
 		int32_t doc() const;
 		bool next();

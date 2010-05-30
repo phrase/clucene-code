@@ -5,11 +5,12 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
+#include "Scorer.h"
 #include "SearchHeader.h"
 #include "_BooleanScorer.h"
 
-#include "Scorer.h"
-#include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "Similarity.h"
 #include "CLucene/util/StringBuffer.h"
@@ -61,7 +62,7 @@ CL_NS_DEF(search)
 	more = false;
 	end += BooleanScorer::BucketTable_SIZE;
 	for (SubScorer* sub = scorers; sub != NULL; sub = sub->next) {
-		Scorer* scorer = sub->scorer;
+		Scorer* scorer = sub->scorer.get();
 			int32_t doc;
 			while (!sub->done && (doc=scorer->doc()) < end) {
 				sub->collector->collect(doc, scorer->score());
@@ -108,7 +109,7 @@ CL_NS_DEF(search)
 		return buffer.toString();
 	}
 
-  void BooleanScorer::add(Scorer* scorer, const bool required, const bool prohibited) {
+  void BooleanScorer::add(Scorer::AutoPtr scorer, const bool required, const bool prohibited) {
     int32_t mask = 0;
     if (required || prohibited) {
       if (nextMask == 0)
@@ -193,7 +194,7 @@ CL_NS_DEF(search)
 
 
 
-  BooleanScorer::SubScorer::SubScorer(Scorer* scr, const bool r, const bool p, HitCollector* c, SubScorer* nxt):
+  BooleanScorer::SubScorer::SubScorer(Scorer::AutoPtr scr, const bool r, const bool p, HitCollector* c, SubScorer* nxt):
       scorer(scr),
       required(r),
       prohibited(p),
@@ -206,7 +207,7 @@ CL_NS_DEF(search)
   //       nxt may or may not be NULL
   //Post - The instance has been created
 
-      CND_PRECONDITION(scr != NULL,"scr is NULL");
+      CND_PRECONDITION(scr.get() != NULL,"scr is NULL");
       CND_PRECONDITION(c != NULL,"c is NULL");
 
       done        = !scorer->next();
@@ -223,7 +224,6 @@ CL_NS_DEF(search)
 		_CLDELETE(ptr);
 		ptr = next;
 	}
-	_CLDELETE(scorer);
 	_CLDELETE(collector);
   }
 

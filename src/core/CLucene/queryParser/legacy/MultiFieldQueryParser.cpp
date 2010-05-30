@@ -6,6 +6,9 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "MultiFieldQueryParser.h"
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
+#include "CLucene/search/Scorer.h"
 #include "CLucene/analysis/AnalysisHeader.h"
 #include "CLucene/search/BooleanQuery.h"
 #include "CLucene/search/BooleanClause.h"

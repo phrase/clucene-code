@@ -7,11 +7,13 @@
 #include "CLucene/_ApiHeader.h"
 #include "QueryFilter.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "IndexSearcher.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/BitSet.h"
+#include "Scorer.h"
 #include "SearchHeader.h"
 #include "Query.h"
 

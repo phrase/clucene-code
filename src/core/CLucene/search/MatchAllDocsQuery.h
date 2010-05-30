@@ -7,6 +7,8 @@
 #ifndef _lucene_search_MatchAllDocsQuery_h
 #define _lucene_search_MatchAllDocsQuery_h
 
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
 #include "Scorer.h"
 #include "SearchHeader.h"
 #include "Query.h"
@@ -74,7 +76,7 @@ CL_NS_DEF(search)
 
 			void normalize(float_t _queryNorm);
 
-			Scorer* scorer(CL_NS(index)::IndexReader* reader);
+			Scorer::AutoPtr scorer(CL_NS(index)::IndexReader* reader);
 
 			Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc);
 		};

@@ -7,6 +7,9 @@
 #include "CLucene/_ApiHeader.h"
 #include "QueryParser.h"
 
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/shared_ptr.hpp>
+#include "CLucene/search/Scorer.h"
 #include "CLucene/search/TermQuery.h"
 #include "CLucene/search/PhraseQuery.h"
 #include "CLucene/search/RangeQuery.h"

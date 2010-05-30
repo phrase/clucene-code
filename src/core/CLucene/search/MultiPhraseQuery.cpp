@@ -5,9 +5,11 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "MultiPhraseQuery.h"
+#include "Scorer.h"
 #include "SearchHeader.h"
 
 #include "BooleanClause.h"
@@ -72,10 +74,11 @@ public:
       value = queryWeight * idf;                  // idf for document
     }
 
-	Scorer* scorer(IndexReader* reader) {
+	Scorer::AutoPtr scorer(IndexReader* reader) {
+		Scorer::AutoPtr result;
 		const size_t termArraysSize = parentQuery->termArrays->size();
 		if (termArraysSize == 0)                  // optimize zero-term case
-			return NULL;
+			return result; // result.get() == NULL
 
 		TermPositions** tps = _CL_NEWARRAY(TermPositions*,termArraysSize+1);
 		for (size_t i=0; i<termArraysSize; i++) {
@@ -88,23 +91,21 @@ public:
 				p = reader->termPositions((*terms)[0]);
 
 			if (p == NULL)
-				return NULL;
+				return result; // result.get() == NULL
 
 			tps[i] = p;
 		}
 		tps[termArraysSize] = NULL;
 
-		Scorer* ret = NULL;
-
 		ValueArray<int32_t> positions;
 		parentQuery->getPositions(positions);
 		const int32_t slop = parentQuery->getSlop();
 		if (slop == 0)
-			ret = _CLNEW ExactPhraseScorer(this, tps, positions.values, similarity,
-																reader->norms(parentQuery->field));
+			result.reset(new ExactPhraseScorer(this, tps, positions.values, similarity,
+																reader->norms(parentQuery->field)));
 		else
-			ret = _CLNEW SloppyPhraseScorer(this, tps, positions.values, similarity,
-															slop, reader->norms(parentQuery->field));
+			result.reset(new SloppyPhraseScorer(this, tps, positions.values, similarity,
+															slop, reader->norms(parentQuery->field)));
 
 		positions.deleteArray();
 
@@ -112,7 +113,7 @@ public:
 		//of its values
 		_CLDELETE_LARRAY(tps);
 
-		return ret;
+		return result;
 	}
 
 	Explanation* explain(IndexReader* reader, int32_t doc){

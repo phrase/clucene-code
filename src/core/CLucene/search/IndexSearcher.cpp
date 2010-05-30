@@ -5,13 +5,14 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
+#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
 #include "IndexSearcher.h"
 
-#include "SearchHeader.h"
 #include "Scorer.h"
+#include "SearchHeader.h"
 #include "_HitQueue.h"
 #include "Query.h"
 #include "Filter.h"
@@ -222,8 +223,8 @@ CL_NS_DEF(search)
       CND_PRECONDITION(query != NULL, "query is NULL");
 
 	  Weight* weight = query->weight(this);
-    Scorer* scorer = weight->scorer(reader);
-	  if (scorer == NULL){
+    Scorer::AutoPtr scorer = weight->scorer(reader);
+	  if (scorer.get() == NULL){
           return _CLNEW TopDocs(0, NULL, 0);
 	  }
 
@@ -238,7 +239,6 @@ CL_NS_DEF(search)
 
       SimpleTopDocsCollector hitCol(bits,hq,totalHits,nDocs,0.0f);
       scorer->score( &hitCol );
-      _CLDELETE(scorer);
 
       int32_t scoreDocsLength = hq->size();
 
@@ -269,8 +269,8 @@ CL_NS_DEF(search)
       CND_PRECONDITION(query != NULL, "query is NULL");
 
     Weight* weight = query->weight(this);
-    Scorer* scorer = weight->scorer(reader);
-    if (scorer == NULL){
+    Scorer::AutoPtr scorer = weight->scorer(reader);
+    if (scorer.get() == NULL){
 		return _CLNEW TopFieldDocs(0, NULL, 0, NULL );
 	}
 
@@ -281,7 +281,6 @@ CL_NS_DEF(search)
     
 	SortedTopDocsCollector hitCol(bits,&hq,totalHits,nDocs);
 	scorer->score(&hitCol);
-    _CLLDELETE(scorer);
 
 	int32_t hqLen = hq.size();
     FieldDoc** fieldDocs = _CL_NEWARRAY(FieldDoc*,hqLen);
@@ -325,14 +324,13 @@ CL_NS_DEF(search)
        }
 
       Weight* weight = query->weight(this);
-      Scorer* scorer = weight->scorer(reader);
-      if (scorer != NULL) {
+      Scorer::AutoPtr scorer = weight->scorer(reader);
+      if (scorer.get() != NULL) {
 		  if (fc == NULL){
               scorer->score(results);
 		  }else{
               scorer->score((HitCollector*)fc);
 		  }
-          _CLDELETE(scorer); 
       }
 
     _CLLDELETE(fc);
