@@ -125,7 +125,8 @@
 
    void testEmptyStopList(CuTest *tc)
    {
-       StandardAnalyzer a((const TCHAR**)_T("\0"));
+       const TCHAR* stopWords = { NULL };
+       StandardAnalyzer a(&stopWords);
        Directory::Pointer ram(_CLNEW RAMDirectory());
        IndexWriter writer(ram, &a, true);
        
