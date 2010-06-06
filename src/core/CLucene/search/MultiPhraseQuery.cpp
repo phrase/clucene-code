@@ -52,7 +52,7 @@ public:
 
 		// compute idf
 		for (size_t i = 0; i < parentQuery->termArrays->size(); i++){
-			CLArrayList<Term::Pointer, Term::Deletor>* terms = parentQuery->termArrays->at(i);
+			Term::Vector* terms = parentQuery->termArrays->at(i);
 		      for (size_t j = 0; j < terms->size(); j++) {
 		        idf += parentQuery->getSimilarity(searcher)->idf((*terms)[j], searcher);
 			}
@@ -82,7 +82,7 @@ public:
 
 		TermPositions** tps = _CL_NEWARRAY(TermPositions*,termArraysSize+1);
 		for (size_t i=0; i<termArraysSize; i++) {
-			CLArrayList<Term::Pointer, Term::Deletor>* terms = parentQuery->termArrays->at(i);
+			Term::Vector* terms = parentQuery->termArrays->at(i);
 
 			TermPositions* p;
 			if (terms->size() > 1 )
@@ -211,7 +211,7 @@ public:
 
 Query* MultiPhraseQuery::rewrite(IndexReader* reader) {
 	if (termArrays->size() == 1) {                 // optimize one-term case
-		CLArrayList<Term::Pointer, Term::Deletor>* terms = termArrays->at(0);
+		Term::Vector* terms = termArrays->at(0);
 		BooleanQuery* boq = _CLNEW BooleanQuery(true);
 		for (size_t i=0; i < terms->size(); i++) {
 			boq->add(_CLNEW TermQuery((*terms)[i]), BooleanClause::SHOULD);
@@ -230,10 +230,8 @@ MultiPhraseQuery::MultiPhraseQuery():
   slop(0)
 {
 	termArrays = _CLNEW CLArrayList<
-		CLArrayList<Term::Pointer, Term::Deletor>*,
-		Deletor::Object<
-			CLArrayList<Term::Pointer, Term::Deletor>
-		>
+		Term::Vector*,
+		Deletor::Object<Term::Vector>
 	>;
 }
 
@@ -248,12 +246,11 @@ void MultiPhraseQuery::setSlop(const int32_t s) { slop = s; }
 int32_t MultiPhraseQuery::getSlop() const { return slop; }
 
 void MultiPhraseQuery::add(CL_NS(index)::Term::Pointer term) {
-	CLArrayList<Term::Pointer, Term::Deletor> _terms(false);
-	_terms.push_back(term);
+	Term::Vector _terms(1, term);
 	add(&_terms);
 }
 
-void MultiPhraseQuery::add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms) {
+void MultiPhraseQuery::add(const Term::Vector* terms) {
 	int32_t position = 0;
 	if (positions->size() > 0)
 		position = (*positions)[positions->size()-1] + 1;
@@ -261,18 +258,18 @@ void MultiPhraseQuery::add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Po
 	add(terms, position);
 }
 
-void MultiPhraseQuery::add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* _terms, const int32_t position) {
+void MultiPhraseQuery::add(const Term::Vector* _terms, const int32_t position) {
 	if (termArrays->size() == 0)
 		field = STRDUP_TtoT((*_terms)[0]->field());
 
-	CLArrayList<Term::Pointer, Term::Deletor>* terms = _CLNEW CLArrayList<Term::Pointer, Term::Deletor>(false);
-	for (size_t i = 0; i < _terms->size(); i++) {
+	Term::Vector* terms = new Term::Vector(_terms->size());
+	for (Term::Vector::size_type i = 0; i < _terms->size(); i++) {
 		if ( _tcscmp((*_terms)[i]->field(), field) != 0) {
 			TCHAR buf[250];
 			_sntprintf(buf,250,_T("All phrase terms must be in the same field (%s): %s"),field, (*terms)[i]->toString());
 			_CLTHROWT(CL_ERR_IllegalArgument,buf);
 		}
-		terms->push_back((*_terms)[i]);
+		(*terms)[i] = (*_terms)[i];
 	}
 	termArrays->push_back(terms);
 	positions->push_back(position);
@@ -299,14 +296,12 @@ TCHAR* MultiPhraseQuery::toString(const TCHAR* f) const {
 	buffer.appendChar(_T('"'));
 	
 	CLArrayList<
-		CLArrayList<Term::Pointer, Term::Deletor>*,
-		Deletor::Object<
-			CLArrayList<Term::Pointer, Term::Deletor>
-		>
+		Term::Vector*,
+		Deletor::Object<Term::Vector>
 	>::iterator i;
 	i = termArrays->begin();
 	while (i != termArrays->end()){
-		CLArrayList<Term::Pointer, Term::Deletor>& terms = *(*i);
+		Term::Vector& terms = *(*i);
 		if (terms.size() > 1) {
 			buffer.appendChar(_T('('));
 			for (size_t j = 0; j < terms.size(); j++) {
@@ -335,10 +330,10 @@ TCHAR* MultiPhraseQuery::toString(const TCHAR* f) const {
 	return buffer.giveBuffer();
 }
 
-class TermArrayList_Equals : public CL_NS_STD(binary_function)<const CLArrayList<Term::Pointer, Term::Deletor>*, const CLArrayList<Term::Pointer, Term::Deletor>*, bool>
+class TermArrayList_Equals : public CL_NS_STD(binary_function)<const Term::Vector*, const Term::Vector*, bool>
 {
 public:
-	bool operator()(CLArrayList<Term::Pointer, Term::Deletor>* val1, CLArrayList<Term::Pointer, Term::Deletor>* val2 ) const {
+	bool operator()(Term::Vector* val1, Term::Vector* val2 ) const {
 		if ( val1->size() != val2->size())
 			return false;
 		for ( size_t i=0;i<val1->size();i++ ) {
@@ -369,16 +364,12 @@ bool MultiPhraseQuery::equals(Query* o) const {
 			CLListEquals<
 				Term::Pointer, TermArrayList_Equals,
 				const CLArrayList<
-					CLArrayList<Term::Pointer, Term::Deletor>*,
-					Deletor::Object<
-						CLArrayList<Term::Pointer, Term::Deletor>
-					>
+					Term::Vector*,
+					Deletor::Object<Term::Vector>
 				>,
 				const CLArrayList<
-					CLArrayList<Term::Pointer, Term::Deletor>*,
-					Deletor::Object<
-						CLArrayList<Term::Pointer, Term::Deletor>
-					>
+					Term::Vector*,
+					Deletor::Object<Term::Vector>
 				>
 			> comp;
 			ret = comp.equals(this->termArrays, other->termArrays);

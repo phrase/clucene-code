@@ -30,7 +30,7 @@ public:
 	* 
 	* @exception IOException
 	*/ 
-  MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms);
+  MultipleTermPositions(IndexReader* indexReader, const Term::Vector* terms);
 	virtual ~MultipleTermPositions(){}
 
 	bool next();

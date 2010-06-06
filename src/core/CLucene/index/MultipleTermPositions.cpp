@@ -86,7 +86,7 @@ public:
 	}
 };
 
-MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms) : _posList(_CLNEW IntQueue()){
+MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const Term::Vector* terms) : _posList(_CLNEW IntQueue()){
 	CLLinkedList<TermPositions*> termPositions;
   for (size_t i = 0; i < terms->size(); i++){
     termPositions.push_back( indexReader->termPositions((*terms)[i]));

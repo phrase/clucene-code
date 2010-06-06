@@ -15,6 +15,8 @@
 
 #include "CLucene/analysis/AnalysisHeader.h"
 
+#include "CLucene/index/Term.h"
+
 #include "CLucene/search/Scorer.h"
 #include "CLucene/search/SearchHeader.h"
 
@@ -33,7 +35,6 @@
 #include "CLucene/document/DateField.h"
 #include "CLucene/document/DateTools.h"
 
-#include "CLucene/index/Term.h"
 #include "QueryToken.h"
 
 #include "CLucene/util/CLStreams.h"
@@ -366,7 +367,7 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
       }else {
 		    MultiPhraseQuery* mpq = _CLNEW MultiPhraseQuery();
 		    mpq->setSlop(phraseSlop);
-		    CLArrayList<Term::Pointer, Term::Deletor> multiTerms(false);
+				Term::Vector multiTerms;
 		    int32_t position = -1;
 		    for (size_t i = 0; i < v.size(); i++) {
 			    t = v.at(i);

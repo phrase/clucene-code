@@ -29,13 +29,8 @@ class CLUCENE_EXPORT MultiPhraseQuery : public Query {
 private:
 	TCHAR* field;
 	CL_NS(util)::CLArrayList<
-		CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>*,
-		CL_NS(util)::Deletor::Object<
-			CL_NS(util)::CLArrayList<
-				CL_NS(index)::Term::Pointer,
-				CL_NS(index)::Term::Deletor
-			>
-		>
+		CL_NS(index)::Term::Vector*,
+		CL_NS(util)::Deletor::Object<CL_NS(index)::Term::Vector>
 	>* termArrays;
 	CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>* positions;
 
@@ -67,7 +62,7 @@ public:
 	* @memory A pointer is taken of each term, the array memory must be cleaned up by calle
 	* @see PhraseQuery#add(Term)
 	*/
-	void add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms);
+	void add(const CL_NS(index)::Term::Vector* terms);
 
 	/**
 	* Allows to specify the relative position of terms within the phrase.
@@ -77,7 +72,7 @@ public:
 	* @param position
 	  * @memory A pointer is taken of each term, the array memory must be cleaned up by calle
 	*/
-	void add(const CL_NS(util)::CLArrayList<CL_NS(index)::Term::Pointer, CL_NS(index)::Term::Deletor>* terms, const int32_t position);
+	void add(const CL_NS(index)::Term::Vector* terms, const int32_t position);
 
 	/**
 	* Returns a List<Term[]> of the terms in the multiphrase.
