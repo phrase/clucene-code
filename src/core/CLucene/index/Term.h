@@ -61,6 +61,8 @@ public:
 	 Use const shared pointer as const default pointer type.
 	 */
 	typedef ConstSharedPtr ConstPointer;
+	/** Vector of pointers for class Term */
+	typedef std::vector<Pointer> Vector;
 
 	/**
 	Dummy Deletor for shared pointers of Term

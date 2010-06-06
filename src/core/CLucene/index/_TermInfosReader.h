@@ -9,6 +9,7 @@
 
 
 #include <memory>
+#include <boost/scoped_ptr.hpp>
 //#include "Terms.h"
 #include "_SegmentTermEnum.h"
 //CL_CLASS_DEF(store,IndexInput)
@@ -31,14 +32,14 @@ CL_NS_DEF(index)
 		FieldInfos* fieldInfos;
 
 		CL_NS(util)::ThreadLocal<SegmentTermEnum*, 
-			CL_NS(util)::Deletor::Object<SegmentTermEnum> > enumerators;
+		CL_NS(util)::Deletor::Object<SegmentTermEnum> > enumerators;
 
 		SegmentTermEnum* getEnum();
 		SegmentTermEnum* origEnum;
 		SegmentTermEnum* indexEnum;
 		int64_t _size;
 
-		std::auto_ptr<CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor> > indexTerms; //note: this is a list of objects, not arrays!
+		boost::scoped_ptr<Term::Vector> indexTerms;
     int32_t indexTermsLength;
 		TermInfo* indexInfos;
 		int64_t* indexPointers;

@@ -310,18 +310,18 @@ CL_NS_DEF(index)
 
     SCOPED_LOCK_MUTEX(THIS_LOCK)
 
-	  if ( indexTerms.get() != NULL )
+	  if (indexTerms)
 		  return;
 
       try {
           indexTermsLength = (size_t)indexEnum->size;
 
 			//Instantiate an block of Term's,so that each one doesn't have to be new'd
-			indexTerms.reset(_CLNEW CLArrayList<Term::Pointer, Term::Deletor>(false));
-			CND_CONDITION(indexTerms.get() != NULL,"No memory could be allocated for indexTerms");//Check if is indexTerms is a valid array
+			indexTerms.reset(new Term::Vector(indexTermsLength));
+			CND_CONDITION(indexTerms, "No memory could be allocated for indexTerms");//Check if is indexTerms is a valid array
 
-			for (CLArrayList<Term::Pointer, Term::Deletor>::size_type i = 0; i < indexTermsLength; i++) {
-				indexTerms->push_back(Term::Pointer(new Term));
+			for (Term::Vector::size_type i = 0; i < indexTermsLength; i++) {
+				(*indexTerms)[i] = Term::Pointer(new Term);
 			}	
 
 		  //Instantiate an big block of TermInfo's, so that each one doesn't have to be new'd
@@ -358,22 +358,22 @@ CL_NS_DEF(index)
   //Post - The new offset has been returned
 
       //Check if is indexTerms is a valid array
-      CND_PRECONDITION(indexTerms.get() != NULL,"indexTerms is NULL");
+      CND_PRECONDITION(indexTerms, "indexTerms is NULL");
 
       int32_t lo = 0;
       int32_t hi = indexTermsLength - 1;
-	  int32_t mid;
-	  int32_t delta;
+      int32_t mid;
+      int32_t delta;
 
       while (hi >= lo) {
           //Start in the middle betwee hi and lo
           mid = (lo + hi) >> 1;
 
           //Check if is indexTerms[mid] is a valid instance of Term
-          CND_PRECONDITION((*indexTerms)[mid].get() != NULL,"indexTerms[mid] is NULL");
-          CND_PRECONDITION(mid < indexTermsLength,"mid >= indexTermsLength");
+          CND_PRECONDITION((*indexTerms)[mid], "indexTerms[mid] is NULL");
+          CND_PRECONDITION(mid < indexTermsLength, "mid >= indexTermsLength");
 
-		  //Determine if term is before mid or after mid
+          //Determine if term is before mid or after mid
           delta = term->compareTo((*indexTerms)[mid]);
           if (delta < 0){
               //Calculate the new hi
@@ -399,7 +399,7 @@ CL_NS_DEF(index)
   //Post - The current Term and Terminfo have been repositioned to indexOffset
 
       CND_PRECONDITION(indexOffset >= 0, "indexOffset contains a negative number");
-      CND_PRECONDITION(indexTerms.get() != NULL,    "indexTerms is NULL");
+      CND_PRECONDITION(indexTerms, "indexTerms is NULL");
       CND_PRECONDITION(indexInfos != NULL,    "indexInfos is NULL");
       CND_PRECONDITION(indexPointers != NULL, "indexPointers is NULL");
 
