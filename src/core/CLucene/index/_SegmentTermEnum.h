@@ -76,7 +76,7 @@ public:
     /**
 	 * Scan for Term term without allocating new Terms
 	 */
-	void scanTo(Term::ConstPointer term);
+	void scanTo(const Term::ConstPointer& term);
 
 	/** 
 	 * Closes the enumeration to further activity, freeing resources. 
@@ -91,7 +91,7 @@ public:
 	/**
 	 * Repositions term and termInfo within the enumeration
 	 */
-	void seek(const int64_t pointer, const int32_t p, Term::Pointer t, TermInfo* ti);
+	void seek(const int64_t pointer, const int32_t p, const Term::Pointer& t, TermInfo* ti);
 	
 	/**
 	 * Returns a clone of the current termInfo

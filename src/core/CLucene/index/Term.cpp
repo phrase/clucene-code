@@ -55,7 +55,7 @@ Term::Term(const TCHAR* fld, const TCHAR* txt, bool internField){
 }
 
 
-Term::Term(Term::ConstPointer fieldTerm, const TCHAR* txt){
+Term::Term(const Term::ConstPointer& fieldTerm, const TCHAR* txt){
 	_field = LUCENE_BLANK_STRING;
 	internF = false;
 	textLen = 0;
@@ -119,7 +119,7 @@ const TCHAR* Term::text() const {
 }
 
 
-void Term::set(Term::ConstPointer term, const TCHAR* txt){
+void Term::set(const Term::ConstPointer& term, const TCHAR* txt){
 	set(term->field(),txt,false);
 }
 
@@ -182,10 +182,10 @@ void Term::set(const TCHAR* fld, const TCHAR* txt,const bool internField){
 
 /** Compares two terms, returning true iff they have the same
   field and text. */
-bool Term::equals(Term::ConstPointer other) const{
+bool Term::equals(const Term::ConstPointer& other) const{
 	if (other.get() == this)
 		return true;
-  if (other.get() == NULL)
+  if (!other)
       return false;
 
    if ( cachedHashCode != 0 && other->cachedHashCode != 0 && other->cachedHashCode != cachedHashCode )
@@ -210,7 +210,7 @@ size_t Term::hashCode(){
 
 size_t Term::textLength() const { return textLen; }
 
-int32_t Term::compareTo(Term::ConstPointer other) const {
+int32_t Term::compareTo(const Term::ConstPointer& other) const {
 //Func - Compares two terms, to see if this term belongs before,is equal to or after
 //       after the argument term.
 //Pre  - other is a reference to another term
@@ -232,7 +232,7 @@ int32_t Term::compareTo(Term::ConstPointer other) const {
         }
 }
 
-int32_t Term::hashedCompareTo(Term::Pointer other) {
+int32_t Term::hashedCompareTo(const Term::Pointer& other) {
     size_t hc1 = this->hashCode();
     size_t hc2 = other->hashCode();
     

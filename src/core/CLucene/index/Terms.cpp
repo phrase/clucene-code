@@ -18,7 +18,7 @@ Term::Pointer TermEnum::term(bool pointer){
 TermEnum::~TermEnum(){
 }
 
-bool TermEnum::skipTo(Term::Pointer target){
+bool TermEnum::skipTo(const Term::Pointer& target){
 	do {
 		if (!next())
 			return false;

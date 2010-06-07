@@ -11,7 +11,7 @@
       int32_t docFreq;
       Term::Pointer term;
       
-      TestTermInfo(Term::Pointer t, int32_t df) {
+      TestTermInfo(const Term::Pointer& t, int32_t df) {
         term = t;
         docFreq = df;
       }

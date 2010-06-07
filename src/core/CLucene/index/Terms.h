@@ -120,7 +120,7 @@ public:
 	* </pre>
 	* Some implementations are considerably more efficient than that.
 	*/
-	virtual bool skipTo(Term::Pointer target);
+	virtual bool skipTo(const Term::Pointer& target);
 };
 
 

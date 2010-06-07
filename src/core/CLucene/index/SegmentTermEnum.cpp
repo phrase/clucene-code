@@ -167,7 +167,7 @@ CL_NS_DEF(index)
 
 		//delete the previous enumerated term
 		Term::Pointer tmp;
-		if ( prev.get() != NULL ){
+		if (prev) {
 			if (!prev.unique()) {
 				prev.reset(); //todo: tune other places try and delete its term 
 			}else
@@ -221,7 +221,7 @@ CL_NS_DEF(index)
 		return _term;
 	}
 
-	void SegmentTermEnum::scanTo(Term::ConstPointer term){
+	void SegmentTermEnum::scanTo(const Term::ConstPointer& term){
 	//Func - Scan for Term without allocating new Terms
 	//Pre  - term != NULL
 	//Post - The iterator term has been moved to the position where Term is expected to be
@@ -248,7 +248,7 @@ CL_NS_DEF(index)
 		return termInfo->docFreq;
 	}
 
-	void SegmentTermEnum::seek(const int64_t pointer, const int32_t p, Term::Pointer t, TermInfo* ti) {
+	void SegmentTermEnum::seek(const int64_t pointer, const int32_t p, const Term::Pointer& t, TermInfo* ti) {
 	//Func - Repositions term and termInfo within the enumeration
 	//Pre  - pointer >= 0
 	//       p >= 0 and contains the new position within the enumeration
@@ -263,7 +263,7 @@ CL_NS_DEF(index)
 		position = p;
 
 		//finalize the current term
-		if ( _term.get() == NULL || _term.use_count() > 1 ){
+		if ( !_term || _term.use_count() > 1 ){
 			//Get a pointer from t and increase the reference counter of t
 			_term.reset(new Term); //cannot use reference, because TermInfosReader uses non ref-counted array
 		}

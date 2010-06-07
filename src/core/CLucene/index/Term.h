@@ -82,7 +82,7 @@ public:
    * <p>Note that a null field or null text value results in undefined
    * behavior for most Lucene APIs that accept a Term parameter.
   */
-	Term(ConstPointer fieldTerm, const TCHAR* txt);
+	Term(const ConstPointer& fieldTerm, const TCHAR* txt);
 		
 	/** Constructs a blank term */
 	Term();
@@ -123,7 +123,7 @@ public:
 	* - avoids field.intern() overhead
 	* @param text The text of the new term (field is implicitly same as this Term instance)
 	*/
-	void set(ConstPointer term, const TCHAR* txt);
+	void set(const ConstPointer& term, const TCHAR* txt);
 
 	void set(const TCHAR* fld, const TCHAR* txt, const bool internField);
 
@@ -132,7 +132,7 @@ public:
 	argument, and a positive integer if this term belongs after the argument.
 	
 	The ordering of terms is first by field, then by text.*/
-	int32_t compareTo(ConstPointer other) const;
+	int32_t compareTo(const ConstPointer& other) const;
 	
 	/** Compares two terms, returning a negative integer if this
 	term belongs before the argument, zero if this term is equal to the
@@ -141,9 +141,9 @@ public:
 	The ordering of terms is purely on the hashCode, so is not a logical ordering, but is repeatable.
 	Note: can't be const because call the to hashCode is not const
 	*/
-	int32_t hashedCompareTo(Pointer other);
+	int32_t hashedCompareTo(const Pointer& other);
 
-	bool equals(ConstPointer other) const;
+	bool equals(const ConstPointer& other) const;
 
 	size_t textLength() const;
 

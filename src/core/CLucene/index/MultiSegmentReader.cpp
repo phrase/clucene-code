@@ -554,7 +554,7 @@ void MultiTermDocs::seek(Term::Pointer tterm) {
 //Pre  - tterm != NULL
 //Post - The instance has been reset for a new search
 
-	CND_PRECONDITION(tterm.get() != NULL, "tterm is NULL");
+	CND_PRECONDITION(tterm, "tterm is NULL");
 
 	// TODO: Is this still needed?
 	//Assigning tterm is done as below for a reason

@@ -13,10 +13,10 @@
 CL_NS_DEF(index)
 
 
-class Term_Equals:public CL_NS_STD(binary_function)<Term::ConstPointer, Term::ConstPointer, bool>
+class Term_Equals:public CL_NS_STD(binary_function)<const Term::ConstPointer&, const Term::ConstPointer&, bool>
 {
 public:
-	bool operator() (Term::ConstPointer val1, Term::ConstPointer val2) const {
+	bool operator() (const Term::ConstPointer& val1, const Term::ConstPointer& val2) const {
 		return val1->equals(val2);
 	}
 };
@@ -24,10 +24,10 @@ public:
 class Term_Compare:LUCENE_BASE, public CL_NS(util)::Compare::_base //<Term*>
 {
 public:
-	bool operator() (Term::Pointer t1, Term::Pointer t2) const {
+	bool operator() (const Term::Pointer& t1, const Term::Pointer& t2) const {
 		return ( t1->compareTo(t2) < 0 );
 	}
-	size_t operator() (Term::Pointer t) const {
+	size_t operator() (const Term::Pointer& t) const {
 		return t->hashCode();
 	}
 };
@@ -35,10 +35,10 @@ public:
 class Term_UnorderedCompare:LUCENE_BASE, public CL_NS(util)::Compare::_base //<Term*>
 {
 public:
-	bool operator() (Term::Pointer t1, Term::Pointer t2) const {
+	bool operator() (const Term::Pointer& t1, const Term::Pointer& t2) const {
 		return ( t1->hashedCompareTo(t2) < 0 );
 	}
-	size_t operator() (Term::Pointer t) const {
+	size_t operator() (const Term::Pointer& t) const {
 		return t->hashCode();
 	}
 };
