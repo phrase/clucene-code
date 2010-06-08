@@ -29,7 +29,7 @@ CL_NS_DEF(index)
 		input		 = i;
 		position     = -1;
 		//Instantiate a Term with empty field, empty text and which is interned (see term.h what interned means)
-	    _term.reset(new Term);
+		_term.reset(new Term);
 		isIndex      = isi;
 		termInfo     = _CLNEW TermInfo();
 		indexPointer = 0;
@@ -96,7 +96,7 @@ CL_NS_DEF(index)
 		//Copy the postion from the clone
 		position     = clone.position;
 
-        if ( clone._term.get() != NULL ){
+ 		if (clone._term) {
 			_term.reset(new Term);
 			_term->set(clone._term,clone._term->text());
 		}else
@@ -108,7 +108,7 @@ CL_NS_DEF(index)
 		bufferLength = clone.bufferLength;
 		size         = clone.size;
 
-		if (clone.prev.get() != NULL) {
+		if (clone.prev) {
 			prev.reset(new Term(clone.prev->field(), clone.prev->text(), false));
 		} else {
 			prev.reset();
@@ -171,9 +171,10 @@ CL_NS_DEF(index)
 			if (!prev.unique()) {
 				prev.reset(); //todo: tune other places try and delete its term 
 			}else
-				tmp = prev; //we are going to re-use this term
+				tmp.swap(prev); //we are going to re-use this term
 		}
 		//prev becomes the current enumerated term
+		//swap not possible, because _term is used in growBuffer()
 		prev = _term;
 		//term becomes the next term read from inputStream input
 		_term = readTerm(tmp);
@@ -352,7 +353,7 @@ CL_NS_DEF(index)
 		//Return a new Term	
 		int32_t field = input->readVInt();
 		const TCHAR* fieldname = fieldInfos->fieldName(field);
-		if (reuse.get() == NULL)
+		if (!reuse)
 			reuse.reset(new Term);
 
 		reuse->set(fieldname, buffer, false);
