@@ -41,10 +41,10 @@ SegmentInfo::SegmentInfo(const char* _name, const int32_t _docCount, CL_NS(store
 	CND_PRECONDITION(docStoreOffset == -1 || !docStoreSegment.empty(), "failed testing for (docStoreOffset == -1 || docStoreSegment != NULL)");
 
 	this->name = _name;
-	this->dir = _dir;
+	this->dir.swap(_dir);
 }
 
-string SegmentInfo::segString(Directory::Pointer dir) {
+string SegmentInfo::segString(const Directory::Pointer& dir) {
   string cfs;
   try {
     if (getUseCompoundFile())
@@ -619,7 +619,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
 	  return max;
   }
 
-  int64_t SegmentInfos::getCurrentSegmentGeneration( const CL_NS(store)::Directory::Pointer directory ) {
+  int64_t SegmentInfos::getCurrentSegmentGeneration( const CL_NS(store)::Directory::Pointer& directory ) {
 	  vector<string> files;
     if ( !directory->list(&files) ){
 		  _CLTHROWA(CL_ERR_IO, (string("cannot read directory ") + directory->toString() + string(": list() returned NULL")).c_str() );
@@ -731,7 +731,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
     infos.remove(index, dontDelete);
   }
 
-  void SegmentInfos::read(Directory::Pointer directory, const char* segmentFileName){
+  void SegmentInfos::read(const Directory::Pointer& directory, const char* segmentFileName){
 	  bool success = false;
 
 	  // Clear any previous segments:
@@ -781,7 +781,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
 	  });
   }
 
-  void SegmentInfos::read(Directory::Pointer directory) {
+  void SegmentInfos::read(const Directory::Pointer& directory) {
 	  generation = lastGeneration = -1;
 
 	  FindSegmentsRead find(directory, this);
@@ -790,7 +790,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
   }
 
 
-  void SegmentInfos::write(Directory::Pointer directory){
+  void SegmentInfos::write(const Directory::Pointer& directory){
   //Func - Writes a new segments file based upon the SegmentInfo instances it manages
   //Pre  - directory is a valid reference to a Directory
   //Post - The new segment has been written to disk
@@ -862,7 +862,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
   int64_t SegmentInfos::getGeneration() const { return generation; }
   int64_t SegmentInfos::getLastGeneration() const { return lastGeneration; }
 
-  int64_t SegmentInfos::readCurrentVersion(Directory::Pointer directory){
+  int64_t SegmentInfos::readCurrentVersion(const Directory::Pointer& directory){
 	  FindSegmentsVersion find(directory);
 	  return find.run();
   }
@@ -913,7 +913,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
 
         int64_t genA = -1;
 
-        if (directory != NULL){
+        if (directory) {
           if (directory->list(&files)) {
             genA = getCurrentSegmentGeneration( files );
             files.clear();
@@ -931,7 +931,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
         // a stale cache (NFS) we have a better chance of
         // getting the right generation.
         int64_t genB = -1;
-        if (directory != NULL) {
+        if (directory) {
           CLuceneError e;
           for(int32_t i=0;i<defaultGenFileRetryCount;i++) {
             IndexInput* genInput = NULL;
@@ -1081,7 +1081,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
       }
     }
   }
-  SegmentInfos::FindSegmentsRead::FindSegmentsRead( CL_NS(store)::Directory::Pointer dir, SegmentInfos* _this ) :
+  SegmentInfos::FindSegmentsRead::FindSegmentsRead(const CL_NS(store)::Directory::Pointer& dir, SegmentInfos* _this ) :
     SegmentInfos::FindSegmentsFile<bool>(dir) {
       this->_this = _this;
   }
@@ -1091,7 +1091,7 @@ string SegmentInfo::segString(Directory::Pointer dir) {
     return true;
   }
 
-  SegmentInfos::FindSegmentsVersion::FindSegmentsVersion( CL_NS(store)::Directory::Pointer dir ) :
+  SegmentInfos::FindSegmentsVersion::FindSegmentsVersion(const CL_NS(store)::Directory::Pointer& dir) :
     SegmentInfos::FindSegmentsFile<int64_t>(dir) {
   }
 

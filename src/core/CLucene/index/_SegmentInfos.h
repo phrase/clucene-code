@@ -190,7 +190,7 @@ CL_NS_DEF(index)
 	    friend class SegmentReader;
 
 	    /** Used for debugging */
-	    std::string segString(CL_NS(store)::Directory::Pointer dir);
+	    std::string segString(const CL_NS(store)::Directory::Pointer& dir);
 	};
 
 	typedef CL_NS(util)::CLVector<SegmentInfo*,CL_NS(util)::Deletor::Object<SegmentInfo> > segmentInfosType;
@@ -312,7 +312,7 @@ CL_NS_DEF(index)
 		*
 		* @param directory -- directory to search for the latest segments_N file
 		*/
-		static int64_t getCurrentSegmentGeneration( const CL_NS(store)::Directory::Pointer directory );
+		static int64_t getCurrentSegmentGeneration( const CL_NS(store)::Directory::Pointer& directory );
 
 		/**
 		* Get the filename of the current segments_N file
@@ -374,7 +374,7 @@ CL_NS_DEF(index)
 		* @throws CorruptIndexException if the index is corrupt
 		* @throws IOException if there is a low-level IO error
 		*/
-		void read(CL_NS(store)::Directory::Pointer directory, const char* segmentFileName);
+		void read(const CL_NS(store)::Directory::Pointer& directory, const char* segmentFileName);
 
 		/**
 		* This version of read uses the retry logic (for lock-less
@@ -382,11 +382,11 @@ CL_NS_DEF(index)
 		* @throws CorruptIndexException if the index is corrupt
 		* @throws IOException if there is a low-level IO error
 		*/
-		void read(CL_NS(store)::Directory::Pointer directory);
+		void read(const CL_NS(store)::Directory::Pointer& directory);
 
 		//Writes a new segments file based upon the SegmentInfo instances it manages
 		//note: still does not support lock-less writes (still pre-2.1 format)
-        void write(CL_NS(store)::Directory::Pointer directory);
+ 		void write(const CL_NS(store)::Directory::Pointer& directory);
 
 		/**
 		* Returns a copy of this instance, also copying each
@@ -406,7 +406,7 @@ CL_NS_DEF(index)
 		* @throws CorruptIndexException if the index is corrupt
 		* @throws IOException if there is a low-level IO error
 		*/
-		static int64_t readCurrentVersion(CL_NS(store)::Directory::Pointer directory);
+		static int64_t readCurrentVersion(const CL_NS(store)::Directory::Pointer& directory);
 
 
     /** If non-null, information about retries when loading
@@ -491,7 +491,7 @@ CL_NS_DEF(index)
       }
     public:
     		FindSegmentsFile( CL_NS(store)::Directory::Pointer dir ){
-	        this->directory = dir;
+	        this->directory.swap(dir);
           this->fileDirectory = NULL;
           this->result = 0;
         }
@@ -511,7 +511,7 @@ CL_NS_DEF(index)
 
     	class FindSegmentsVersion: public FindSegmentsFile<int64_t> {
     	public:
-    		FindSegmentsVersion( CL_NS(store)::Directory::Pointer dir );
+    		FindSegmentsVersion(const CL_NS(store)::Directory::Pointer& dir);
     		FindSegmentsVersion( const char* dir );
     		int64_t doBody( const char* segmentFileName );
     	};
@@ -520,7 +520,7 @@ CL_NS_DEF(index)
 		class FindSegmentsRead: public FindSegmentsFile<bool> {
       	  SegmentInfos* _this;
     	public:
-		  FindSegmentsRead( CL_NS(store)::Directory::Pointer dir, SegmentInfos* _this );
+		  FindSegmentsRead(const CL_NS(store)::Directory::Pointer& dir, SegmentInfos* _this );
     	  FindSegmentsRead( const char* dir, SegmentInfos* _this );
     	  bool doBody( const char* segmentFileName );
     	};

@@ -111,7 +111,7 @@ CL_NS_DEF(index)
     this->stale = false;
     this->writeLock = NULL;
     this->rollbackSegmentInfos = NULL;
-    this->_directory = __directory;
+    this->_directory.swap(__directory);
     this->segmentInfos = segmentInfos;
     this->closeDirectory = closeDirectory;
   }
@@ -130,7 +130,7 @@ CL_NS_DEF(index)
     }
      _CLDELETE(segmentInfos);
   }
-  DirectoryIndexReader::DirectoryIndexReader(Directory::Pointer __directory, SegmentInfos* segmentInfos, bool closeDirectory):
+  DirectoryIndexReader::DirectoryIndexReader(const Directory::Pointer& __directory, SegmentInfos* segmentInfos, bool closeDirectory):
     IndexReader()
   {
     init(__directory, segmentInfos, closeDirectory);
@@ -165,7 +165,7 @@ CL_NS_DEF(index)
     }
   };
 
-  DirectoryIndexReader* DirectoryIndexReader::open(Directory::Pointer __directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy) {
+  DirectoryIndexReader* DirectoryIndexReader::open(const Directory::Pointer& __directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy) {
     DirectoryIndexReader::FindSegmentsFile_Open runner(closeDirectory, deletionPolicy, __directory);
     return runner.run();
   }

@@ -562,14 +562,7 @@ void MultiTermDocs::seek(Term::Pointer tterm) {
 	//MultiTermDocs with as argument this->term (seek(this->term)) that the assignment
 	//will succeed and all referencecounters represent the correct situation
 
-	//Get a pointer from tterm and increase its reference counter
-	Term::Pointer TempTerm = tterm;
-
-	//Finialize term to ensure we decrease the reference counter of the instance which term points to
-	term.reset();
-
-	//Assign TempTerm to term
-	term = TempTerm;
+	term.swap(tterm);
 
 	base = 0;
 	pointer = 0;
@@ -712,7 +705,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 		reader = (*subReaders)[i];
 
 		//Check if the enumeration must start from term t
-		if (t.get() != NULL) {
+		if (t) {
 			//termEnum is an enumeration of terms starting at or after the named term t
 			termEnum = reader->terms(t);
 		}else{
@@ -726,7 +719,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 		// Note that in the call termEnum->getTerm(false) below false is required because
 		// otherwise a reference is leaked. By passing false getTerm is
 		// ordered to return an unowned reference instead. (Credits for DSR)
-		if (t.get() == NULL ? smi->next() : termEnum->term(false) != NULL){
+		if (!t ? smi->next() : termEnum->term(false) != NULL){
 			// initialize queue
 			queue->put(smi);
 		} else{
@@ -738,7 +731,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 	}
 
 	//Check if the queue has elements
-	if (t.get() != NULL && queue->size() > 0) {
+	if (t && queue->size() > 0) {
 		next();
 	}
 }
@@ -763,7 +756,7 @@ bool MultiTermEnum::next(){
 
 	SegmentMergeInfo* top = queue->top();
 	if (top == NULL) {
-		_term.reset();
+      _term.reset();
 	    return false;
 	}
 

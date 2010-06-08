@@ -82,8 +82,8 @@ public:
   virtual ~DirectoryIndexReader();
   void init(CL_NS(store)::Directory::Pointer directory, SegmentInfos* segmentInfos, bool closeDirectory);
 
-  CLUCENE_LOCAL_DECL DirectoryIndexReader(CL_NS(store)::Directory::Pointer directory, SegmentInfos* segmentInfos, bool closeDirectory);
-  CLUCENE_LOCAL_DECL static DirectoryIndexReader* open(CL_NS(store)::Directory::Pointer directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy);
+  CLUCENE_LOCAL_DECL DirectoryIndexReader(const CL_NS(store)::Directory::Pointer& directory, SegmentInfos* segmentInfos, bool closeDirectory);
+  CLUCENE_LOCAL_DECL static DirectoryIndexReader* open(const CL_NS(store)::Directory::Pointer& directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy);
 
   IndexReader* reopen();
 

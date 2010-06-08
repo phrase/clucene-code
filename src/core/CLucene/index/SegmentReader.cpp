@@ -480,7 +480,7 @@ CL_NS_DEF(index)
   //       tis != NULL
   //Post - An enumeration of terms starting at or after the named term t
 
-      CND_PRECONDITION(t.get() != NULL, "t is NULL");
+      CND_PRECONDITION(t, "t is NULL");
       CND_PRECONDITION(tis != NULL, "tis is NULL");
 
       ensureOpen();
