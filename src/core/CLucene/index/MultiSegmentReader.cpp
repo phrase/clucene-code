@@ -44,7 +44,7 @@ void MultiSegmentReader::initialize(CL_NS(util)::ArrayBase<IndexReader*>* _subRe
   starts[subReaders->length] = _maxDoc;
 }
 
-MultiSegmentReader::MultiSegmentReader(CL_NS(store)::Directory::Pointer directory, SegmentInfos* sis, bool closeDirectory):
+MultiSegmentReader::MultiSegmentReader(const CL_NS(store)::Directory::Pointer& directory, SegmentInfos* sis, bool closeDirectory):
   normsCache(NormsCacheType(true,true)),
   DirectoryIndexReader(directory,sis,closeDirectory)
 {
@@ -77,7 +77,7 @@ MultiSegmentReader::MultiSegmentReader(CL_NS(store)::Directory::Pointer director
 
 /** This contructor is only used for {@link #reopen()} */
 MultiSegmentReader::MultiSegmentReader(
-      CL_NS(store)::Directory::Pointer directory,
+      const CL_NS(store)::Directory::Pointer& directory,
       SegmentInfos* infos,
       bool closeDirectory,
       CL_NS(util)::ArrayBase<IndexReader*>* oldReaders,
@@ -345,12 +345,12 @@ TermEnum* MultiSegmentReader::terms() {
 	return _CLNEW MultiTermEnum(subReaders, starts, emptyPointer);
 }
 
-TermEnum* MultiSegmentReader::terms(Term::ConstPointer term) {
+TermEnum* MultiSegmentReader::terms(const Term::ConstPointer& term) {
     ensureOpen();
 	return _CLNEW MultiTermEnum(subReaders, starts, term);
 }
 
-int32_t MultiSegmentReader::docFreq(Term::ConstPointer t) {
+int32_t MultiSegmentReader::docFreq(const Term::ConstPointer& t) {
     ensureOpen();
 	int32_t total = 0;				  // sum freqs in Multi
 	for (size_t i = 0; i < subReaders->length; i++)

@@ -312,7 +312,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(CL_NS(store)::Directory::Pointer dir, SegmentInfo* si,
+  static SegmentReader* get(const CL_NS(store)::Directory::Pointer& dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize);
@@ -321,7 +321,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(CL_NS(store)::Directory::Pointer dir, SegmentInfo* si,
+  static SegmentReader* get(const CL_NS(store)::Directory::Pointer& dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize,
@@ -346,7 +346,7 @@ public:
 	///Returns an enumeration of all the Terms and TermInfos in the set.
 	TermEnum* terms();
 	///Returns an enumeration of terms starting at or after the named term t
-	TermEnum* terms(Term::ConstPointer t);
+	TermEnum* terms(const Term::ConstPointer& t);
 
 	///Gets the document identified by n
 	bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
@@ -360,7 +360,7 @@ public:
 	TermPositions* termPositions();
 
 	///Returns the number of documents which contain the term t
-	int32_t docFreq(Term::ConstPointer t);
+	int32_t docFreq(const Term::ConstPointer& t);
 
 	///Returns the actual number of documents in the segment
 	int32_t numDocs();

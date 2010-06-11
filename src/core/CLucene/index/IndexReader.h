@@ -70,7 +70,7 @@ protected:
   * @see #directory()
   * @deprecated - use IndexReader()
   */
-  IndexReader(CL_NS(store)::Directory::Pointer dir);
+  IndexReader(const CL_NS(store)::Directory::Pointer& dir);
 
   IndexReader();
 
@@ -167,7 +167,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static IndexReader* open(CL_NS(store)::Directory::Pointer directory, bool closeDirectoryOnCleanup=false, IndexDeletionPolicy* deletionPolicy=NULL);
+  static IndexReader* open(const CL_NS(store)::Directory::Pointer& directory, bool closeDirectoryOnCleanup=false, IndexDeletionPolicy* deletionPolicy=NULL);
 
 
   /**
@@ -327,7 +327,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
 	*/
-	static uint64_t lastModified(CL_NS(store)::Directory::Pointer directory);
+	static uint64_t lastModified(const CL_NS(store)::Directory::Pointer& directory);
 
 
 	/**
@@ -340,7 +340,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
 	*/
-	static int64_t getCurrentVersion(CL_NS(store)::Directory::Pointer directory);
+	static int64_t getCurrentVersion(const CL_NS(store)::Directory::Pointer& directory);
 
 	/**
    * Reads version number from segments files. The version number is
@@ -479,7 +479,7 @@ public:
 	* @return <code>true</code> if an index exists; <code>false</code> otherwise
 	* @throws IOException if there is a problem with accessing the index
 	*/
-	static bool indexExists(CL_NS(store)::Directory::ConstPointer directory);
+	static bool indexExists(const CL_NS(store)::Directory::ConstPointer& directory);
 
 	/** Returns the number of documents in this index. */
   	virtual int32_t numDocs() = 0;
@@ -556,12 +556,12 @@ public:
   * @throws IOException if there is a low-level IO error
 	* @memory Caller must clean up
 	*/
-	virtual TermEnum* terms(Term::ConstPointer t) = 0;
+	virtual TermEnum* terms(const Term::ConstPointer& t) = 0;
 
   /** Returns the number of documents containing the term <code>t</code>.
    * @throws IOException if there is a low-level IO error
    */
-	virtual int32_t docFreq(Term::ConstPointer t) = 0;
+	virtual int32_t docFreq(const Term::ConstPointer& t) = 0;
 
 	/* Returns an unpositioned TermPositions enumerator.
    * @throws IOException if there is a low-level IO error
@@ -587,7 +587,7 @@ public:
   * @throws IOException if there is a low-level IO error
   * @memory Caller must clean up
 	*/
-	TermPositions* termPositions(Term::Pointer term);
+	TermPositions* termPositions(const Term::Pointer& term);
 
 	/** Returns an unpositioned {@link TermDocs} enumerator.
    * @throws IOException if there is a low-level IO error
@@ -605,7 +605,7 @@ public:
   * @throws IOException if there is a low-level IO error
   * @memory Caller must clean up
 	*/
-	TermDocs* termDocs(Term::Pointer term);
+	TermDocs* termDocs(const Term::Pointer& term);
 
 	/** Deletes the document numbered <code>docNum</code>.  Once a document is
 	* deleted it will not appear in TermDocs or TermPostitions enumerations.
@@ -642,10 +642,10 @@ public:
   *  be obtained)
   * @throws IOException if there is a low-level IO error
 	*/
-	int32_t deleteDocuments(Term::Pointer term);
+	int32_t deleteDocuments(const Term::Pointer& term);
 
 	///@deprecated. Use deleteDocuments instead.
-	_CL_DEPRECATED( deleteDocuments ) int32_t deleteTerm(Term::Pointer term);
+	_CL_DEPRECATED( deleteDocuments ) int32_t deleteTerm(const Term::Pointer& term);
 
 	/**
 	* Closes files associated with this index and also saves any new deletions to disk.
@@ -660,7 +660,7 @@ public:
    * @param directory the directory to check for a lock
    * @throws IOException if there is a low-level IO error
    */
-	static bool isLocked(CL_NS(store)::Directory::Pointer directory);
+	static bool isLocked(const CL_NS(store)::Directory::Pointer& directory);
 
   /**
    * Returns <code>true</code> iff the index in the named directory is
@@ -675,7 +675,7 @@ public:
 	///Caution: this should only be used by failure recovery code,
 	///when it is known that no other process nor thread is in fact
 	///currently accessing this index.
-	static void unlock(CL_NS(store)::Directory::Pointer directory);
+	static void unlock(const CL_NS(store)::Directory::Pointer& directory);
 	static void unlock(const char* path);
 
 	 /** Returns the directory this index resides in. */
@@ -698,5 +698,3 @@ public:
 
 CL_NS_END
 #endif
-
-

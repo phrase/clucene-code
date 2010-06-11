@@ -156,8 +156,8 @@ CL_NS_DEF(index)
       return reader;
     }
   public:
-    FindSegmentsFile_Open( bool closeDirectory, IndexDeletionPolicy* deletionPolicy, 
-        CL_NS(store)::Directory::Pointer dir ):
+    FindSegmentsFile_Open( bool closeDirectory, IndexDeletionPolicy* deletionPolicy,
+        const CL_NS(store)::Directory::Pointer& dir ):
       SegmentInfos::FindSegmentsFile<DirectoryIndexReader*>(dir)
     {
       this->closeDirectory = closeDirectory;
@@ -191,7 +191,7 @@ CL_NS_DEF(index)
     }
   public:
     FindSegmentsFile_Reopen( bool closeDirectory, IndexDeletionPolicy* deletionPolicy, 
-        CL_NS(store)::Directory::Pointer dir, DirectoryIndexReader* _this ):
+        const CL_NS(store)::Directory::Pointer& dir, DirectoryIndexReader* _this ):
       SegmentInfos::FindSegmentsFile<DirectoryIndexReader*>(dir)
     {
       this->closeDirectory = closeDirectory;

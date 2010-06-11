@@ -29,7 +29,7 @@ CL_NS_DEF(index)
 
   class IndexReaderFindSegmentsFile: public SegmentInfos::FindSegmentsFile<uint64_t>{
   public:
-		IndexReaderFindSegmentsFile( CL_NS(store)::Directory::Pointer dir ):
+		IndexReaderFindSegmentsFile(const CL_NS(store)::Directory::Pointer& dir ):
 			SegmentInfos::FindSegmentsFile<uint64_t>(dir){
 		}
 		IndexReaderFindSegmentsFile( const char* dir ):
@@ -65,8 +65,8 @@ CL_NS_DEF(index)
 
     Internal(Directory::Pointer directory, IndexReader* _this)
     {
-      if ( directory.get() != NULL )
-        this->directory = directory;
+      if (directory)
+        this->directory.swap(directory);
       _this->refCount = 1;
       _this->closed = false;
       _this->hasChanges = false;
@@ -76,7 +76,7 @@ CL_NS_DEF(index)
     }
   };
 
-  IndexReader::IndexReader(Directory::Pointer dir){
+  IndexReader::IndexReader(const Directory::Pointer& dir){
   //Constructor.
   //Func - Creates an instance of IndexReader
   //Pre  - true
@@ -116,7 +116,7 @@ CL_NS_DEF(index)
 	   return reader;
   }
 
-  IndexReader* IndexReader::open( Directory::Pointer directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy){
+  IndexReader* IndexReader::open(const Directory::Pointer& directory, bool closeDirectory, IndexDeletionPolicy* deletionPolicy){
   //Func - Static method.
   //       Returns an IndexReader reading the index in an FSDirectory in the named path.
   //Pre  - directory represents a directory
@@ -131,7 +131,7 @@ CL_NS_DEF(index)
   }
   CL_NS(store)::Directory::Pointer IndexReader::directory() {
     ensureOpen();
-    if (NULL != _internal->directory.get()) {
+    if (_internal->directory) {
       return _internal->directory;
     } else {
 	  _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support this method.");
@@ -184,7 +184,7 @@ CL_NS_DEF(index)
 	  return (uint64_t)runner.run();
   }
 
-  int64_t IndexReader::getCurrentVersion(Directory::Pointer directory) {
+  int64_t IndexReader::getCurrentVersion(const Directory::Pointer& directory) {
 		return SegmentInfos::readCurrentVersion(directory);
   }
 
@@ -214,7 +214,7 @@ CL_NS_DEF(index)
     _CLTHROWA(CL_ERR_UnsupportedOperation, "This reader does not support this method.");
   }
 
-  uint64_t IndexReader::lastModified(Directory::Pointer directory2) {
+  uint64_t IndexReader::lastModified(const Directory::Pointer& directory2) {
   //Func - Static method
   //       Returns the time the index in this directory was last modified.
   //Pre  - directory contains a valid reference
@@ -249,7 +249,7 @@ CL_NS_DEF(index)
     return SegmentInfos::getCurrentSegmentGeneration(files) != -1;
   }
 
-  bool IndexReader::indexExists(Directory::ConstPointer directory){
+  bool IndexReader::indexExists(const Directory::ConstPointer& directory){
   //Func - Static method
   //       Checks if an index exists in the directory
   //Pre  - directory is a valid reference
@@ -260,7 +260,7 @@ CL_NS_DEF(index)
     return SegmentInfos::getCurrentSegmentGeneration(boost::const_pointer_cast<Directory>(directory)) != -1;
   }
 
-  TermDocs* IndexReader::termDocs(Term::Pointer term) {
+  TermDocs* IndexReader::termDocs(const Term::Pointer& term) {
   //Func - Returns an enumeration of all the documents which contain
   //       term. For each document, the document number, the frequency of
   //       the term in that document is also provided, for use in search scoring.
@@ -273,7 +273,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermDocs containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term.get() != NULL, "term is NULL");
+      CND_PRECONDITION(term, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated TermDocs instance
@@ -284,7 +284,7 @@ CL_NS_DEF(index)
       return _termDocs;
   }
 
-  TermPositions* IndexReader::termPositions(Term::Pointer term){
+  TermPositions* IndexReader::termPositions(const Term::Pointer& term){
   //Func - Returns an enumeration of all the documents which contain  term. For each
   //       document, in addition to the document number and frequency of the term in
   //       that document, a list of all of the ordinal positions of the term in the document
@@ -299,7 +299,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermPositions containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term.get() != NULL, "term is NULL");
+      CND_PRECONDITION(term, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated termPositions instance
@@ -321,7 +321,7 @@ CL_NS_DEF(index)
   void IndexReader::deleteDoc(const int32_t docNum){
     deleteDocument(docNum);
   }
-  int32_t IndexReader::deleteTerm(Term::Pointer term){
+  int32_t IndexReader::deleteTerm(const Term::Pointer& term){
     return deleteDocuments(term);
   }
 
@@ -369,7 +369,7 @@ CL_NS_DEF(index)
     doUndeleteAll();
   }
 
-  int32_t IndexReader::deleteDocuments(Term::Pointer term) {
+  int32_t IndexReader::deleteDocuments(const Term::Pointer& term) {
   //Func - Deletes all documents containing term. This is useful if one uses a
   //       document field to hold a unique ID string for the document.  Then to delete such
   //       a document, one merely constructs a term with the appropriate field and the unique
@@ -378,7 +378,7 @@ CL_NS_DEF(index)
   //Post - All documents containing term have been deleted. The number of deleted documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term, "term is NULL");
       ensureOpen();
 
 	  //Search for the documents contain term
@@ -430,7 +430,7 @@ CL_NS_DEF(index)
     }
   }
 
-  bool IndexReader::isLocked(Directory::Pointer directory) {
+  bool IndexReader::isLocked(const Directory::Pointer& directory) {
   //Func - Static method
   //       Checks if the index in the directory is currently locked.
   //Pre  - directory is a valid reference to a directory to check for a lock
@@ -471,7 +471,7 @@ void IndexReader::unlock(const char* path){
 	unlock(dir);
 	dir->close();
 }
-  void IndexReader::unlock(Directory::Pointer directory){
+  void IndexReader::unlock(const Directory::Pointer& directory){
   //Func - Static method
   //       Forcibly unlocks the index in the named directory->
   //       Caution: this should only be used by failure recovery code,

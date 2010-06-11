@@ -58,11 +58,11 @@ protected:
 public:
 
   /** Construct reading the named set of readers. */
-  MultiSegmentReader(CL_NS(store)::Directory::Pointer directory, SegmentInfos* sis, bool closeDirectory);
+  MultiSegmentReader(const CL_NS(store)::Directory::Pointer& directory, SegmentInfos* sis, bool closeDirectory);
 
   /** This contructor is only used for {@link #reopen()} */
   CLUCENE_LOCAL_DECL MultiSegmentReader(
-      CL_NS(store)::Directory::Pointer directory,
+      const CL_NS(store)::Directory::Pointer& directory,
       SegmentInfos* sis,
       bool closeDirectory,
       CL_NS(util)::ArrayBase<IndexReader*>* oldReaders,
@@ -88,7 +88,7 @@ public:
 
 	int32_t maxDoc() const;
 
-  bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
+	bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
 
 	bool isDeleted(const int32_t n);
 	bool hasDeletions() const;
@@ -98,14 +98,14 @@ public:
 	void norms(const TCHAR* field, uint8_t* result);
 
 	TermEnum* terms();
-	TermEnum* terms(Term::ConstPointer term);
+	TermEnum* terms(const Term::ConstPointer& term);
 
 	//Returns the document frequency of the current term in the set
-	int32_t docFreq(Term::ConstPointer t);
+	int32_t docFreq(const Term::ConstPointer& t);
 	TermDocs* termDocs();
 	TermPositions* termPositions();
 
-  void getFieldNames (FieldOption fldOption, StringArrayWithDeletor& retarray);
+	void getFieldNames (FieldOption fldOption, StringArrayWithDeletor& retarray);
 	static void getFieldNames(FieldOption fldOption, StringArrayWithDeletor& retarray, CL_NS(util)::ArrayBase<IndexReader*>* subReaders);
 
   void setTermInfosIndexDivisor(int32_t indexDivisor);

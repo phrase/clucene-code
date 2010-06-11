@@ -265,12 +265,12 @@ TermEnum* MultiReader::terms() {
 	return _CLNEW MultiTermEnum(subReaders, starts, emptyPointer);
 }
 
-TermEnum* MultiReader::terms(Term::ConstPointer term) {
+TermEnum* MultiReader::terms(const Term::ConstPointer& term) {
     ensureOpen();
 	return _CLNEW MultiTermEnum(subReaders, starts, term);
 }
 
-int32_t MultiReader::docFreq(Term::ConstPointer t) {
+int32_t MultiReader::docFreq(const Term::ConstPointer& t) {
     ensureOpen();
 	int32_t total = 0;				  // sum freqs in Multi
 	for (size_t i = 0; i < subReaders->length; i++)

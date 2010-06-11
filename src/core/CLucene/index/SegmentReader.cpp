@@ -263,7 +263,7 @@ CL_NS_DEF(index)
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  SegmentReader* SegmentReader::get(Directory::Pointer dir, SegmentInfo* si,
+  SegmentReader* SegmentReader::get(const Directory::Pointer& dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize) {
@@ -274,7 +274,7 @@ CL_NS_DEF(index)
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  SegmentReader* SegmentReader::get(Directory::Pointer dir, SegmentInfo* si,
+  SegmentReader* SegmentReader::get(const Directory::Pointer& dir, SegmentInfo* si,
                                   SegmentInfos* sis,
                                   bool closeDir, bool ownDir,
                                   int32_t readBufferSize,
@@ -474,7 +474,7 @@ CL_NS_DEF(index)
 	return tis->terms(empty);
   }
 
-  TermEnum* SegmentReader::terms(Term::ConstPointer t) {
+  TermEnum* SegmentReader::terms(const Term::ConstPointer& t) {
   //Func - Returns an enumeration of terms starting at or after the named term t
   //Pre  - t != NULL
   //       tis != NULL
@@ -542,7 +542,7 @@ CL_NS_DEF(index)
       return _CLNEW SegmentTermPositions(this);
   }
 
-  int32_t SegmentReader::docFreq(Term::ConstPointer t) {
+  int32_t SegmentReader::docFreq(const Term::ConstPointer& t) {
   //Func - Returns the number of documents which contain the term t
   //Pre  - t holds a valid reference to a Term
   //Post - The number of documents which contain term t has been returned
@@ -830,7 +830,7 @@ bool SegmentReader::hasNorms(const TCHAR* field){
         Directory::Pointer d = directory();
         string fileName = si->getNormFileName(fi->number);
         if (!si->hasSeparateNorms(fi->number)) {
-          d = cfsDir;
+          d.swap(cfsDir);
         }
 
         // singleNormFile means multiple norms share this file

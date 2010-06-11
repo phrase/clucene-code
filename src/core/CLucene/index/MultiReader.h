@@ -88,16 +88,16 @@ public:
 
 	int32_t numDocs();
 	int32_t maxDoc() const;
-  bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
+	bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
 	bool isDeleted(const int32_t n);
 	bool hasDeletions() const;
 	uint8_t* norms(const TCHAR* field);
 	void norms(const TCHAR* field, uint8_t* result);
 	TermEnum* terms();
-	TermEnum* terms(Term::ConstPointer term);
+	TermEnum* terms(const Term::ConstPointer& term);
 
 	//Returns the document frequency of the current term in the set
-	int32_t docFreq(Term::ConstPointer t);
+	int32_t docFreq(const Term::ConstPointer& t);
 	TermDocs* termDocs();
 	TermPositions* termPositions();
 
