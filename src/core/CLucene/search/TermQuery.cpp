@@ -53,9 +53,9 @@ CL_NS_DEF(search)
 
 
 	/** Constructs a query for the term <code>t</code>. */
-	TermQuery::TermQuery(Term::Pointer t):
-		term(t)
+	TermQuery::TermQuery(Term::Pointer t)
 	{
+		term.swap(t);
 	}
 
 	TermQuery::TermQuery(const TermQuery& clone):
@@ -110,9 +110,10 @@ CL_NS_DEF(search)
 	}
 
    TermWeight::TermWeight(Searcher* _searcher, TermQuery* _parentQuery, Term::Pointer term):similarity(_searcher->getSimilarity()),
-	   value(0), queryNorm(0),queryWeight(0), parentQuery(_parentQuery),_term(term)
+	   value(0), queryNorm(0),queryWeight(0), parentQuery(_parentQuery)
    {
-		   idf = similarity->idf(term, _searcher); // compute idf
+	   _term.swap(term);
+	   idf = similarity->idf(_term, _searcher); // compute idf
    }
    
    TermWeight::~TermWeight(){
@@ -238,4 +239,3 @@ CL_NS_DEF(search)
         return _CLNEW TermWeight(_searcher,this,term);
     }
 CL_NS_END
-
