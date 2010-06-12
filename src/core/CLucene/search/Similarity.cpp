@@ -183,7 +183,7 @@ CL_NS_DEF(search)
    }
 
 
-   float_t Similarity::idf(Term::Pointer term, Searcher* searcher) {
+   float_t Similarity::idf(const Term::Pointer& term, Searcher* searcher) {
       return idf(searcher->docFreq(term), searcher->maxDoc());
    }
 

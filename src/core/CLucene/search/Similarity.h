@@ -120,7 +120,7 @@ public:
    * @param searcher the document collection being searched
    * @return a score factor for the term
    */
-   float_t idf(CL_NS(index)::Term::Pointer term, Searcher* searcher);
+   float_t idf(const CL_NS(index)::Term::Pointer& term, Searcher* searcher);
 
    
    /** Computes a score factor based on a term or phrase's frequency in a
