@@ -33,7 +33,7 @@ CL_NS_DEF(search)
         ********************************************/
 
         protected:
-        bool termCompare(CL_NS(index)::Term::Pointer term) ;
+        bool termCompare(const CL_NS(index)::Term::Pointer& term) ;
 
         public:
 

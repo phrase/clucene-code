@@ -44,7 +44,7 @@ public:
 	* @throws IllegalArgumentException if minimumSimilarity is &gt; 1 or &lt; 0
 	* or if prefixLength &lt; 0 or &gt; <code>term.text().length()</code>.
 	*/
-	FuzzyQuery(CL_NS(index)::Term::Pointer term, float_t minimumSimilarity=-1, size_t prefixLength=0);
+	FuzzyQuery(const CL_NS(index)::Term::Pointer& term, float_t minimumSimilarity=-1, size_t prefixLength=0);
 	virtual ~FuzzyQuery();
 
 	/**
@@ -166,7 +166,7 @@ protected:
 	* The termCompare method in FuzzyTermEnum uses Levenshtein distance to 
 	* calculate the distance between the given term and the comparing term. 
 	*/
-	bool termCompare(CL_NS(index)::Term::Pointer term) ;
+	bool termCompare(const CL_NS(index)::Term::Pointer& term) ;
 
 	/** Returns the fact if the current term in the enumeration has reached the end */
 	bool endEnum();

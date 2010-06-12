@@ -30,7 +30,7 @@ CL_NS_DEF(search)
   //Post - The instance has been created
 
       //Get a pointer to Prefix
-      this->prefix = prefix;
+      this->prefix.swap(prefix);
   }
 
   PrefixQuery::PrefixQuery(const PrefixQuery& clone):Query(clone){
@@ -95,8 +95,7 @@ CL_NS_DEF(search)
       size_t prefixLen = prefix->textLength();
       do {
         lastTerm = enumerator->term();
-        if (lastTerm != NULL &&
-          lastTerm->field() == prefixField ) // interned comparison
+        if (lastTerm && lastTerm->field() == prefixField ) // interned comparison
         {
 
           //now see if term->text() starts with prefixText
@@ -188,7 +187,7 @@ class PrefixFilter::PrefixGenerator{
   Term::ConstPointer prefix;
 public:
   PrefixGenerator(Term::ConstPointer prefix) {
-    this->prefix = prefix;
+    this->prefix.swap(prefix);
   }
 
   virtual void handleDoc(int doc) = 0;
@@ -206,9 +205,8 @@ public:
     try{
       do{
           term = enumerator->term(false);
-          if (term.get() != NULL &&
-              term->field() == prefixField // interned comparison
-          ){
+          if (term && term->field() == prefixField) // interned comparison
+          {
               //now see if term->text() starts with prefixText
               size_t termLen = term->textLength();
               if ( prefixLen>termLen )
@@ -244,7 +242,7 @@ public:
 class DefaultPrefixGenerator: public PrefixFilter::PrefixGenerator{
 public:
   BitSet* bts;
-  DefaultPrefixGenerator(BitSet* bts, Term::ConstPointer prefix):
+  DefaultPrefixGenerator(BitSet* bts, const Term::ConstPointer& prefix):
     PrefixGenerator(prefix)
   {
     this->bts = bts;
@@ -255,7 +253,7 @@ public:
 };
 
 PrefixFilter::PrefixFilter(Term::Pointer prefix) {
-	this->prefix = prefix;
+	this->prefix.swap(prefix);
 }
 
 PrefixFilter::~PrefixFilter() {

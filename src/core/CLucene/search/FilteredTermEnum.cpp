@@ -49,7 +49,7 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
        currentTerm.reset();
 
 		//Iterate through the enumeration
-        while (currentTerm.get() == NULL) {
+        while (!currentTerm) {
             if (endEnum()) 
 				return false;
             if (actualEnum->next()) {
@@ -58,7 +58,7 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
 				//Compare the retrieved term
                 if (termCompare(term)){
 					//Get a reference to the matched term
-                    currentTerm = term;
+                    currentTerm.swap(term);
                     return true;
                 }
             }else 
@@ -112,8 +112,8 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
         // Find the first term that matches
         //Ordered term not to return reference ownership here.
         Term::Pointer term = actualEnum->term(false);
-        if (term.get() != NULL && termCompare(term)){
-            currentTerm = term;
+        if (term && termCompare(term)){
+            currentTerm.swap(term);
         }else{
             next();
 		}

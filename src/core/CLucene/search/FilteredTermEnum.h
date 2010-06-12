@@ -42,7 +42,7 @@ public:
 
 protected:
 	/** Equality compare on the term */
-	virtual bool termCompare(CL_NS(index)::Term::Pointer term) = 0;
+	virtual bool termCompare(const CL_NS(index)::Term::Pointer& term) = 0;
 
 	/** Indicates the end of the enumeration has been reached */
 	virtual bool endEnum() = 0;

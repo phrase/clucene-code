@@ -14,7 +14,7 @@
 CL_NS_USE(index)
 CL_NS_DEF(search)
 
-    bool WildcardTermEnum::termCompare(Term::Pointer term) {
+    bool WildcardTermEnum::termCompare(const Term::Pointer& term) {
         if ( term!=NULL && __term->field() == term->field() ) {
             const TCHAR* searchText = term->text();
             const TCHAR* patternText = __term->text();
@@ -29,12 +29,12 @@ CL_NS_DEF(search)
     /** Creates new WildcardTermEnum */
     WildcardTermEnum::WildcardTermEnum(IndexReader* reader, Term::Pointer term):
 	    FilteredTermEnum(),
-		__term(term),
 		fieldMatch(false),
 		_endEnum(false)
     {
+		__term.swap(term);
        
-		pre = stringDuplicate(term->text());
+		pre = stringDuplicate(__term->text());
 
 		const TCHAR* sidx = _tcschr( pre, LUCENE_WILDCARDTERMENUM_WILDCARD_STRING );
 		const TCHAR* cidx = _tcschr( pre, LUCENE_WILDCARDTERMENUM_WILDCARD_CHAR );
@@ -46,7 +46,7 @@ CL_NS_DEF(search)
 		CND_PRECONDITION(tidx != NULL, "tidx==NULL");
 		int32_t idx = (int32_t)(tidx - pre);
 		preLen = idx;
-		CND_PRECONDITION(preLen<term->textLength(), "preLen >= term->textLength()");
+		CND_PRECONDITION(preLen < __term->textLength(), "preLen >= term->textLength()");
 		pre[preLen]=0; //trim end
 
 		Term::Pointer t(new Term(__term, pre));
@@ -55,7 +55,7 @@ CL_NS_DEF(search)
 
     void WildcardTermEnum::close()
     {
-       if ( __term.get() != NULL ){
+       if (__term) {
          FilteredTermEnum::close();
 
          __term.reset();

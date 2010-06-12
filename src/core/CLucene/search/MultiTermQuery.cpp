@@ -24,9 +24,9 @@ CL_NS_DEF(search)
   //Pre  - t != NULL
   //Post - The instance has been created
 
-      CND_PRECONDITION(t.get() != NULL, "t is NULL");
+      CND_PRECONDITION(t, "t is NULL");
 
-      term = t;
+      term.swap(t);
   }
   MultiTermQuery::MultiTermQuery(const MultiTermQuery& clone):
   	Query(clone)	
@@ -50,7 +50,7 @@ CL_NS_DEF(search)
 		try {
             do {
                 Term::Pointer t = enumerator->term(false);
-                if (t.get() != NULL) {
+                if (t) {
                     TermQuery* tq = _CLNEW TermQuery(t);	// found a match
                     tq->setBoost(getBoost() * enumerator->difference()); // set the boost
                     query->add(tq,true, false, false);		// add to q

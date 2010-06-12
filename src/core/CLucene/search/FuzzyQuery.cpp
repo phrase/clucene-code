@@ -31,11 +31,13 @@ CL_NS_DEF(search)
 
 
 	FuzzyTermEnum::FuzzyTermEnum(IndexReader* reader, Term::Pointer term, float_t minSimilarity, size_t _prefixLength):
-		FilteredTermEnum(),d(NULL),dLen(0),_similarity(0),_endEnum(false),searchTerm(term),
+		FilteredTermEnum(),d(NULL),dLen(0),_similarity(0),_endEnum(false),
 		text(NULL),textLen(0),prefix(NULL)/* ISH: was STRDUP_TtoT(LUCENE_BLANK_STRING)*/,prefixLength(0),
 		minimumSimilarity(minSimilarity)
 	{
-		CND_PRECONDITION(term.get() != NULL,"term is NULL");
+		CND_PRECONDITION(term,"term is NULL");
+
+		searchTerm.swap(term);
 
 		if (minSimilarity >= 1.0f)
 			_CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity cannot be greater than or equal to 1");
@@ -108,14 +110,14 @@ CL_NS_DEF(search)
 		_CLDELETE_CARRAY(prefix);
 	}
 
-	bool FuzzyTermEnum::termCompare(Term::Pointer term) {
+	bool FuzzyTermEnum::termCompare(const Term::Pointer& term) {
 		//Func - Compares term with the searchTerm using the Levenshtein distance.
 		//Pre  - term is NULL or term points to a Term
 		//Post - if pre(term) is NULL then false is returned otherwise
 		//       if the distance of the current term in the enumeration is bigger than the FUZZY_THRESHOLD
 		//       then true is returned
 
-		if (term.get() == NULL){
+		if (!term) {
 			return false;  //Note that endEnum is not set to true!
 		}
 
@@ -247,7 +249,8 @@ CL_NS_DEF(search)
 	  Term::Pointer term;
 	  float_t score;
 
-	  ScoreTerm(Term::Pointer _term, float_t _score) : term(_term), score(_score) {
+	  ScoreTerm(Term::Pointer _term, float_t _score) : score(_score) {
+		  term.swap(_term);
 	  }
 	  virtual ~ScoreTerm() {
 	  }
@@ -271,13 +274,13 @@ CL_NS_DEF(search)
   };
 
 
-  FuzzyQuery::FuzzyQuery(Term::Pointer term, float_t _minimumSimilarity, size_t _prefixLength):
+  FuzzyQuery::FuzzyQuery(const Term::Pointer& term, float_t _minimumSimilarity, size_t _prefixLength):
   MultiTermQuery(term),minimumSimilarity(_minimumSimilarity),prefixLength(_prefixLength)
   {
 	  if ( minimumSimilarity < 0 )
 		  minimumSimilarity = defaultMinSimilarity;
 
-	  CND_PRECONDITION(term.get() != NULL,"term is NULL");
+	  CND_PRECONDITION(term,"term is NULL");
 
 	  if (minimumSimilarity >= 1.0f)
 		  _CLTHROWA(CL_ERR_IllegalArgument,"minimumSimilarity >= 1");
@@ -390,7 +393,7 @@ CL_NS_DEF(search)
 		  do {
 			  float_t score = 0.0f;
 			  Term::Pointer t = enumerator->term();
-			  if (t != NULL) {
+			  if (t) {
 				  score = enumerator->difference();
 				  if (reusableST == NULL) {
 					  reusableST = _CLNEW ScoreTerm(t, score);
@@ -399,7 +402,7 @@ CL_NS_DEF(search)
 					  // this new score is not better than that, there's no
 					  // need to try inserting it
 					  reusableST->score = score;
-					  reusableST->term = t;
+					  reusableST->term.swap(t);
 				  } else {
 					  continue;
 				  }
