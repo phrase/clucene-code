@@ -100,7 +100,7 @@ public:
 	* @param create <code>true</code> to create the index or overwrite the existing one;
 	* 	<code>false</code> to append to the existing index
 	*/
-	IndexModifier(CL_NS(store)::Directory::Pointer directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
+	IndexModifier(const CL_NS(store)::Directory::Pointer& directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
 		
 	~IndexModifier();
 
@@ -168,7 +168,7 @@ public:
 	* @see IndexReader#deleteDocuments(Term*)
 	* @throws IllegalStateException if the index is closed
 	*/
-	int32_t deleteDocuments(Term::Pointer term);
+	int32_t deleteDocuments(const Term::Pointer& term);
 
 	/**
 	* Deletes the document numbered <code>docNum</code>.
@@ -294,7 +294,7 @@ public:
 	* while using the TermDocs. If the IndexReader that the modifier manages
 	* is closed, the TermDocs object will fail.
 	*/
-	TermDocs* termDocs(Term::Pointer term);
+	TermDocs* termDocs(const Term::Pointer& term);
 	TermDocs* termDocs() {
 		Term::Pointer emptyPointer;
 		return termDocs(emptyPointer);
@@ -311,7 +311,7 @@ public:
 	* while using the TermDocs. If the IndexReader that the modifier manages
 	* is closed, the Document will be invalid
 	*/
-	TermEnum* terms(Term::Pointer term);
+	TermEnum* terms(const Term::Pointer& term);
 	TermEnum* terms() {
 		Term::Pointer emptyPointer;
 		return terms(emptyPointer);
@@ -335,5 +335,3 @@ public:
 };
 CL_NS_END
 #endif
-
-

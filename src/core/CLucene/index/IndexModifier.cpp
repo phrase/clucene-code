@@ -21,7 +21,7 @@ CL_NS_USE(store)
 CL_NS_USE(analysis)
 CL_NS_USE(document)
 
-IndexModifier::IndexModifier(Directory::Pointer directory, Analyzer* analyzer, bool create) {
+IndexModifier::IndexModifier(const Directory::Pointer& directory, Analyzer* analyzer, bool create) {
 	init(directory, analyzer, create);
 }
 
@@ -41,7 +41,7 @@ void IndexModifier::init(Directory::Pointer directory, Analyzer* analyzer, bool 
 	this->maxFieldLength = IndexWriter::DEFAULT_MAX_FIELD_LENGTH;
 	this->mergeFactor = IndexWriter::DEFAULT_MERGE_FACTOR;
 
-	this->directory = directory;
+	this->directory.swap(directory);
 	createIndexReader();
 	open = true;
 }
@@ -104,7 +104,7 @@ void IndexModifier::addDocument(Document* doc, Analyzer* docAnalyzer) {
 		indexWriter->addDocument(doc);
 }
 
-int32_t IndexModifier::deleteDocuments(Term::Pointer term) {
+int32_t IndexModifier::deleteDocuments(const Term::Pointer& term) {
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
@@ -219,18 +219,18 @@ int64_t IndexModifier::getCurrentVersion() const{
 	return IndexReader::getCurrentVersion(directory);
 }
 
-TermDocs* IndexModifier::termDocs(Term::Pointer term){
+TermDocs* IndexModifier::termDocs(const Term::Pointer& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
 	return indexReader->termDocs(term);
 }
 
-TermEnum* IndexModifier::terms(Term::Pointer term){
+TermEnum* IndexModifier::terms(const Term::Pointer& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
-	if ( term.get() != NULL )
+	if (term)
 		return indexReader->terms(term);
 	else
 		return indexReader->terms();
