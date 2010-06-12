@@ -229,7 +229,7 @@ class CLUCENE_EXPORT IndexWriter:LUCENE_BASE {
 
 	CL_NS(store)::LuceneLock* writeLock;
 
-  void init(CL_NS(store)::Directory::Pointer d, CL_NS(analysis)::Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
+  void init(const CL_NS(store)::Directory::Pointer& d, CL_NS(analysis)::Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
   void init(CL_NS(store)::Directory::Pointer d, CL_NS(analysis)::Analyzer* a, bool create, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit);
 
 	// where this index resides
@@ -491,7 +491,7 @@ public:
   *  <code>false</code> or if there is any other low-level
   *  IO error
   */
-  explicit IndexWriter(CL_NS(store)::Directory::Pointer d, CL_NS(analysis)::Analyzer* a, const bool create, const bool closeDirOnShutdown=false);
+  explicit IndexWriter(const CL_NS(store)::Directory::Pointer& d, CL_NS(analysis)::Analyzer* a, const bool create, const bool closeDirOnShutdown=false);
 
   /**
   * Expert: constructs an IndexWriter with a custom {@link
@@ -511,7 +511,7 @@ public:
   *  read/written to or if there is any other low-level
   *  IO error
   */
-  explicit IndexWriter(CL_NS(store)::Directory::Pointer d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
+  explicit IndexWriter(const CL_NS(store)::Directory::Pointer& d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
 
   /**
   * Expert: constructs an IndexWriter with a custom {@link
@@ -537,7 +537,7 @@ public:
   *  <code>false</code> or if there is any other low-level
   *  IO error
   */
-  explicit IndexWriter(CL_NS(store)::Directory::Pointer d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, const bool create, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
+  explicit IndexWriter(const CL_NS(store)::Directory::Pointer& d, const bool autoCommit, CL_NS(analysis)::Analyzer* a, const bool create, IndexDeletionPolicy* deletionPolicy = NULL, const bool closeDirOnShutdown=false);
 
 	/**Returns the number of documents currently in this index.
 	*  synchronized
@@ -700,7 +700,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void deleteDocuments(Term::Pointer term);
+  void deleteDocuments(const Term::Pointer& term);
 
   /**
    * Deletes the document(s) containing any of the
@@ -724,7 +724,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void updateDocument(Term::Pointer term, CL_NS(document)::Document* doc);
+  void updateDocument(const Term::Pointer& term, CL_NS(document)::Document* doc);
 
   /**
    * Updates a document by first deleting the document(s)
@@ -739,7 +739,7 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  void updateDocument(Term::Pointer term, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
+  void updateDocument(const Term::Pointer& term, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
   /**
    * Returns default write lock timeout for newly

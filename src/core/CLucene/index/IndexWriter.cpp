@@ -154,19 +154,19 @@ IndexWriter::IndexWriter(const char* path, Analyzer* a, bool create):bOwnsDirect
     init(FSDirectory::getDirectory(path, create), a, create, true, (IndexDeletionPolicy*)NULL, true);
 }
 
-IndexWriter::IndexWriter(Directory::Pointer d, Analyzer* a, bool create, bool closeDir):bOwnsDirectory(true){
+IndexWriter::IndexWriter(const Directory::Pointer& d, Analyzer* a, bool create, bool closeDir):bOwnsDirectory(true){
   init(d, a, create, closeDir, NULL, true);
 }
 
-IndexWriter::IndexWriter(Directory::Pointer d, bool autoCommit, Analyzer* a, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(true){
+IndexWriter::IndexWriter(const Directory::Pointer& d, bool autoCommit, Analyzer* a, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(true){
   init(d, a, closeDirOnShutdown, deletionPolicy, autoCommit);
 }
 
-IndexWriter::IndexWriter(Directory::Pointer d, bool autoCommit, Analyzer* a, bool create, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(true){
+IndexWriter::IndexWriter(const Directory::Pointer& d, bool autoCommit, Analyzer* a, bool create, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(true){
   init(d, a, create, closeDirOnShutdown, deletionPolicy, autoCommit);
 }
 
-void IndexWriter::init(Directory::Pointer d, Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit){
+void IndexWriter::init(const Directory::Pointer& d, Analyzer* a, bool closeDir, IndexDeletionPolicy* deletionPolicy, bool autoCommit){
   if (IndexReader::indexExists(d)) {
     init(d, a, false, closeDir, deletionPolicy, autoCommit);
   } else {
@@ -194,7 +194,7 @@ void IndexWriter::init(Directory::Pointer d, Analyzer* a, const bool create, con
   this->commitLockTimeout =0;
   this->closeDir = closeDir;
   this->commitPending = this->closed = this->closing = false;
-  directory = d;
+  directory.swap(d);
   analyzer = a;
   this->infoStream = defaultInfoStream;
   setMessageID();
@@ -695,7 +695,7 @@ void IndexWriter::addDocument(Document* doc, Analyzer* analyzer) {
   }
 }
 
-void IndexWriter::deleteDocuments(Term::Pointer term) {
+void IndexWriter::deleteDocuments(const Term::Pointer& term) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerm(term);
@@ -719,12 +719,12 @@ void IndexWriter::deleteDocuments(const CLArrayList<Term::Pointer, Term::Deletor
   }
 }
 
-void IndexWriter::updateDocument(Term::Pointer term, Document* doc) {
+void IndexWriter::updateDocument(const Term::Pointer& term, Document* doc) {
   ensureOpen();
   updateDocument(term, doc, getAnalyzer());
 }
 
-void IndexWriter::updateDocument(Term::Pointer term, Document* doc, Analyzer* analyzer)
+void IndexWriter::updateDocument(const Term::Pointer& term, Document* doc, Analyzer* analyzer)
 {
   ensureOpen();
   try {
