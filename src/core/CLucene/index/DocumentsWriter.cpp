@@ -80,12 +80,12 @@ AbortException::AbortException(CLuceneError& _err, DocumentsWriter* docWriter):
 
 DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory::Pointer directory, IndexWriter* writer):
   bufferedDeleteTerms(_CLNEW CL_NS(util)::CLHashMap<Term::Pointer, Num*, Term_Compare, Term_Equals, Term::Deletor, Deletor::Object<Num> >),
-	waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) ),
+  waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) ),
   freeByteBlocks(FreeByteBlocksType(true)), freeCharBlocks(FreeCharBlocksType(true))
 {
   numBytesAlloc = 0;
   numBytesUsed = 0;
-  this->directory = directory;
+  this->directory.swap(directory);
   this->writer = writer;
   this->hasNorms = this->bufferIsFull = false;
   fieldInfos = _CLNEW FieldInfos();
@@ -831,7 +831,7 @@ void DocumentsWriter::close() {
   CONDITION_NOTIFYALL(THIS_WAIT_CONDITION)
 }
 
-DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Term::Pointer delTerm) {
+DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, const Term::Pointer& delTerm) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
 
   // First, find a thread state.  If this thread already
@@ -878,7 +878,7 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
     bool success = false;
     try {
       state->init(doc, nextDocID);
-      if (delTerm.get() != NULL) {
+      if (delTerm) {
         addDeleteTerm(delTerm, state->docID);
         state->doFlushAfter = timeToFlushDeletes();
       }
@@ -919,11 +919,11 @@ bool DocumentsWriter::addDocument(Document* doc, Analyzer* analyzer){
 	return updateDocument(doc, analyzer, emptyTerm); 
 }
 
-bool DocumentsWriter::updateDocument(Term::Pointer t, Document* doc, Analyzer* analyzer){
+bool DocumentsWriter::updateDocument(const Term::Pointer& t, Document* doc, Analyzer* analyzer){
   return updateDocument(doc, analyzer, t);
 }
 
-bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term::Pointer delTerm) {
+bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, const Term::Pointer& delTerm) {
 
   // This call is synchronized but fast
   ThreadState* state = getThreadState(doc, delTerm);
@@ -1004,7 +1004,7 @@ bool DocumentsWriter::bufferDeleteTerms(const CLArrayList<Term::Pointer, Term::D
   return timeToFlushDeletes();
 }
 
-bool DocumentsWriter::bufferDeleteTerm(Term::Pointer term) {
+bool DocumentsWriter::bufferDeleteTerm(const Term::Pointer& term) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)

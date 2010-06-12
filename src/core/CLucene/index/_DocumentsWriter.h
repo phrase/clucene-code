@@ -861,15 +861,15 @@ public:
    * flush is pending.  If delTerm is non-null then we
    * buffer this deleted term after the thread state has
    * been acquired. */
-  ThreadState* getThreadState(CL_NS(document)::Document* doc, Term::Pointer delTerm);
+  ThreadState* getThreadState(CL_NS(document)::Document* doc, const Term::Pointer& delTerm);
 
   /** Returns true if the caller (IndexWriter) should now
    * flush. */
   bool addDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
-  bool updateDocument(Term::Pointer t, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
+  bool updateDocument(const Term::Pointer& t, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
-  bool updateDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer, Term::Pointer delTerm);
+  bool updateDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer, const Term::Pointer& delTerm);
 
   int32_t getNumBufferedDeleteTerms();
 
@@ -882,7 +882,7 @@ public:
 
   bool bufferDeleteTerms(const CL_NS(util)::CLArrayList<Term::Pointer, Term::Deletor>* terms);
 
-  bool bufferDeleteTerm(Term::Pointer term);
+  bool bufferDeleteTerm(const Term::Pointer& term);
 
   void setMaxBufferedDeleteTerms(int32_t maxBufferedDeleteTerms);
 
