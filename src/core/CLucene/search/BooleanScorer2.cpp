@@ -32,7 +32,7 @@ public:
 	typedef std::auto_ptr<Coordinator> AutoPtr;
 
 	int32_t maxCoord;
-	int32_t nrMatchers; // to be increased by score() of match counting scorers.
+	Scorer::Vector::size_type nrMatchers; // to be increased by score() of match counting scorers.
 	float_t* coordFactors;
 	Scorer* parentScorer;
 
@@ -378,9 +378,9 @@ class BooleanScorer2::BSConjunctionScorer: public CL_NS(search)::ConjunctionScor
 private:
 	CL_NS(search)::BooleanScorer2::Coordinator* coordinator;
 	int32_t lastScoredDoc;
-	int32_t requiredNrMatchers;
+	Scorer::Vector::size_type requiredNrMatchers;
 public:
-	BSConjunctionScorer( CL_NS(search)::BooleanScorer2::Coordinator* _coordinator, Scorer::Vector& _requiredScorers, int32_t _requiredNrMatchers ):
+	BSConjunctionScorer( CL_NS(search)::BooleanScorer2::Coordinator* _coordinator, Scorer::Vector& _requiredScorers, Scorer::Vector::size_type _requiredNrMatchers ):
 		ConjunctionScorer( Similarity::getDefault(), _requiredScorers ),
 		coordinator(_coordinator),
 		lastScoredDoc(-1),
@@ -409,7 +409,7 @@ public:
 	BSDisjunctionSumScorer(
 		CL_NS(search)::BooleanScorer2::Coordinator* _coordinator,
 		Scorer::Vector& subScorers,
-		int32_t minimumNrMatchers ):
+		Scorer::Vector::size_type minimumNrMatchers ):
 			DisjunctionSumScorer( subScorers, minimumNrMatchers ),
 			coordinator(_coordinator),
 			lastScoredDoc(-1)
@@ -449,7 +449,7 @@ public:
 		countingSumScorer = makeCountingSumScorer();
 	}
 
-	Scorer::AutoPtr countingDisjunctionSumScorer(Scorer::Vector& scorers, int32_t minNrShouldMatch)
+	Scorer::AutoPtr countingDisjunctionSumScorer(Scorer::Vector& scorers, Scorer::Vector::size_type minNrShouldMatch)
 	{
 		Scorer::AutoPtr result(new BSDisjunctionSumScorer(coordinator.get(), scorers, minNrShouldMatch));
 		return result;
