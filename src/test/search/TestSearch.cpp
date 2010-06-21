@@ -288,7 +288,7 @@ void SearchTest(CuTest *tc, bool bram) {
   //test MultiPositionQuery...
   {
     MultiPhraseQuery* query = _CLNEW MultiPhraseQuery();
-	CLArrayList<Term::Pointer, Term::Deletor> terms;
+		Term::Vector terms;
     Term::Pointer termE(new Term(_T("contents"), _T("e")));
     terms.push_back(Term::Pointer(new Term(_T("contents"), _T("asdf"))));
     terms.push_back(Term::Pointer(new Term(_T("contents"), _T("asdg"))));
