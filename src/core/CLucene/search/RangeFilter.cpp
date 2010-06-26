@@ -82,7 +82,7 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 	Term::Pointer t(new Term( field, (lowerValue ? lowerValue : _T("")), false ));
 	TermEnum* enumerator = reader->terms( t );	// get enumeration of all terms after lowerValue
 	
-	if( enumerator->term(false) == NULL ) {
+	if( !enumerator->term() ) {
 		_CLDELETE( enumerator );
 		return bts;
 	}
@@ -97,9 +97,9 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 	{
 		do
 		{
-			term = enumerator->term();
+			term.swap(enumerator->term());
 			
-			if( term.get() == NULL || _tcscmp(term->field(), field) )
+			if( !term || _tcscmp(term->field(), field) )
 				break;
 			
 			if( !checkLower || lowerValue == NULL || _tcscmp(term->text(), lowerValue) > 0 )
@@ -115,7 +115,7 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 						break;
 				}
 				
-				termDocs->seek( enumerator->term(false) );
+				termDocs->seek( enumerator->term() );
 				while( termDocs->next() ) {
 					bts->set( termDocs->doc() );
 				}

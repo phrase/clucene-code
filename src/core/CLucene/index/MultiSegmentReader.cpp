@@ -661,7 +661,7 @@ TermDocs* MultiTermDocs::termDocs(IndexReader* reader) {
 }
 
 TermDocs* MultiTermDocs::termDocs(const int32_t i) {
-	if (term == NULL)
+	if (!term)
 	  return NULL;
 	TermDocs* result = (*readerTermDocs)[i];
 	if (result == NULL){

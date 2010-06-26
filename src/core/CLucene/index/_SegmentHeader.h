@@ -61,7 +61,7 @@ public:
 
 	virtual void seek(Term::Pointer term);
     virtual void seek(TermEnum* termEnum);
-	virtual void seek(const TermInfo* ti, Term::Pointer term);
+	virtual void seek(const TermInfo* ti, const Term::Pointer& term);
 
 	virtual void close();
 	virtual int32_t doc()const;
@@ -106,7 +106,7 @@ public:
 	~SegmentTermPositions();
 
 private:
-	void seek(const TermInfo* ti, Term::Pointer term);
+	void seek(const TermInfo* ti, const Term::Pointer& term);
 
 public:
 	void close();

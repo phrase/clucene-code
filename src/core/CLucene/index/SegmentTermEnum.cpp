@@ -177,7 +177,7 @@ CL_NS_DEF(index)
 		//swap not possible, because _term is used in growBuffer()
 		prev = _term;
 		//term becomes the next term read from inputStream input
-		_term = readTerm(tmp);
+		_term.swap(readTerm(tmp));
 
 		//Read docFreq, the number of documents which contain the term.
 		termInfo->docFreq = input->readVInt();
@@ -328,7 +328,7 @@ CL_NS_DEF(index)
 		return _CLNEW SegmentTermEnum(*this);
 	}
 
-	Term::Pointer SegmentTermEnum::readTerm(Term::Pointer reuse) {
+	Term::Pointer SegmentTermEnum::readTerm(Term::Pointer& reuse) {
 	//Func - Reads the next term in the enumeration
 	//Pre  - true
 	//Post - The next Term in the enumeration has been read and returned

@@ -33,7 +33,7 @@ TermPositions* SegmentTermPositions::__asTermPositions(){
     return (TermPositions*) this;
 }
 
-void SegmentTermPositions::seek(const TermInfo* ti, Term::Pointer term) {
+void SegmentTermPositions::seek(const TermInfo* ti, const Term::Pointer& term) {
     SegmentTermDocs::seek(ti, term);
     if (ti != NULL)
     	lazySkipPointer = ti->proxPointer;
