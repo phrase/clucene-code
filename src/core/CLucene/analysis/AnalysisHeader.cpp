@@ -224,7 +224,7 @@ TCHAR* Token::toString() const{
 
 CL_NS(index)::Payload::Pointer Token::getPayload() { return this->payload; }
 void Token::setPayload(CL_NS(index)::Payload::Pointer payload) {
-	this->payload = payload;
+	this->payload.swap(payload);
 }
 void Token::clear() {
 	payload.reset();
