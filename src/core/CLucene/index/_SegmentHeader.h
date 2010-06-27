@@ -59,8 +59,8 @@ public:
 	SegmentTermDocs( const SegmentReader* Parent);
     virtual ~SegmentTermDocs();
 
-	virtual void seek(Term::Pointer term);
-    virtual void seek(TermEnum* termEnum);
+	virtual void seek(const Term::Pointer& term);
+	virtual void seek(TermEnum* termEnum);
 	virtual void seek(const TermInfo* ti, const Term::Pointer& term);
 
 	virtual void close();

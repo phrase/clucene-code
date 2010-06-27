@@ -549,7 +549,7 @@ void MultiTermDocs::seek(TermEnum* termEnum){
 	seek(termEnum->term(false));
 }
 
-void MultiTermDocs::seek(Term::Pointer tterm) {
+void MultiTermDocs::seek(const Term::Pointer& tterm) {
 //Func - Resets the instance for a new search
 //Pre  - tterm != NULL
 //Post - The instance has been reset for a new search
@@ -562,7 +562,7 @@ void MultiTermDocs::seek(Term::Pointer tterm) {
 	//MultiTermDocs with as argument this->term (seek(this->term)) that the assignment
 	//will succeed and all referencecounters represent the correct situation
 
-	term.swap(tterm);
+	term = tterm;
 
 	base = 0;
 	pointer = 0;

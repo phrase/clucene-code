@@ -146,7 +146,7 @@ public:
   int32_t freq() const;
 
   void seek(TermEnum* termEnum);
-  void seek(Term::Pointer tterm);
+  void seek(const Term::Pointer& tterm);
   bool next();
 
   /** Optimized implementation. */

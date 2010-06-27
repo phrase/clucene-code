@@ -29,7 +29,7 @@ public:
 
 	// Sets this to the data for a term.
 	// The enumeration is reset to the start of the data for this term.
-	virtual void seek(Term::Pointer term)=0;
+	virtual void seek(const Term::Pointer& term)=0;
 
 	/** Sets this to the data for the current term in a {@link TermEnum}.
 	* This may be optimized in some implementations.

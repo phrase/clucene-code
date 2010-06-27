@@ -49,7 +49,7 @@ public:
 	* Not implemented.
 	* @throws UnsupportedOperationException
 	*/
-	void seek(Term::Pointer) {
+	void seek(const Term::Pointer&) {
 		_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
 	}
 

@@ -31,7 +31,7 @@ CL_NS_DEF(index)
 	  return NULL;
   }
 
-  void SegmentTermDocs::seek(Term::Pointer term) {
+  void SegmentTermDocs::seek(const Term::Pointer& term) {
     TermInfo* ti = parent->tis->get(term);
     seek(ti, term);
     _CLDELETE(ti);
