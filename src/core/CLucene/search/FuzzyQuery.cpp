@@ -312,7 +312,8 @@ CL_NS_DEF(search)
 
   TCHAR* FuzzyQuery::toString(const TCHAR* field) const{
 	  StringBuffer buffer(100); // TODO: Have a better estimation for the initial buffer length
-	  Term::Pointer term = getTerm(false); // no need to increase ref count
+	  Term::Pointer term;
+	  term.swap(getTerm()); // no need to increase ref count
 	  if ( field==NULL || _tcscmp(term->field(),field)!=0 ) {
 		  buffer.append(term->field());
 		  buffer.appendChar( _T(':'));
@@ -378,7 +379,8 @@ CL_NS_DEF(search)
   }
 
   FilteredTermEnum* FuzzyQuery::getEnum(IndexReader* reader){
-	  Term::Pointer term = getTerm(false);
+	  Term::Pointer term;
+	  term.swap(getTerm());
 	  FuzzyTermEnum* ret = _CLNEW FuzzyTermEnum(reader, term, minimumSimilarity, prefixLength);
 	  return ret;
   }
@@ -392,7 +394,8 @@ CL_NS_DEF(search)
 	  try {
 		  do {
 			  float_t score = 0.0f;
-			  Term::Pointer t = enumerator->term();
+			  Term::Pointer t;
+			  t.swap(enumerator->term());
 			  if (t) {
 				  score = enumerator->difference();
 				  if (reusableST == NULL) {

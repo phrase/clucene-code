@@ -45,17 +45,17 @@ CL_NS_DEF(index)
     if ( termEnum->getObjectName() == SegmentTermEnum::getClassName() &&
         ((SegmentTermEnum*)termEnum)->fieldInfos == parent->_fieldInfos ){
       SegmentTermEnum* segmentTermEnum = (SegmentTermEnum*) termEnum;
-      term = segmentTermEnum->term(false);
+      term.swap(segmentTermEnum->term());
       ti = segmentTermEnum->getTermInfo();
     }else{
-      term = termEnum->term(false);
+      term.swap(termEnum->term());
       ti = parent->tis->get(term);
     }
     
     seek(ti,term);
     _CLDELETE(ti);
   }
-  void SegmentTermDocs::seek(const TermInfo* ti, Term::Pointer term) {
+  void SegmentTermDocs::seek(const TermInfo* ti, const Term::Pointer& term) {
 	  count = 0;
 	  FieldInfo* fi = parent->_fieldInfos->fieldInfo(term->field());
 	  currentFieldStoresPayloads = (fi != NULL) ? fi->storePayloads : false;

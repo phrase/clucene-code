@@ -125,7 +125,7 @@ private:
 	/**
 	 * Reads the next term in the enumeration
 	 */
-	Term::Pointer readTerm(Term::Pointer reuse);
+	Term::Pointer readTerm(Term::Pointer& reuse);
    /** 
 	 * Instantiate a buffer of length length+1
    * TODO: deprecate this...
