@@ -984,8 +984,7 @@ DocumentsWriter::PostingVector* DocumentsWriter::ThreadState::FieldData::addNewV
 
 void DocumentsWriter::ThreadState::FieldData::addPosition(Token* token) {
 
-  Payload::ConstPointer payload;
-  payload.swap(token->getPayload());
+  Payload::ConstPointer payload(token->getPayload());
 
   // Get the text of this term.  Term can either
   // provide a String token or offset into a TCHAR*

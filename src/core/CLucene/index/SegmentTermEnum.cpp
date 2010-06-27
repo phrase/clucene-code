@@ -177,7 +177,7 @@ CL_NS_DEF(index)
 		//swap not possible, because _term is used in growBuffer()
 		prev = _term;
 		//term becomes the next term read from inputStream input
-		_term.swap(readTerm(tmp));
+		_term = readTerm(tmp);
 
 		//Read docFreq, the number of documents which contain the term.
 		termInfo->docFreq = input->readVInt();

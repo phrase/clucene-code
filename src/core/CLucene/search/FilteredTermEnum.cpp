@@ -54,11 +54,10 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
 				return false;
             if (actualEnum->next()) {
                 //Order term not to return reference ownership here. */
-                Term::Pointer term;
-				term.swap(actualEnum->term());
-				//Compare the retrieved term
+                Term::Pointer term(actualEnum->term());
+                //Compare the retrieved term
                 if (termCompare(term)){
-					//Get a reference to the matched term
+                    //Get a reference to the matched term
                     currentTerm.swap(term);
                     return true;
                 }
@@ -105,20 +104,19 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
 	//Pre  - actualEnum != NULL
 	//Post - The instance has been created
 
-		CND_PRECONDITION(actualEnum != NULL,"actualEnum is NULL");
+        CND_PRECONDITION(actualEnum != NULL,"actualEnum is NULL");
 
-		_CLLDELETE(this->actualEnum);
+        _CLLDELETE(this->actualEnum);
         this->actualEnum = actualEnum;
 
         // Find the first term that matches
         //Ordered term not to return reference ownership here.
-        Term::Pointer term;
-		term.swap(actualEnum->term());
+        Term::Pointer term(actualEnum->term());
         if (term && termCompare(term)){
             currentTerm.swap(term);
         }else{
             next();
-		}
+        }
     }
 
 CL_NS_END
