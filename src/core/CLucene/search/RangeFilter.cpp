@@ -77,12 +77,12 @@ search results, and false for those that should not. */
 BitSet* RangeFilter::bits( IndexReader* reader )
 {
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
-	Term::Pointer term;
 	
-	Term::Pointer t(new Term( field, (lowerValue ? lowerValue : _T("")), false ));
-	TermEnum* enumerator = reader->terms( t );	// get enumeration of all terms after lowerValue
-	
-	if( !enumerator->term() ) {
+	Term::Pointer term(new Term( field, (lowerValue ? lowerValue : _T("")), false ));
+	TermEnum* enumerator = reader->terms(term);	// get enumeration of all terms after lowerValue
+	term = enumerator->term();
+
+	if (!term) {
 		_CLDELETE( enumerator );
 		return bts;
 	}
@@ -97,8 +97,6 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 	{
 		do
 		{
-			term.swap(enumerator->term());
-			
 			if( !term || _tcscmp(term->field(), field) )
 				break;
 			
@@ -115,14 +113,19 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 						break;
 				}
 				
-				termDocs->seek( enumerator->term() );
+				termDocs->seek(term);
 				while( termDocs->next() ) {
 					bts->set( termDocs->doc() );
 				}
 			}
-			
+
+			if (enumerator->next()) {
+				term = enumerator->term();
+			} else {
+				term.reset();
+			}
 		}
-		while( enumerator->next() );
+		while (term);
 	}
 	_CLFINALLY
 	(
