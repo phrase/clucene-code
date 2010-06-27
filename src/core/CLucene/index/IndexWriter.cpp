@@ -413,6 +413,7 @@ std::ostream* IndexWriter::getDefaultInfoStream() {
   return IndexWriter::defaultInfoStream;
 }
 
+//TODO: infoStream - unicode
 void IndexWriter::setInfoStream(std::ostream* infoStream) {
   ensureOpen();
   this->infoStream = infoStream;
@@ -2290,8 +2291,10 @@ void IndexWriter::Internal::applyDeletesSelectively(const DocumentsWriter::TermN
 
   if (deleteIds.size() > 0) {
     vector<int32_t>::const_iterator iter2 = deleteIds.begin();
-    while(iter2 != deleteIds.end() )
+    while (iter2 != deleteIds.end()){
       reader->deleteDocument(*iter2);
+      ++iter2;
+    }
   }
 }
 

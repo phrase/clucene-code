@@ -13,10 +13,8 @@ CL_CLASS_DEF(index, IndexWriter)
 CL_CLASS_DEF(index, IndexReader)
 CL_CLASS_DEF(index, TermDocs)
 CL_CLASS_DEF(index, TermEnum)
+
 #include "CLucene/analysis/AnalysisHeader.h"
-//#include "Term.h"
-//#include "IndexWriter.h"
-//#include "IndexReader.h"
 
 CL_NS_DEF(index)
 
@@ -75,7 +73,7 @@ CL_NS_DEF(index)
 * 
 * @deprecated Please use {@link IndexWriter} instead.
 */
-class CLUCENE_EXPORT IndexModifier :LUCENE_BASE{
+class CLUCENE_EXPORT IndexModifier {
 protected:
 	IndexWriter* indexWriter;
 	IndexReader* indexReader;
@@ -85,6 +83,7 @@ protected:
 	bool open;
 
 	// Lucene defaults:
+    std::ostream* infoStream;
 	bool useCompoundFile;
 	int32_t maxBufferedDocs;
 	int32_t maxFieldLength;
@@ -102,7 +101,7 @@ public:
 	*/
 	IndexModifier(const CL_NS(store)::Directory::Pointer& directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
 		
-	~IndexModifier();
+	IndexModifier(CL_NS(store)::Directory* directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
 
 	/**
 	* Open an index with write access.
@@ -113,6 +112,8 @@ public:
 	* 	<code>false</code> to append to the existing index
 	*/
 	IndexModifier(const char* dirName, CL_NS(analysis)::Analyzer* analyzer, bool create);
+		
+	virtual ~IndexModifier();
 
 protected:
 
