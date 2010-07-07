@@ -1042,6 +1042,8 @@ bool SegmentReader::hasNorms(const TCHAR* field){
     this->storeCFSReader = NULL;
     this->termVectorsReaderOrig = NULL;
     this->tis = NULL;
+    _CLDELETE(fieldsReader);
+    _CLDELETE(this->singleNormStream);
 
     return clone;
   }
