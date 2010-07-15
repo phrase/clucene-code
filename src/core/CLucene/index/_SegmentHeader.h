@@ -153,7 +153,7 @@ private:
 	virtual TermPositions* __asTermPositions();
 
     //resolve SegmentTermDocs/TermPositions ambiguity
-	void seek(Term::Pointer term){ SegmentTermDocs::seek(term); }
+	void seek(const Term::Pointer& term){ SegmentTermDocs::seek(term); }
     void seek(TermEnum* termEnum){ SegmentTermDocs::seek(termEnum); }
     int32_t doc() const{ return SegmentTermDocs::doc(); }
 	int32_t freq() const{ return SegmentTermDocs::freq(); }
