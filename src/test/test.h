@@ -55,6 +55,7 @@ CuSuite *testsearch(void);
 CuSuite *testtermvector(void);
 CuSuite *testsort(void);
 CuSuite *testduplicates(void);
+CuSuite *testRangeFilter(void);
 CuSuite *testdatefilter(void);
 CuSuite *testwildcard(void);
 CuSuite *testdebug(void);
