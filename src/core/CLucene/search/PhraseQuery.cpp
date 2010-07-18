@@ -432,9 +432,8 @@ CL_NS_DEF(search)
 	  fieldExpl->setDescription(descbuf);
 
 
-	  Scorer* sc = scorer(reader);
+	  Scorer::AutoPtr sc = scorer(reader);
 	  Explanation* tfExpl = sc->explain(doc);
-	  _CLLDELETE(sc);
 	  fieldExpl->addDetail(tfExpl);
 	  fieldExpl->addDetail( _CLNEW Explanation(idfExpl->getValue(), idfExpl->getDescription()) );
 

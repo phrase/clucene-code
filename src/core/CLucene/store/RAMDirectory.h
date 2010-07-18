@@ -21,6 +21,10 @@ CL_NS_DEF(store)
 	*
 	*/
 	class CLUCENE_EXPORT RAMDirectory:public Directory{
+	public:
+		/** Shared pointer for RAMDirectory */
+		typedef boost::shared_ptr<RAMDirectory> SharedPtr;
+	private:
 		typedef CL_NS(util)::CLHashMap<char*,RAMFile*,
 				CL_NS(util)::Compare::Char, CL_NS(util)::Equals::Char,
 				CL_NS(util)::Deletor::acArray , CL_NS(util)::Deletor::Object<RAMFile> > FileMap;

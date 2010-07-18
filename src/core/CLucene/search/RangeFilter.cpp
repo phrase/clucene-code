@@ -69,7 +69,7 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 {
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
 	
-	Term::Pointer term(new Term( field, (lowerValue ? lowerValue : _T("")), false ));
+	Term::Pointer term(new Term( fieldName, (lowerTerm ? lowerTerm : _T("")), false ));
 	TermEnum* enumerator = reader->terms(term);	// get enumeration of all terms after lowerValue
 	term = enumerator->term();
 
