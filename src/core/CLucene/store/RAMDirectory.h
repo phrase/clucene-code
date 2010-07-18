@@ -24,6 +24,8 @@ CL_NS_DEF(store)
 	public:
 		/** Shared pointer for RAMDirectory */
 		typedef boost::shared_ptr<RAMDirectory> SharedPtr;
+		/** Shared pointer is default pointer */
+		typedef SharedPtr Pointer;
 	private:
 		typedef CL_NS(util)::CLHashMap<char*,RAMFile*,
 				CL_NS(util)::Compare::Char, CL_NS(util)::Equals::Char,

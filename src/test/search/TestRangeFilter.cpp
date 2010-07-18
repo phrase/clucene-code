@@ -32,7 +32,7 @@ public:
     static const bool F = false;
     static const bool T = true;
     
-    RAMDirectory* index;
+    RAMDirectory::SharedPtr index;
     
     int maxR;
     int minR;
@@ -56,7 +56,6 @@ public:
     virtual ~BaseTestRangeFilter()
     {
         index->close();
-        _CLLDECDELETE(index);
     }
     
     /**
@@ -172,9 +171,8 @@ public:
         assertEqualsMsg(_T("num of docs"), numDocs, static_cast<size_t>(1+ maxId - minId));
 
         Hits* result;
-        Term* term = _CLNEW Term(_T("body"),_T("body"));
+        Term::Pointer term(_CLNEW Term(_T("body"),_T("body")));
         Query* q = _CLNEW TermQuery(term);
-        _CLDECDELETE(term);
 
         // test id, bounded on both ends
 
@@ -315,9 +313,8 @@ public:
         assertEqualsMsg(_T("num of docs"), numDocs, 1+ maxId - minId);
 
         Hits* result;
-        Term* term = _CLNEW Term(_T("body"),_T("body"));
+        Term::Pointer term(_CLNEW Term(_T("body"),_T("body")));
         Query* q = _CLNEW TermQuery(term);
-        _CLDECDELETE(term);
 
         // test extremes, bounded on both ends
 
@@ -412,7 +409,7 @@ void testRangeFilterTrigger(CuTest* tc)
 void testIncludeLowerTrue(CuTest* tc)
 {
     WhitespaceAnalyzer a;
-    RAMDirectory* index = _CLNEW RAMDirectory();
+    RAMDirectory::Pointer index(_CLNEW RAMDirectory());
     IndexWriter* writer = _CLNEW IndexWriter(index,
         &a, true);
 
@@ -432,13 +429,11 @@ void testIncludeLowerTrue(CuTest* tc)
     IndexSearcher* s = _CLNEW IndexSearcher(index);
     Filter* f = _CLNEW RangeFilter(_T("Category"), _T("3"), _T("3"), true, true);
 
-    Term* t = _CLNEW Term(_T("Category"), _T("a"));
+    Term::Pointer t(_CLNEW Term(_T("Category"), _T("a")));
     Query* q1 = _CLNEW TermQuery(t);
-    _CLLDECDELETE(t);
 
-    t = _CLNEW Term(_T("Category"), _T("3"));
+    t.reset(_CLNEW Term(_T("Category"), _T("3")));
     Query* q2 = _CLNEW TermQuery(t);
-    _CLLDECDELETE(t);
 
     Hits* h = s->search(q1);
     assertTrue(h->length() == 3);
@@ -459,7 +454,6 @@ void testIncludeLowerTrue(CuTest* tc)
     _CLLDELETE(f);
 
     index->close();
-    _CLLDECDELETE(index);
 }
 
 CuSuite *testRangeFilter(void)
