@@ -124,8 +124,10 @@ public:
 private:
 	/**
 	 * Reads the next term in the enumeration
+	 * \remarks It is assumed that readTerm() is only called by next(),
+	 * which provides always a Term owned by at leat by next().
 	 */
-	Term::Pointer readTerm(Term::Pointer& reuse);
+	void readTerm(Term* reuse);
    /** 
 	 * Instantiate a buffer of length length+1
    * TODO: deprecate this...

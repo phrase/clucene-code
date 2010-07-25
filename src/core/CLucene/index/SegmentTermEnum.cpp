@@ -167,17 +167,24 @@ CL_NS_DEF(index)
 
 		//delete the previous enumerated term
 		Term::Pointer tmp;
+		//assure that tmp has a Term, either an old one or a new one
 		if (prev) {
 			if (!prev.unique()) {
-				prev.reset(); //todo: tune other places try and delete its term 
+				prev.reset(); //todo: tune other places try and delete its term
+				tmp.reset(new Term); 
 			}else
 				tmp.swap(prev); //we are going to re-use this term
+		} else {
+			tmp.reset(new Term);
 		}
 		//prev becomes the current enumerated term
-		//swap not possible, because _term is used in growBuffer()
+		//swap not possible, because _term is used in growBuffer() called by readTerm()
 		prev = _term;
 		//term becomes the next term read from inputStream input
-		_term = readTerm(tmp);
+		//providing the raw pointer to avoid incrementing the reference counter
+		//(not needed here, because tmp is owned only by this function)
+		readTerm(tmp.get());
+		_term.swap(tmp);
 
 		//Read docFreq, the number of documents which contain the term.
 		termInfo->docFreq = input->readVInt();
@@ -328,7 +335,7 @@ CL_NS_DEF(index)
 		return _CLNEW SegmentTermEnum(*this);
 	}
 
-	Term::Pointer SegmentTermEnum::readTerm(Term::Pointer& reuse) {
+	void SegmentTermEnum::readTerm(Term* reuse) {
 	//Func - Reads the next term in the enumeration
 	//Pre  - true
 	//Post - The next Term in the enumeration has been read and returned
@@ -353,11 +360,8 @@ CL_NS_DEF(index)
 		//Return a new Term	
 		int32_t field = input->readVInt();
 		const TCHAR* fieldname = fieldInfos->fieldName(field);
-		if (!reuse)
-			reuse.reset(new Term);
 
 		reuse->set(fieldname, buffer, false);
-		return reuse;
 	}
 
 	void SegmentTermEnum::growBuffer(const uint32_t length, bool force_copy) {
