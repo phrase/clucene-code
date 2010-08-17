@@ -41,9 +41,6 @@ CL_NS_DEF(store)
 	public:
     DEFINE_MUTEX(THIS_LOCK)
 
-    #ifdef _DEBUG
-		const char* filename;
-    #endif
 		// File used as buffer, in no RAMDirectory
 		RAMFile( RAMDirectory* directory=NULL );
 		~RAMFile();
