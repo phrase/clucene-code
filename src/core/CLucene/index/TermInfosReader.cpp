@@ -107,14 +107,13 @@ CL_NS_DEF(index)
 
 	  //Check if indexTerms and indexInfos exist
      if (indexTerms && indexInfos){
-          //Iterate through arrays indexTerms and indexPointer to
+        //Iterate through arrays indexTerms and indexPointer to
 	      //destroy their elements
-#ifdef _DEBUG
-         for ( int32_t i=0; i<indexTermsLength;++i ){
-            indexTerms[i].__cl_refcount--;
-         }
-#endif
-         //Delete the arrays
+        for ( int32_t i=0; i<indexTermsLength;++i ){
+           indexTerms[i].reset();
+        }
+
+        //Delete the arrays
          delete [] indexTerms;
          _CLDELETE_ARRAY(indexInfos);
      }
