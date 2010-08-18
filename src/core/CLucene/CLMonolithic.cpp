@@ -91,6 +91,7 @@
 #include "CLucene/search/MultiPhraseQuery.cpp"
 #include "CLucene/search/MultiSearcher.cpp"
 #include "CLucene/search/MultiTermQuery.cpp"
+#include "CLucene/search/MultiPhraseQuery.cpp"
 #include "CLucene/search/PhrasePositions.cpp"
 #include "CLucene/search/PhraseQuery.cpp"
 #include "CLucene/search/PhraseScorer.cpp"

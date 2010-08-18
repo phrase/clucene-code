@@ -110,7 +110,7 @@ CL_NS_DEF(index)
         //Iterate through arrays indexTerms and indexPointer to
 	      //destroy their elements
         for ( int32_t i=0; i<indexTermsLength;++i ){
-           indexTerms[i].reset();
+           indexTerms[i].__cl_refcount--;
         }
 
         //Delete the arrays

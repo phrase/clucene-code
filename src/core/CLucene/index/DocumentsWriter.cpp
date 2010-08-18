@@ -1222,7 +1222,7 @@ uint8_t* DocumentsWriter::getByteBlock(bool trackAllocations) {
     b = _CL_NEWARRAY(uint8_t, BYTE_BLOCK_SIZE);
     memset(b,0,sizeof(uint8_t) * BYTE_BLOCK_SIZE);
   } else {
-    b = *freeByteBlocks.begin();    
+    b = *freeByteBlocks.begin();
     freeByteBlocks.remove(freeByteBlocks.begin(),true);
   }
   if (trackAllocations)
@@ -1572,7 +1572,7 @@ void DocumentsWriter::ByteSliceReader::readBytes(uint8_t* b, int32_t len) {
 
 int64_t DocumentsWriter::ByteSliceReader::getFilePointer() const{_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 int64_t DocumentsWriter::ByteSliceReader::length() const{_CLTHROWA(CL_ERR_Runtime,"not implemented");}
-void DocumentsWriter::ByteSliceReader::seek(const int64_t pos) {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
+void DocumentsWriter::ByteSliceReader::seek(const int64_t /*pos*/) {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 void DocumentsWriter::ByteSliceReader::close() {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 
 DocumentsWriter::ByteBlockPool::ByteBlockPool( bool _trackAllocations, DocumentsWriter* _parent):

@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
@@ -12,7 +12,7 @@
 
 CL_NS_USE(util)
 CL_NS_DEF(analysis)
-		
+
 CharTokenizer::CharTokenizer(Reader* in) :
 	Tokenizer(in),
 	offset(0),
@@ -25,9 +25,9 @@ CharTokenizer::CharTokenizer(Reader* in) :
 CharTokenizer::~CharTokenizer(){
 }
 
-TCHAR CharTokenizer::normalize(const TCHAR c) const 
-{ 
-	return c; 
+TCHAR CharTokenizer::normalize(const TCHAR c) const
+{
+	return c;
 }
 Token* CharTokenizer::next(Token* token){
 	int32_t length = 0;
@@ -99,7 +99,7 @@ WhitespaceTokenizer::WhitespaceTokenizer(CL_NS(util)::Reader* in):CharTokenizer(
 }
 WhitespaceTokenizer::~WhitespaceTokenizer(){
 }
-	
+
 bool WhitespaceTokenizer::isTokenChar(const TCHAR c)  const{
 	return _istspace(c)==0; //(return true if NOT a space)
 }
@@ -109,10 +109,10 @@ WhitespaceAnalyzer::WhitespaceAnalyzer(){
 WhitespaceAnalyzer::~WhitespaceAnalyzer(){
 }
 
-TokenStream* WhitespaceAnalyzer::tokenStream(const TCHAR* fieldName, Reader* reader) {
+TokenStream* WhitespaceAnalyzer::tokenStream(const TCHAR* /*fieldName*/, Reader* reader) {
 	return _CLNEW WhitespaceTokenizer(reader);
 }
-TokenStream* WhitespaceAnalyzer::reusableTokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader)
+TokenStream* WhitespaceAnalyzer::reusableTokenStream(const TCHAR* /*fieldName*/, CL_NS(util)::Reader* reader)
 {
 	Tokenizer* tokenizer = static_cast<Tokenizer*>(getPreviousTokenStream());
 	if (tokenizer == NULL) {
@@ -127,10 +127,10 @@ SimpleAnalyzer::SimpleAnalyzer(){
 }
 SimpleAnalyzer::~SimpleAnalyzer(){
 }
-TokenStream* SimpleAnalyzer::tokenStream(const TCHAR* fieldName, Reader* reader) {
+TokenStream* SimpleAnalyzer::tokenStream(const TCHAR* /*fieldName*/, Reader* reader) {
 	return _CLNEW LowerCaseTokenizer(reader);
 }
-TokenStream* SimpleAnalyzer::reusableTokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader) {
+TokenStream* SimpleAnalyzer::reusableTokenStream(const TCHAR* /*fieldName*/, CL_NS(util)::Reader* reader) {
 	Tokenizer* tokenizer = static_cast<Tokenizer*>(getPreviousTokenStream());
 	if (tokenizer == NULL) {
 		tokenizer = _CLNEW LowerCaseTokenizer(reader);
@@ -187,14 +187,14 @@ StopFilter::~StopFilter(){
 bool StopFilter::getEnablePositionIncrementsDefault() {
 	return ENABLE_POSITION_INCREMENTS_DEFAULT;
 }
-//static 
+//static
 void StopFilter::setEnablePositionIncrementsDefault(const bool defaultValue) {
 	ENABLE_POSITION_INCREMENTS_DEFAULT = defaultValue;
 }
 
 bool StopFilter::getEnablePositionIncrements() const { return enablePositionIncrements; }
 void StopFilter::setEnablePositionIncrements(const bool enable) { this->enablePositionIncrements = enable; }
-		
+
 void StopFilter::fillStopTable(CLTCSetList* stopTable, const TCHAR** stopWords, const bool _ignoreCase)
 {
   TCHAR* tmp;
@@ -268,7 +268,7 @@ StopAnalyzer::StopAnalyzer( const TCHAR** stopWords):
 {
 	StopFilter::fillStopTable(stopTable,stopWords);
 }
-TokenStream* StopAnalyzer::tokenStream(const TCHAR* fieldName, Reader* reader) {
+TokenStream* StopAnalyzer::tokenStream(const TCHAR* /*fieldName*/, Reader* reader) {
 	return _CLNEW StopFilter(_CLNEW LowerCaseTokenizer(reader),true, stopTable);
 }
 
@@ -314,7 +314,7 @@ TokenStream* PerFieldAnalyzerWrapper::tokenStream(const TCHAR* fieldName, Reader
     if (analyzer == NULL) {
       analyzer = defaultAnalyzer;
     }
-    
+
     return analyzer->tokenStream(fieldName, reader);
 }
 
@@ -356,7 +356,7 @@ Token* ISOLatin1AccentFilter::next(Token* token){
 				doProcess = true;
 				break;
 			}
-			
+
 		}
 		if ( !doProcess ) {
 			return token;
@@ -504,10 +504,10 @@ Token* ISOLatin1AccentFilter::next(Token* token){
 
 KeywordAnalyzer::KeywordAnalyzer(){}
 KeywordAnalyzer::~KeywordAnalyzer(){}
-TokenStream* KeywordAnalyzer::tokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader){
+TokenStream* KeywordAnalyzer::tokenStream(const TCHAR* /*fieldName*/, CL_NS(util)::Reader* reader){
     return _CLNEW KeywordTokenizer(reader);
 }
-TokenStream* KeywordAnalyzer::reusableTokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader)
+TokenStream* KeywordAnalyzer::reusableTokenStream(const TCHAR* /*fieldName*/, CL_NS(util)::Reader* reader)
 {
 	Tokenizer* tokenizer = static_cast<Tokenizer*>(getPreviousTokenStream());
 	if (tokenizer == NULL) {

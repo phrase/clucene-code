@@ -73,8 +73,6 @@ CL_NS_DEF(index)
           writeLock->release();  // release write lock
           writeLock = NULL;
         }
-
-        _CLLDELETE(deleter);
       }
       else
         commitChanges();
