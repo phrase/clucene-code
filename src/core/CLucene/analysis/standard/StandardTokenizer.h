@@ -58,6 +58,8 @@ CL_NS_DEF2(analysis,standard)
     StandardTokenizer(CL_NS(util)::BufferedReader* reader, bool deleteReader=false);
 
     ~StandardTokenizer();
+    
+	  void reset(CL_NS(util)::Reader* _input, bool deleteReader=false);
 
     /** Returns the next token in the stream, or false at end-of-stream.
     * The returned token's type is set to an element of

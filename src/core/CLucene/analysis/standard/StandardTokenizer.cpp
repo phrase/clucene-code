@@ -109,6 +109,29 @@ CL_NS_DEF2(analysis,standard)
     if ( this->deleteReader )
     	_CLDELETE(reader)
   }
+  
+  void StandardTokenizer::reset(CL_NS(util)::Reader* _input, bool deleteReader){
+    BufferedReader* bufferedReader;
+    if ( _input != NULL ){
+      bufferedReader = _input->__asBufferedReader();
+      if ( bufferedReader == NULL ){
+        bufferedReader = _CLNEW FilteredBufferedReader(_input, deleteReader);
+        deleteReader = true;
+      }
+
+      input = _input;
+	    this->deleteReader = deleteReader;
+    }else{
+      bufferedReader = _input->__asBufferedReader();
+      assert(bufferedReader!=NULL);
+    }
+    TokenStream::reset();
+
+    this->rdPos = -1;
+    this->tokenStart = -1;
+    _CLDELETE(rd);
+    rd = _CLNEW FastCharStream(bufferedReader);
+  }
 
   int StandardTokenizer::readChar() {
     /* Increment by 1 because we're speaking in terms of characters, not

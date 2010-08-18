@@ -19,6 +19,26 @@ CL_NS_USE(analysis)
 
 CL_NS_DEF2(analysis,standard)
 
+  class StandardAnalyzer::SavedStreams : public TokenStream {
+  public:
+    StandardTokenizer* tokenStream;
+    TokenStream* filteredTokenStream;
+
+    SavedStreams(){
+      tokenStream = NULL;
+      filteredTokenStream = NULL;
+    }
+
+    Token* next(Token* token){
+      return token;
+    }
+    void close(){}
+    void reset(){}
+    virtual ~SavedStreams(){
+    
+    }
+  };
+
 	StandardAnalyzer::StandardAnalyzer():
 		stopSet(_CLNEW CLTCSetList(true))
 	{
@@ -48,20 +68,45 @@ CL_NS_DEF2(analysis,standard)
 	StandardAnalyzer::~StandardAnalyzer(){
 		_CLDELETE(stopSet);
 	}
-
-
-	TokenStream* StandardAnalyzer::tokenStream(const TCHAR* /*fieldName*/, Reader* reader)
+	TokenStream* StandardAnalyzer::tokenStream(const TCHAR* fieldName, Reader* reader)
 	{
-		BufferedReader* bufferedReader = reader->__asBufferedReader();
-		TokenStream* ret;
+    BufferedReader* bufferedReader = reader->__asBufferedReader();
 
-		if ( bufferedReader == NULL )
-			ret =  _CLNEW StandardTokenizer( _CLNEW FilteredBufferedReader(reader, false), true );
-		else
-			ret = _CLNEW StandardTokenizer(bufferedReader);
-		ret = _CLNEW StandardFilter(ret,true);
-		ret = _CLNEW LowerCaseFilter(ret,true);
-		ret = _CLNEW StopFilter(ret,true, stopSet);
-		return ret;
+    StandardTokenizer* tokenStream;
+    if ( bufferedReader == NULL )
+      tokenStream =  _CLNEW StandardTokenizer( _CLNEW FilteredBufferedReader(reader, false), true );
+    else
+      tokenStream = _CLNEW StandardTokenizer(bufferedReader);
+
+    TokenStream* result = _CLNEW StandardFilter(tokenStream,true);
+    result = _CLNEW LowerCaseFilter(result,true);
+    result = _CLNEW StopFilter(result,true, stopSet);
+    return result;
+  }
+  
+	TokenStream* StandardAnalyzer::reusableTokenStream(const TCHAR* fieldName, Reader* reader)
+	{
+    SavedStreams* streams = (SavedStreams*)getPreviousTokenStream();
+    if (streams == NULL) {
+      streams = _CLNEW SavedStreams;
+      setPreviousTokenStream(streams);
+
+      BufferedReader* bufferedReader = reader->__asBufferedReader();
+
+      if ( bufferedReader == NULL )
+        streams->tokenStream =  _CLNEW StandardTokenizer( _CLNEW FilteredBufferedReader(reader, false), true );
+      else
+        streams->tokenStream = _CLNEW StandardTokenizer(bufferedReader);
+
+      streams->filteredTokenStream = _CLNEW StandardFilter(streams->tokenStream,true);
+      streams->filteredTokenStream = _CLNEW LowerCaseFilter(streams->filteredTokenStream,true);
+      streams->filteredTokenStream = _CLNEW StopFilter(streams->filteredTokenStream,true, stopSet);
+      
+    } else{
+      streams->tokenStream->reset(reader);
+    }
+    //ret->setMaxTokenLength(maxTokenLength);
+    //ret->setReplaceInvalidAcronym(replaceInvalidAcronym);
+    return streams->filteredTokenStream;
 	}
 CL_NS_END2
