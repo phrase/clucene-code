@@ -33,6 +33,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 #define options...
 
 Include (CLuceneDocs)
+Include (CLuceneBoost)
 Include (FindThreads)
 
 IF(NOT CMAKE_BUILD_TYPE)
