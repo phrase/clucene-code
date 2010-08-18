@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-*
-* Distributable under the terms of either the Apache License (Version 2.0) or
+* 
+* Distributable under the terms of either the Apache License (Version 2.0) or 
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #ifndef _lucene_util_Array_
@@ -17,9 +17,9 @@ class CLUCENE_INLINE_EXPORT ArrayBase: LUCENE_BASE{
 public:
 	T* values;
 	size_t length;
-
+    
   /**
-  * Delete's the values in the array.
+  * Delete's the values in the array. 
   * This won't do anything if deleteArray or takeArray is called first.
   * This is overridden in various implementations to provide the appropriate deletor function.
   */
@@ -34,17 +34,17 @@ public:
   * Delete's a single value. Used when resizing...
   */
   virtual void deleteValue(T) = 0;
-
+	
   /**
-  * Delete's the values in the array and then calls deleteArray().
+  * Delete's the values in the array and then calls deleteArray(). 
   * This won't do anything if deleteArray or takeArray is called first.
   * This is overridden in various implementations to provide the appropriate deletor function.
   */
-	void deleteAll(){
-    this->deleteValues();
-    this->deleteArray();
+	void deleteAll(){ 
+    this->deleteValues(); 
+    this->deleteArray(); 
   }
-
+	
 	/**
 	* Deletes the array holding the values. Do this if you want to take
 	* ownership of the array's values, but not the array containing the values.
@@ -61,7 +61,7 @@ public:
 	    T* ret = values;
 	    values = NULL;
 	    return ret;
-	}
+	} 
 
 	ArrayBase(){
 		values = NULL;
@@ -93,7 +93,7 @@ public:
 		}
 		return (*(values + _Pos));
 	}
-
+  
   /**
   * Resize the array
   * @param deleteValues if shrinking, delete the values that are lost.
@@ -131,19 +131,11 @@ public:
   ObjectArray():ArrayBase<T*>(){}
 	ObjectArray(T** values, size_t length):ArrayBase<T*>(values,length){}
 	ObjectArray(size_t length):ArrayBase<T*>(length){}
-
+	
   void deleteValues(){
       if ( this->values == NULL )
         return;
-		  for (size_t i=0;i<this->length;++i){
-			    _CLLDELETE(this->values[i]);
-		  }
-	    this->deleteArray();
-	}
-  void deleteUntilNULL(){
-      if ( this->values == NULL )
-        return;
-		  for (size_t i=0;i<this->length && this->values[i] != NULL;++i){
+		  for (size_t i=0;i<this->length;i++){
 			    _CLLDELETE(this->values[i]);
 		  }
 	    this->deleteArray();
@@ -197,10 +189,8 @@ public:
         return;
     this->deleteArray();
 	}
-  void deleteValue(T /*v*/){} //nothing to do...
-  virtual ~ValueArray(){
-    deleteValues();
-  }
+  void deleteValue(T v){} //nothing to do...
+  virtual ~ValueArray(){/*deleteValues();*/}
 };
 
 /** A value array for const values (never deleted) */
@@ -211,9 +201,11 @@ public:
 	ConstValueArray(T* values, size_t length):ArrayBase<T>(values,length){}
 	ConstValueArray(size_t length):ArrayBase<T>(length){}
 
-  void deleteValues(){}
-  void deleteValue(T /*v*/){} //nothing to do...
-  virtual ~ConstValueArray(){}
+  void deleteValues(){
+	}
+  void deleteValue(T v){} //nothing to do...
+	virtual ~ConstValueArray(){
+	}
 };
 
 

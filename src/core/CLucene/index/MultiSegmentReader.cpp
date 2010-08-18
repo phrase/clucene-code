@@ -44,8 +44,7 @@ void MultiSegmentReader::initialize(CL_NS(util)::ArrayBase<IndexReader*>* _subRe
 }
 
 MultiSegmentReader::MultiSegmentReader(CL_NS(store)::Directory* directory, SegmentInfos* sis, bool closeDirectory):
-  DirectoryIndexReader(directory,sis,closeDirectory),
-  normsCache(NormsCacheType(true,true))
+  DirectoryIndexReader(directory,sis,closeDirectory)
 {
   // To reduce the chance of hitting FileNotFound
   // (and having to retry), we open segments in
@@ -82,8 +81,7 @@ MultiSegmentReader::MultiSegmentReader(
       CL_NS(util)::ArrayBase<IndexReader*>* oldReaders,
       int32_t* oldStarts,
       NormsCacheType* oldNormsCache):
-  DirectoryIndexReader(directory, infos, closeDirectory),
-  normsCache(NormsCacheType(true,true))
+  DirectoryIndexReader(directory, infos, closeDirectory)
 {
   // we put the old SegmentReaders in a map, that allows us
   // to lookup a reader using its segment name
