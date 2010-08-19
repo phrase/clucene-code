@@ -522,8 +522,8 @@ KeywordTokenizer::KeywordTokenizer(CL_NS(util)::Reader* input, int bufferSize):
 	Tokenizer(input)
 {
   this->done = false;
-	if ( bufferSize < 0 )
-	this->bufferSize = DEFAULT_BUFFER_SIZE;
+	if ( bufferSize < 1 )
+	  this->bufferSize = DEFAULT_BUFFER_SIZE;
 }
 KeywordTokenizer::~KeywordTokenizer(){
 }
@@ -532,20 +532,26 @@ Token* KeywordTokenizer::next(Token* token){
   if (!done) {
     done = true;
     int32_t upto = 0;
+    int32_t rd;
+
     token->clear();
-    if (token->termBuffer() == NULL)
-        token->growBuffer(10); // todo
-    const TCHAR* termBuffer=token->termBuffer();
-	//assert(false);//test me;
+    TCHAR* termBuffer=token->termBuffer();
+    const TCHAR* readBuffer=NULL;
+
     while (true) {
-      int32_t length = input->read(termBuffer, 1, cl_min(bufferSize, token->bufferLength()-upto) );
-      if (length == -1) break;
-      upto += length;
+      rd = input->read(readBuffer, 1, cl_min(bufferSize, token->bufferLength()-upto) );
+      if (rd == -1)
+		    break;
       if ( upto == token->bufferLength() ){
-        termBuffer = token->resizeTermBuffer(token->bufferLength() + 8); // todo: compare to JL
+        termBuffer = token->resizeTermBuffer(token->bufferLength() + 8);
       }
+	    _tcsncpy(termBuffer + upto, readBuffer, rd);
+      upto += rd;
     }
-    token->termBuffer()[upto]=0;
+    if ( termBuffer == NULL ){
+      termBuffer=token->resizeTermBuffer(token->bufferLength() + 8);
+    }
+    termBuffer[upto]=0;
     token->setTermLength(upto);
     return token;
   }

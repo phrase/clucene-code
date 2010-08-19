@@ -24,8 +24,8 @@ CL_NS_DEF(index)
   void DirectoryIndexReader::doClose() {
     if(closeDirectory && _directory){
       _directory->close();
+    	_CLDECDELETE(_directory);
     }
-    _CLDECDELETE(_directory);
   }
 
   void DirectoryIndexReader::doCommit() {
@@ -129,6 +129,7 @@ CL_NS_DEF(index)
     }catch(...){
     }
      _CLDELETE(segmentInfos);
+     _CLDELETE(rollbackSegmentInfos);
   }
   DirectoryIndexReader::DirectoryIndexReader(Directory* __directory, SegmentInfos* segmentInfos, bool closeDirectory):
     IndexReader()
@@ -291,7 +292,7 @@ CL_NS_DEF(index)
         // segmentInfos, so we reset it in place instead:
         segmentInfos->info(i)->reset(rollbackSegmentInfos->info(i));
       }
-      rollbackSegmentInfos = NULL;
+      _CLDELETE(rollbackSegmentInfos);
     }
 
     hasChanges = rollbackHasChanges;

@@ -342,8 +342,10 @@ CL_NS_DEF(search)
         Scorer* subScorer = w->scorer(reader);
         if (subScorer != NULL)
           result->add(subScorer, c->isRequired(), c->isProhibited());
-        else if (c->isRequired())
+        else if (c->isRequired()){
+          _CLDELETE(result);
           return NULL;
+        }
       }
 
       return result;
@@ -369,7 +371,6 @@ CL_NS_DEF(search)
 					sumExpl->addDetail(e);
 					sum += e->getValue();
 					coord++;
-					e = NULL; //prevent e from being deleted
 				} else {
 					StringBuffer buf(100);
 					buf.append(_T("match on prohibited clause ("));

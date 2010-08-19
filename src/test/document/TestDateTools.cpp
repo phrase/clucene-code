@@ -10,7 +10,10 @@ void assertDateTimeEquals(CuTest* tc, const TCHAR* isoFormat, int64_t d){
     TCHAR* tmp = DateTools::getISOFormat(d);
     int res = _tcscmp(isoFormat, tmp);
     _CLDELETE_LCARRAY(tmp);
-    CLUCENE_ASSERT(res == 0);
+
+    if ( res != 0 ){
+        CuFail(tc, _T("Assert Failed: %s != %s when converting %lld"), tmp, isoFormat, d);
+    }
 }
 
 void testStringToDate(CuTest *tc) {

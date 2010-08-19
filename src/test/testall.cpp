@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 {
 	#ifdef _MSC_VER
 	#ifdef _DEBUG
-		_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // | _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_CHECK_CRT_DF 
+		_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // | _CRTDBG_CHECK_ALWAYS_DF | _CRTDBG_CHECK_CRT_DF
 		_crtBreakAlloc=-1;
 	#endif
 	#endif
@@ -70,9 +70,10 @@ int main(int argc, char *argv[])
 	else if ( getenv("TMP") != NULL )
 		cl_tempDirS = getenv("TMP");
 
-  if ( Misc::dir_Exists( (cl_tempDirS + "/clucene").c_str() ) )
-		cl_tempDirS += "/clucene";
-  cl_tempDir = cl_tempDirS.c_str();
+        _mkdir( (cl_tempDirS + "/test-clucene").c_str() );
+        if ( Misc::dir_Exists( (cl_tempDirS + "/test-clucene").c_str() ) )
+          cl_tempDirS += "/test-clucene";
+        cl_tempDir = cl_tempDirS.c_str();
 
 	clucene_data_location[0]=0;
 	if ( CL_NS(util)::Misc::dir_Exists(CLUCENE_DATA_LOCATION1 "/reuters-21578-index/segments") )
@@ -227,6 +228,9 @@ exit_point:
 void TestAssertIndexReaderEquals(CuTest *tc,  IndexReader* index1, IndexReader* index2){
   const Document::FieldsType* fields1, *fields2;
   Document::FieldsType::const_iterator it1, it2;
+
+  CuAssertPtrNotNull(tc, _T("check index1!=null"), index1);
+  CuAssertPtrNotNull(tc, _T("check index1!=null"), index2);
 
   //misc
   CuAssertIntEquals(tc,_T("IndexReaders have different values for numDocs"), index1->numDocs(), index2->numDocs());

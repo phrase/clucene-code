@@ -41,6 +41,7 @@ SET(test_files ./tests.cpp
 ./search/TestTermVector.cpp
 ./index/TestIndexModifier.cpp
 ./index/TestIndexWriter.cpp
+./index/TestIndexModifier.cpp
 ./index/TestIndexReader.cpp
 ./index/TestThreading.cpp
 ./index/TestUtf8.cpp

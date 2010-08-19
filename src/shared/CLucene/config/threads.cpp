@@ -62,6 +62,21 @@ CL_NS_DEF(util)
   	ExitThread(val);
   }
 
+  int32_t mutex_thread::atomic_increment(_LUCENE_ATOMIC_INT *theInteger){
+#ifdef _M_X64
+    return _InterlockedIncrement64(theInteger);
+#else
+    return InterlockedIncrement(theInteger);
+#endif
+  }
+  int32_t mutex_thread::atomic_decrement(_LUCENE_ATOMIC_INT *theInteger){
+#ifdef _M_X64
+    return _InterlockedDecrement64(theInteger);
+#else
+    return InterlockedDecrement(theInteger);
+#endif
+  }
+
 
 
 	class shared_condition::Internal{
@@ -98,9 +113,9 @@ CL_NS_DEF(util)
 
 
 #elif defined(_CL_HAVE_PTHREAD)
-    #ifndef _REENTRANT
-        #error ACK! You need to compile with _REENTRANT defined since this uses threads
-    #endif
+  #ifndef _REENTRANT
+      #error ACK! You need to compile with _REENTRANT defined since this uses threads
+  #endif
 
 	#ifdef _CL_HAVE_PTHREAD_MUTEX_RECURSIVE
 		bool mutex_pthread_attr_initd=false;
@@ -166,6 +181,24 @@ CL_NS_DEF(util)
     _LUCENE_THREADID_TYPE mutex_thread::_GetCurrentThreadId(){
         return pthread_self();
     }
+      
+    int32_t atomic_threads::atomic_increment(_LUCENE_ATOMIC_INT *theInteger){
+      #ifdef _CL_HAVE_GCC_ATOMIC_FUNCTIONS
+        return __sync_add_and_fetch(theInteger, 1);
+      #else
+        SCOPED_LOCK_MUTEX(theInteger->THIS_LOCK)
+        return ++theInteger->value;
+      #endif
+    }
+    int32_t atomic_threads::atomic_decrement(_LUCENE_ATOMIC_INT *theInteger){
+      #ifdef _CL_HAVE_GCC_ATOMIC_FUNCTIONS
+        return __sync_sub_and_fetch(theInteger, 1);
+      #else
+        SCOPED_LOCK_MUTEX(theInteger->THIS_LOCK)
+        return --theInteger->value;
+      #endif
+    }
+
 
 	_LUCENE_THREADID_TYPE mutex_thread::CreateThread(luceneThreadStartRoutine* func, void* arg){
 	    _LUCENE_THREADID_TYPE ret;

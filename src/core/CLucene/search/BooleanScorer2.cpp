@@ -552,7 +552,7 @@ public:
 		minNrShouldMatch(_minNrShouldMatch),
 		allowDocsOutOfOrder(_allowDocsOutOfOrder)
 	{
-		if ( minNrShouldMatch < 0 ) {
+		if ( _minNrShouldMatch < 0 ) {
       _CLTHROWA(CL_ERR_IllegalArgument, "Minimum number of optional scorers should not be negative");
 		}
 
@@ -562,6 +562,11 @@ public:
 	~Internal(){
 		_CLDELETE( coordinator );
 		_CLDELETE( countingSumScorer );
+		/* TODO: these leak memory... haven't figure out how it should be fixed though...
+		requiredScorers.clear();
+		optionalScorers.clear();
+		prohibitedScorers.clear();
+		*/
 	}
 
 };
@@ -658,7 +663,7 @@ TCHAR* BooleanScorer2::toString()
 	return stringDuplicate(_T("BooleanScorer2"));
 }
 
-Explanation* BooleanScorer2::explain( int32_t doc )
+Explanation* BooleanScorer2::explain( int32_t /*doc*/ )
 {
 	_CLTHROWA(CL_ERR_UnsupportedOperation,"UnsupportedOperationException: BooleanScorer2::explain");
 	/* How to explain the coordination factor?

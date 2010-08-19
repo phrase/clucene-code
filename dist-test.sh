@@ -71,10 +71,11 @@ fi
 #check to see that no #ifdefs exist in headers that don't belong
 function checkForIfdefs {
     I=0
-    grep "#if" $1| grep -v "_UCS2" |grep -v "_CL_HAVE_" |grep -v "_ASCII" |grep -v "_WIN32"|grep -v "_MSC_"|grep -v "__MINGW32__" |grep -v "_WIN64" | while read line; do
+    grep "#if" $1| grep -v "_UCS2" |grep -v "_CL_HAVE_" |grep -v "_ASCII" |grep -v "_WIN32" |grep -v "_WIN64" | while read line; do
         I=`expr $I + 1`
         if [ $I -gt 1 ]; then
-            echo $1 might have invalid ifdef: $line
+            echo $1 has invalid ifdef: $line
+            FAIL=1
         fi
     done
 }

@@ -22,8 +22,8 @@ CL_NS_DEF(search)
 		coord(0.0),
 		lastDoc(-1)
 	{
-    this->scorers = _CLNEW CL_NS(util)::ValueArray<Scorer*>(_scorers->size());
-    _scorers->toArray(this->scorers->values, false);
+    this->scorers = _CLNEW CL_NS(util)::ObjectArray<Scorer>(_scorers->size());
+    _scorers->toArray(this->scorers->values);
     coord = getSimilarity()->coord(this->scorers->length, this->scorers->length);
   }
   ConjunctionScorer::ConjunctionScorer(Similarity* similarity, const CL_NS(util)::ArrayBase<Scorer*>* _scorers):
@@ -33,12 +33,12 @@ CL_NS_DEF(search)
 		coord(0.0),
 		lastDoc(-1)
 	{
-    this->scorers = _CLNEW CL_NS(util)::ValueArray<Scorer*>(_scorers->length);
+    this->scorers = _CLNEW CL_NS(util)::ObjectArray<Scorer>(_scorers->length);
     memcpy(this->scorers->values, _scorers->values, _scorers->length * sizeof(Scorer*));
     coord = getSimilarity()->coord(this->scorers->length, this->scorers->length);
   }
 	ConjunctionScorer::~ConjunctionScorer(){
-		//_CLDELETE(scorers);
+		_CLDELETE(scorers);
 	}
 
 	TCHAR* ConjunctionScorer::toString(){
@@ -80,7 +80,7 @@ CL_NS_DEF(search)
   int ConjunctionScorer_sort(const void* _elem1, const void* _elem2){
     const Scorer* elem1 = *(const Scorer**)_elem1;
     const Scorer* elem2 = *(const Scorer**)_elem2;
-	  return elem1->doc() - elem2->doc();
+    return elem1->doc() - elem2->doc();
   }
 
   bool ConjunctionScorer::init(int32_t target)  {
