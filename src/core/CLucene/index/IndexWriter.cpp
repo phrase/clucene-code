@@ -85,7 +85,7 @@ IndexWriter::~IndexWriter(){
   _CLLDELETE(mergePolicy);
   _CLLDELETE(deleter);
   _CLLDELETE(docWriter);
-  if (bOwnsDirectory) _CLLDECDELETE(directory);
+  _CLLDECDELETE(directory);
   delete _internal;
 }
 
@@ -149,19 +149,21 @@ int32_t IndexWriter::getTermIndexInterval() {
   return termIndexInterval;
 }
 
-IndexWriter::IndexWriter(const char* path, Analyzer* a, bool create):bOwnsDirectory(true){
-    init(FSDirectory::getDirectory(path, create), a, create, true, (IndexDeletionPolicy*)NULL, true);
+IndexWriter::IndexWriter(const char* path, Analyzer* a, bool create){
+  Directory* dir = FSDirectory::getDirectory(path, create);
+  init(dir, a, create, true, (IndexDeletionPolicy*)NULL, true);
+  _CLDECDELETE(dir);
 }
 
-IndexWriter::IndexWriter(Directory* d, Analyzer* a, bool create, bool closeDir):bOwnsDirectory(false){
+IndexWriter::IndexWriter(Directory* d, Analyzer* a, bool create, bool closeDir){
   init(d, a, create, closeDir, NULL, true);
 }
 
-IndexWriter::IndexWriter(Directory* d, bool autoCommit, Analyzer* a, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(false){
+IndexWriter::IndexWriter(Directory* d, bool autoCommit, Analyzer* a, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown){
   init(d, a, closeDirOnShutdown, deletionPolicy, autoCommit);
 }
 
-IndexWriter::IndexWriter(Directory* d, bool autoCommit, Analyzer* a, bool create, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown):bOwnsDirectory(false){
+IndexWriter::IndexWriter(Directory* d, bool autoCommit, Analyzer* a, bool create, IndexDeletionPolicy* deletionPolicy, bool closeDirOnShutdown){
   init(d, a, create, closeDirOnShutdown, deletionPolicy, autoCommit);
 }
 
@@ -545,8 +547,8 @@ void IndexWriter::closeInternal(bool waitForMerges) {
 
     if (closeDir){
       directory->close();
- 	  _CLDECDELETE(directory);
     }
+ 	  _CLDECDELETE(directory);
     if (writeLock != NULL) {
       writeLock->release();                          // release write lock
       _CLDELETE(writeLock);
