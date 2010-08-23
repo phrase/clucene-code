@@ -6,10 +6,8 @@
 ------------------------------------------------------------------------------*/
 #include "test.h"
 
-
 /// Java QueryParser tests
 /// Helper functions and classes
-
 class QPTestFilter: public TokenFilter {
 public:
 
@@ -173,7 +171,7 @@ void assertWildcardQueryEquals(CuTest *tc, const TCHAR* query, bool lowercase, c
 void assertCorrectQuery(CuTest *tc,const TCHAR* query, Analyzer* a, const char* inst, const TCHAR* msg){
 	Query* q = getQuery(tc,query,a);
 	bool success = q->instanceOf(inst);
-	_CLDELETE(q);
+	_CLLDELETE(q);
 	CuAssert(tc,msg,success);
 }
 
@@ -184,11 +182,14 @@ void assertCorrectQuery(CuTest *tc,Query* q, const char* inst, bool bDeleteQuery
 }
 
 void assertParseException(CuTest *tc,const TCHAR* queryString) {
+    Query* q = NULL;
 	try {
-		Query* q = getQuery(tc,queryString, NULL, CL_ERR_Parse);
+		q = getQuery(tc,queryString, NULL, CL_ERR_Parse);
 	} catch (CLuceneError&){
+        _CLLDELETE(q);
 		return;
 	}
+    _CLLDELETE(q);
 	CuFail(tc,_T("ParseException expected, not thrown"));
 }
 
@@ -580,6 +581,8 @@ TCHAR* getLocalizedDate(int32_t year, int32_t month, int32_t day, bool extendLas
     
 }
 
+// TODO: Port testLegacyDateRange from JL test suite
+
 void testDateRange(CuTest* tc) {
 
     TCHAR* startDate = getLocalizedDate(2002, 1, 1, false);
@@ -627,7 +630,9 @@ void testDateRange(CuTest* tc) {
 
 void testEscaped(CuTest *tc) {
 	WhitespaceAnalyzer a;
-	/*assertQueryEquals(tc, _T("\\[brackets"), &a, _T("[brackets") );
+
+	/* These are commented in the original JL test as well
+    assertQueryEquals(tc, _T("\\[brackets"), &a, _T("[brackets") );
 	assertQueryEquals(tc, _T("\\\\\\[brackets"), &a, _T("\\[brackets") );
     assertQueryEquals(tc,_T("\\[brackets"), NULL, _T("brackets") );*/
 
@@ -813,6 +818,28 @@ void testBoost(CuTest *tc){
 
 /// TODO: Port tests starting from assertParseException
 
+//void testException(CuTest* tc)
+//{
+//    assertParseException(tc, _T("\"some phrase"));
+//    assertParseException(tc, _T("(foo bar"));
+//    assertParseException(tc, _T("foo bar))"));
+//    assertParseException(tc, _T("field:term:with:colon some more terms"));
+//    assertParseException(tc, _T("(sub query)^5.0^2.0 plus more"));
+//    assertParseException(tc, _T("secret AND illegal) AND access:confidential"));
+//}
+
+void testCustomQueryParserFuzzy(CuTest* tc)
+{
+    QueryParser *qp = NULL;
+    Query *q = NULL;
+    _TRY {
+        WhitespaceAnalyzer a;
+        qp = _CLNEW QPTestParser(_T("contents"), &a);
+        q = qp->parse(_T("xunit~"));
+        CuFail(tc, _T("Fuzzy queries should not be allowed"));
+    } _CLCATCH_ERR(CL_ERR_Parse, { _CLLDELETE(qp);_CLLDELETE(q); }, {/* do nothing - expected exception */})
+}
+
 void testMatchAllDocs(CuTest *tc) {
 	WhitespaceAnalyzer a;
 	QueryParser* qp = _CLNEW QueryParser(_T("field"), &a);
@@ -870,6 +897,8 @@ CuSuite *testQueryParser(void)
 	SUITE_ADD_TEST(suite, testTabNewlineCarriageReturn);
 	SUITE_ADD_TEST(suite, testSimpleDAO);
 	SUITE_ADD_TEST(suite, testBoost);
+    //SUITE_ADD_TEST(suite, testException);
+    SUITE_ADD_TEST(suite, testCustomQueryParserFuzzy);
 
 	SUITE_ADD_TEST(suite, testMatchAllDocs);
 
