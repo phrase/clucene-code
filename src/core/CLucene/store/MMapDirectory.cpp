@@ -296,6 +296,7 @@ public:
   //       The instance has been destroyed
 
 	  close();
+	_CLDELETE(_internal);
   }
 
   IndexInput* MMapDirectory::MMapIndexInput::clone() const
