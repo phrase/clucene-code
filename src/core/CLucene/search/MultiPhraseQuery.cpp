@@ -26,6 +26,7 @@
 
 #include "_ExactPhraseScorer.h"
 #include "_SloppyPhraseScorer.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -48,7 +49,7 @@ public:
 
 		// compute idf
 		for (size_t i = 0; i < parentQuery->termArrays->size(); i++){
-			ArrayBase<Term*>* terms = parentQuery->termArrays->at(i);
+			ArrayBase<boost::shared_ptr<Term> >* terms = parentQuery->termArrays->at(i);
       for ( size_t j=0;j<terms->length;j++ ){
         idf += parentQuery->getSimilarity(searcher)->idf(terms->values[j], searcher);
 			}
@@ -77,7 +78,7 @@ public:
 
 		TermPositions** tps = _CL_NEWARRAY(TermPositions*,termArraysSize+1);
 		for (size_t i=0; i<termArraysSize; i++) {
-			ArrayBase<Term*>* terms = parentQuery->termArrays->at(i);
+			ArrayBase<boost::shared_ptr<Term> >* terms = parentQuery->termArrays->at(i);
 
 			TermPositions* p;
 			if (terms->length > 1 )
@@ -208,7 +209,7 @@ public:
 
 Query* MultiPhraseQuery::rewrite(IndexReader* /*reader*/) {
   if (termArrays->size() == 1) {                 // optimize one-term case
-	  ArrayBase<Term*>* terms = termArrays->at(0);
+	  ArrayBase<boost::shared_ptr<Term> >* terms = termArrays->at(0);
 	  BooleanQuery* boq = _CLNEW BooleanQuery(true);
     for ( size_t i=0;i<terms->length;i++ ){
 		  boq->add(_CLNEW TermQuery((*terms)[i]), BooleanClause::SHOULD);
@@ -222,7 +223,7 @@ Query* MultiPhraseQuery::rewrite(IndexReader* /*reader*/) {
 
 MultiPhraseQuery::MultiPhraseQuery():
   field(NULL),
-  termArrays(_CLNEW CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>),
+  termArrays(_CLNEW CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >*>),
   positions(_CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>),
   slop(0)
 {
@@ -230,10 +231,7 @@ MultiPhraseQuery::MultiPhraseQuery():
 
 MultiPhraseQuery::~MultiPhraseQuery(){
 	for (size_t i = 0; i < termArrays->size(); i++){
-		for ( size_t j=0;j<termArrays->at(i)->length;j++ ) {
-			_CLLDECDELETE(termArrays->at(i)->values[j]);
-		}
-		_CLLDELETE(termArrays->at(i));
+          _CLDELETE(termArrays->at(i));
 	}
 	_CLLDELETE(termArrays);
 	_CLLDELETE(positions);
@@ -244,13 +242,13 @@ void MultiPhraseQuery::setSlop(const int32_t s) { slop = s; }
 
 int32_t MultiPhraseQuery::getSlop() const { return slop; }
 
-void MultiPhraseQuery::add(CL_NS(index)::Term* term) {
-	ValueArray<CL_NS(index)::Term*> _terms(1);
+void MultiPhraseQuery::add(boost::shared_ptr<Term> const& term) {
+	ValueArray<boost::shared_ptr<Term> > _terms(1);
   _terms[0] = term;
 	add(&_terms);
 }
 
-void MultiPhraseQuery::add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* terms) {
+void MultiPhraseQuery::add(const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms) {
 	int32_t position = 0;
 	if (positions->size() > 0)
 		position = (*positions)[positions->size()-1] + 1;
@@ -258,40 +256,40 @@ void MultiPhraseQuery::add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* te
 	add(terms, position);
 }
 
-void MultiPhraseQuery::add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* _terms, const int32_t position) {
+void MultiPhraseQuery::add(const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* _terms, const int32_t position) {
 	if (termArrays->size() == 0)
-		field = STRDUP_TtoT((*_terms)[0]->field());
+		field = STRDUP_TtoT(((*_terms)[0]).get()->field());
 
-  CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* terms = _CLNEW CL_NS(util)::ValueArray<CL_NS(index)::Term*>(_terms->length);
+  CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms = _CLNEW CL_NS(util)::ValueArray<boost::shared_ptr<Term> >(_terms->length);
   for ( size_t i=0;i<_terms->length;i++ ){
-		if ( _tcscmp(_terms->values[i]->field(), field) != 0) {
+		if ( _tcscmp(_terms->values[i].get()->field(), field) != 0) {
 			TCHAR buf[250];
-			_sntprintf(buf,250,_T("All phrase terms must be in the same field (%s): %s"),field, (*terms)[i]->field());
+			_sntprintf(buf,250,_T("All phrase terms must be in the same field (%s): %s"),field, (*terms)[i].get()->field());
 			_CLTHROWT(CL_ERR_IllegalArgument,buf);
 		}
-    terms->values[i] = _CL_POINTER(_terms->values[i]);
+    terms->values[i] = _terms->values[i];
 	}
 	termArrays->push_back(terms);
 	positions->push_back(position);
 }
-const CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>* MultiPhraseQuery::getTermArrays() {
+const CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >*>* MultiPhraseQuery::getTermArrays() {
   return termArrays;
 }
-void MultiPhraseQuery::extractTerms(CL_NS(util)::RefCountArray<Term*>& terms){
-  CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>::iterator itr;
+void MultiPhraseQuery::extractTerms(CL_NS(util)::RefCountArray<boost::shared_ptr<CL_NS(index)::Term> >& terms){
+  CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >*>::iterator itr;
   itr = termArrays->begin();
-  CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* arr;
-  vector<Term*> v;
+  CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >* arr;
+  vector<boost::shared_ptr<CL_NS(index)::Term> > v;
   while ( itr != termArrays->end() ){
       arr = *itr;
       for (size_t i=0; i<arr->length; i++) {
-          v.push_back(_CL_POINTER(arr->values[i]));
+          v.push_back(arr->values[i]);
       }
 
       itr++;
   }
 
-  vector<Term*>::iterator itr2 = v.begin();
+  vector<boost::shared_ptr<CL_NS(index)::Term> >::iterator itr2 = v.begin();
   terms.resize(v.size(), false);
   int i=0;
   while ( itr2 != v.end() ){
@@ -320,20 +318,20 @@ TCHAR* MultiPhraseQuery::toString(const TCHAR* f) const {
 
 	buffer.appendChar(_T('"'));
 
-  CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>::iterator i;
+  CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >*>::iterator i;
   i = termArrays->begin();
   while (i != termArrays->end()){
-		CL_NS(util)::ArrayBase<CL_NS(index)::Term*>& terms = *(*i);
+		CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >& terms = *(*i);
 		if (terms.length > 1) {
 			buffer.appendChar(_T('('));
 			for (size_t j = 0; j < terms.length; j++) {
-				buffer.append(terms[j]->text());
+				buffer.append(terms[j].get()->text());
 				if (j < terms.length-1)
 					buffer.appendChar(_T(' '));
 			}
 			buffer.appendChar(_T(')'));
 		} else {
-			buffer.append(terms[0]->text());
+			buffer.append(terms[0].get()->text());
 		}
 		if (i+1 != termArrays->end() )
 			buffer.appendChar(_T(' '));
@@ -352,14 +350,14 @@ TCHAR* MultiPhraseQuery::toString(const TCHAR* f) const {
 	return buffer.giveBuffer();
 }
 
-class TermArray_Equals:public CL_NS_STD(binary_function)<const Term**,const Term**,bool>
+class TermArray_Equals:public CL_NS_STD(binary_function)<boost::shared_ptr<Term const>*,boost::shared_ptr<Term const>*,bool>
 {
 public:
-	bool operator()( CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* val1, CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* val2 ) const{
+	bool operator()( CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* val1, CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* val2 ) const{
     if ( val1->length != val2->length )
       return false;
     for ( size_t i=0;i<val1->length;i++ ){
-      if (!val1->values[i]->equals(val2->values[i])) return false;
+      if (!val1->values[i].get()->equals(val2->values[i].get())) return false;
 		}
 		return true;
 	}
@@ -382,9 +380,9 @@ bool MultiPhraseQuery::equals(Query* o) const {
 			return false;
 
 		for (size_t i=0; i<this->termArrays->size();i++){
-			CLListEquals<Term*,TermArray_Equals,
-				const CL_NS(util)::CLVector<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>,
-				const CL_NS(util)::CLVector<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*> > comp;
+			CLListEquals<boost::shared_ptr<Term>,TermArray_Equals,
+				const CL_NS(util)::CLVector<CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >*>,
+				const CL_NS(util)::CLVector<CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >*> > comp;
 			ret = comp.equals(this->termArrays,other->termArrays);
 		}
 	}

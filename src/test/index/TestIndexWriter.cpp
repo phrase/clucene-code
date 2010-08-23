@@ -13,7 +13,7 @@ void testIWmergePhraseSegments(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	_snprintf(fsdir, CL_MAX_PATH, "%s/%s",cl_tempDir, "test.indexwriter");
 	SimpleAnalyzer a;
-  Directory* dir = FSDirectory::getDirectory(fsdir);
+	Directory* dir = FSDirectory::getDirectory(fsdir, true);
 
 	IndexWriter ndx2(dir,&a,true);
 	ndx2.setUseCompoundFile(false);
@@ -97,11 +97,10 @@ void testIWmergeSegments1(CuTest *tc){
 	//test the ram loading
 	RAMDirectory ram2(&ram);
 	IndexReader* reader2 = IndexReader::open(&ram2);
-	Term* term = _CLNEW Term(_T("field0"),fld);
+	boost::shared_ptr<Term> term(_CLNEW Term(_T("field0"),fld));
 	TermEnum* en = reader2->terms(term);
 	CLUCENE_ASSERT(en->next());
 	_CLDELETE(en);
-	_CLDECDELETE(term);
 	_CLDELETE(reader2);
 }
 
@@ -110,7 +109,7 @@ void testIWmergeSegments2(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	_snprintf(fsdir, CL_MAX_PATH, "%s/%s",cl_tempDir, "test.indexwriter");
 	SimpleAnalyzer a;
-  Directory* dir = FSDirectory::getDirectory(fsdir);
+	Directory* dir = FSDirectory::getDirectory(fsdir, true);
 
 	IndexWriter ndx2(dir,&a,true);
 	ndx2.setUseCompoundFile(false);
@@ -142,20 +141,16 @@ void testIWmergeSegments2(CuTest *tc){
 
 	//test the ram querying
 	IndexSearcher searcher(fsdir);
-	Term* term0 = _CLNEW Term(_T("field0"),_T("value1"));
 	Query* query0 = QueryParser::parse(_T("value0"),_T("field0"),&a);
 	Hits* hits0 = searcher.search(query0);
 	CLUCENE_ASSERT(hits0->length() > 0);
-	Term* term1 = _CLNEW Term(_T("field0"),_T("value0"));
 	Query* query1 = QueryParser::parse(_T("value1"),_T("field0"),&a);
 	Hits* hits1 = searcher.search(query1);
 	CLUCENE_ASSERT(hits1->length() > 0);
 	_CLDELETE(query0);
 	_CLDELETE(query1);
 	_CLDELETE(hits0);
-  _CLDELETE(hits1);
-	_CLDECDELETE(term0);
-	_CLDECDELETE(term1);
+	_CLDELETE(hits1);
 	_CLDECDELETE(dir);
 }
 
@@ -198,7 +193,7 @@ void testAddIndexes(CuTest *tc){
   }
 }
 
-void testHashingBug(CuTest *tc){
+void testHashingBug(CuTest* /*tc*/){
   //Manuel Freiholz's indexing bug
 
   CL_NS(document)::Document doc;
@@ -359,7 +354,7 @@ void testIWlargeScaleCorrectness(CuTest *tc){
 	char fsdir[CL_MAX_PATH];
 	_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "test.search");
 	RAMDirectory ram;
-	FSDirectory* disk = FSDirectory::getDirectory(fsdir);
+	Directory* disk = FSDirectory::getDirectory(fsdir, true);
 	IWlargeScaleCorrectness_tester().invoke(ram, tc);
 	IWlargeScaleCorrectness_tester().invoke(*disk, tc);
 	disk->close();
@@ -423,7 +418,7 @@ void testExceptionFromTokenStream(CuTest *tc) {
     _CLLDELETE(writer);
 
     IndexReader* reader = IndexReader::open(dir);
-    Term* t = _CLNEW Term(_T("content"), _T("aa"));
+    boost::shared_ptr<Term> t(_CLNEW Term(_T("content"), _T("aa")));
     assertEquals(reader->docFreq(t), 3);
     
     // Make sure the doc that hit the exception was marked
@@ -438,7 +433,6 @@ void testExceptionFromTokenStream(CuTest *tc) {
     
     t->set(_T("content"), _T("gg"));
     assertEquals(reader->docFreq(t), 0);
-    _CLDECDELETE(t);
 
     reader->close();
     _CLLDELETE(reader);
@@ -482,7 +476,7 @@ void testWickedLongTerm(CuTest *tc) {
     IndexReader* reader = IndexReader::open(dir);
 
     // Make sure all terms < max size were indexed
-    Term* t = _CLNEW Term(_T("content"), _T("abc"), true);
+    boost::shared_ptr<Term> t(_CLNEW Term(_T("content"), _T("abc"), true));
     assertEquals(2, reader->docFreq(t));
     t->set(_T("content"), _T("bbb"), true);
     assertEquals(1, reader->docFreq(t));
@@ -522,8 +516,6 @@ void testWickedLongTerm(CuTest *tc) {
     assertEquals(1, reader->docFreq(t));
     reader->close();
 
-    _CLDECDELETE(t);
-
     _CLLDELETE(writer);
     _CLLDELETE(reader);
 
@@ -558,14 +550,12 @@ void testDeleteDocument(CuTest* tc) {
     writer = _CLNEW IndexWriter(dir, &a, false);
     TCHAR* contents = _CL_NEWARRAY(TCHAR, (size / 10) + 1);
     _i64tot(size - 2, contents, 10);
-    Term* t = _CLNEW Term(_T("content"), contents);
+    boost::shared_ptr<Term> t(_CLNEW Term(_T("content"), contents));
     writer->deleteDocuments(t);
     writer->close();
 
     // now the index has a deletion file in the DGaps format
-
     _CLLDELETE(writer);
-    _CLDECDELETE(t);
 
     // open this index with a searcher to read the deletions file again 
     IndexReader* reader = IndexReader::open(dir);

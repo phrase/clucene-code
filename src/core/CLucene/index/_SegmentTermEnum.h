@@ -11,6 +11,7 @@
 //#include "Terms.h"
 //#include "FieldInfos.h"
 //#include "TermInfo.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -19,7 +20,7 @@ CL_NS_DEF(index)
  */
 class SegmentTermEnum:public TermEnum{
 private:
-	Term* _term;            ///points to the current Term in the enumeration
+	boost::shared_ptr<Term> _term;            ///points to the current Term in the enumeration
 	TermInfo* termInfo;     ///points to the TermInfo matching the current Term in the enumeration
 
 	bool isIndex;           ///Indicates if the Segment is a an index
@@ -37,7 +38,7 @@ private:
 	int64_t size;			///The size of the enumeration
 	int64_t position;		///The position of the current (term) in the enumeration
 	int64_t indexPointer;
-	Term* prev;				///The previous current
+	boost::shared_ptr<Term> prev;				///The previous current
 	int32_t indexInterval;
 	int32_t skipInterval;
 	int32_t maxSkipLevels;
@@ -67,12 +68,12 @@ public:
 	/**
 	 * Returns the current term. 
 	 */
-	Term* term(bool pointer=true);
+	boost::shared_ptr<Term> const& term();
 
     /**
 	 * Scan for Term term without allocating new Terms
 	 */
-	void scanTo(const Term *term);
+	void scanTo(boost::shared_ptr<Term const> const& term);
 
 	/**
 	 * Closes the enumeration to further activity, freeing resources.
@@ -87,7 +88,7 @@ public:
 	/**
 	 * Repositions term and termInfo within the enumeration
 	 */
-	void seek(const int64_t pointer, const int32_t p, Term* t, TermInfo* ti);
+	void seek(const int64_t pointer, const int32_t p, boost::shared_ptr<Term> const& t, TermInfo* ti);
 	
 	/**
 	 * Returns a clone of the current termInfo
@@ -121,7 +122,7 @@ private:
 	/**
 	 * Reads the next term in the enumeration
 	 */
-	Term* readTerm(Term* reuse);
+	boost::shared_ptr<Term> const& readTerm(boost::shared_ptr<Term>& reuse);
    /** 
 	 * Instantiate a buffer of length length+1
    * TODO: deprecate this...

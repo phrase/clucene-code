@@ -10,6 +10,7 @@
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/BitSet.h"
 #include "RangeFilter.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 CL_NS_USE(index)
@@ -66,14 +67,13 @@ RangeFilter* RangeFilter::More( const TCHAR* _fieldName, const TCHAR* _lowerTerm
 BitSet* RangeFilter::bits( IndexReader* reader )
 {
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
-	Term* term = NULL;
+	boost::shared_ptr<Term> term;
 	
-	Term* t = _CLNEW Term( fieldName, (lowerTerm ? lowerTerm : _T("")), false );
+	boost::shared_ptr<Term> t(_CLNEW Term( fieldName, (lowerTerm ? lowerTerm : _T("")), false ));
 	TermEnum* enumerator = reader->terms( t );	// get enumeration of all terms after lowerValue
-	_CLDECDELETE( t );
 	
-	if( enumerator->term(false) == NULL ) {
-		_CLLDELETE( enumerator );
+	if( enumerator->term().get() == NULL ) {
+		_CLDELETE( enumerator );
 		return bts;
 	}
 	
@@ -84,7 +84,6 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 	TermDocs* termDocs = reader->termDocs();
 	
   #define CLEANUP \
-    _CLLDECDELETE( term ); \
     termDocs->close(); \
     _CLLDELETE( termDocs ); \
     enumerator->close(); \
@@ -96,15 +95,15 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 		{
 			term = enumerator->term();
 			
-			if( term == NULL || _tcscmp(term->field(), fieldName) )
+			if( term.get() == NULL || _tcscmp(term.get()->field(), fieldName) )
 				break;
 			
-			if( !checkLower || lowerTerm == NULL || _tcscmp(term->text(), lowerTerm) > 0 )
+			if( !checkLower || lowerTerm == NULL || _tcscmp(term.get()->text(), lowerTerm) > 0 )
 			{
 				checkLower = false;
 				if( upperTerm != NULL )
 				{
-					int compare = _tcscmp( upperTerm, term->text() );
+					int compare = _tcscmp( upperTerm, term.get()->text() );
 					
 					/* if beyond the upper term, or is exclusive and
 					 * this is equal to the upper term, break out */
@@ -112,21 +111,19 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 						break;
 				}
 				
-				termDocs->seek( enumerator->term(false) );
+				termDocs->seek( enumerator->term() );
 				while( termDocs->next() ) {
 					bts->set( termDocs->doc() );
 				}
 			}
-			
-			_CLDECDELETE( term );
 		}
 		while( enumerator->next() );
 	}catch(CLuceneError& err){
-    _CLDELETE(bts);
-    CLEANUP;
-    throw err;
-  }
-  CLEANUP;
+          _CLDELETE(bts);
+          CLEANUP;
+          throw err;
+        }
+        CLEANUP;
 	
 	return bts;
 }

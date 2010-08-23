@@ -34,7 +34,7 @@ CL_NS_DEF(store)
    */
 class CLUCENE_EXPORT Directory: LUCENE_REFBASE, public CL_NS(util)::NamedObject {
 	protected:
-		LockFactory* lockFactory;
+ 		LockFactory* lockFactory;
 
 		Directory();
 		// Removes an existing file in the directory.

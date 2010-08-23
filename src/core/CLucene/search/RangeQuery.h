@@ -11,6 +11,7 @@
 //#include "Scorer.h"
 //#include "TermQuery.h"
 #include "Query.h"
+#include <boost/shared_ptr.hpp>
 
 CL_CLASS_DEF(index,Term)
 //#include "CLucene/index/Terms.h"
@@ -40,8 +41,8 @@ CL_NS_DEF(search)
 class CLUCENE_EXPORT RangeQuery: public Query
 {
 private:
-  CL_NS(index)::Term* lowerTerm;
-  CL_NS(index)::Term* upperTerm;
+  boost::shared_ptr<CL_NS(index)::Term> lowerTerm;
+  boost::shared_ptr<CL_NS(index)::Term> upperTerm;
   bool inclusive;
 protected:
   RangeQuery(const RangeQuery& clone);
@@ -53,7 +54,7 @@ public:
     * in which case there is no bound on that side, but if there are
     * two terms, both terms <b>must</b> be for the same field.
     */
-  RangeQuery(CL_NS(index)::Term* LowerTerm, CL_NS(index)::Term* UpperTerm, const bool Inclusive);
+  RangeQuery(boost::shared_ptr<CL_NS(index)::Term> const& LowerTerm, boost::shared_ptr<CL_NS(index)::Term> const& UpperTerm, const bool Inclusive);
   ~RangeQuery();
 
   const char* getObjectName() const;
@@ -78,9 +79,10 @@ public:
   bool equals(Query * other) const;
 
   /** Returns the lower term of this range query */
-  CL_NS(index)::Term* getLowerTerm(bool pointer=true) const;
+  boost::shared_ptr<CL_NS(index)::Term> const& getLowerTerm() const;
   /** Returns the upper term of this range query */
-  CL_NS(index)::Term* getUpperTerm(bool pointer=true) const;
+  boost::shared_ptr<CL_NS(index)::Term> const& getUpperTerm() const;
+
   bool isInclusive() const;
   /** Returns <code>true</code> if the range query is inclusive */
   const TCHAR* getField() const;

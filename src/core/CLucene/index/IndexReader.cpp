@@ -19,6 +19,7 @@
 #include "MultiReader.h"
 #include "Terms.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -242,7 +243,7 @@ CL_NS_DEF(index)
     return SegmentInfos::getCurrentSegmentGeneration(directory) != -1;
   }
 
-  TermDocs* IndexReader::termDocs(Term* term) {
+  TermDocs* IndexReader::termDocs(boost::shared_ptr<Term> const& term) {
   //Func - Returns an enumeration of all the documents which contain
   //       term. For each document, the document number, the frequency of
   //       the term in that document is also provided, for use in search scoring.
@@ -255,7 +256,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermDocs containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated TermDocs instance
@@ -266,7 +267,7 @@ CL_NS_DEF(index)
       return _termDocs;
   }
 
-  TermPositions* IndexReader::termPositions(Term* term){
+  TermPositions* IndexReader::termPositions(boost::shared_ptr<Term> const& term){
   //Func - Returns an enumeration of all the documents which contain  term. For each
   //       document, in addition to the document number and frequency of the term in
   //       that document, a list of all of the ordinal positions of the term in the document
@@ -281,7 +282,7 @@ CL_NS_DEF(index)
   //Post - A reference to TermPositions containing an enumeration of all found documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
 
       ensureOpen();
       //Reference an instantiated termPositions instance
@@ -303,7 +304,7 @@ CL_NS_DEF(index)
   void IndexReader::deleteDoc(const int32_t docNum){
     deleteDocument(docNum);
   }
-  int32_t IndexReader::deleteTerm(Term* term){
+  int32_t IndexReader::deleteTerm(boost::shared_ptr<Term> const& term){
     return deleteDocuments(term);
   }
 
@@ -351,7 +352,7 @@ CL_NS_DEF(index)
     doUndeleteAll();
   }
 
-  int32_t IndexReader::deleteDocuments(Term* term) {
+  int32_t IndexReader::deleteDocuments(boost::shared_ptr<Term> const& term) {
   //Func - Deletes all documents containing term. This is useful if one uses a
   //       document field to hold a unique ID string for the document.  Then to delete such
   //       a document, one merely constructs a term with the appropriate field and the unique
@@ -360,7 +361,7 @@ CL_NS_DEF(index)
   //Post - All documents containing term have been deleted. The number of deleted documents
   //       has been returned
 
-      CND_PRECONDITION(term != NULL, "term is NULL");
+      CND_PRECONDITION(term.get() != NULL, "term is NULL");
       ensureOpen();
 
 	  //Search for the documents contain term
@@ -450,7 +451,7 @@ bool IndexReader::hasNorms(const TCHAR* field) {
 }
 
 void IndexReader::unlock(const char* path){
-	FSDirectory* dir = FSDirectory::getDirectory(path);
+	Directory* dir = FSDirectory::getDirectory(path);
 	unlock(dir);
 	dir->close();
 	_CLDECDELETE(dir);

@@ -10,6 +10,7 @@
 
 //#include "SearchHeader.h"
 #include "Searchable.h"
+#include <boost/shared_ptr.hpp>
 CL_CLASS_DEF(document,Document)
 CL_CLASS_DEF(index,Term)
 
@@ -38,7 +39,7 @@ CL_NS_DEF(search)
       /** Frees resources associated with this <code>Searcher</code>. */
       void close() ;
 
-	  int32_t docFreq(const CL_NS(index)::Term* term) const ;
+	  int32_t docFreq(boost::shared_ptr<const CL_NS(index)::Term> const& term) const ;
 
       /** For use by {@link HitCollector} implementations. */
 	  bool doc(int32_t n, CL_NS(document)::Document* document);

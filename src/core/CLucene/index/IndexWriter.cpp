@@ -22,7 +22,6 @@
 #include "_SegmentInfos.h"
 #include "_SegmentMerger.h"
 #include "_SegmentHeader.h"
-#include "CLucene/search/Similarity.h"
 #include "CLucene/index/MergePolicy.h"
 #include "MergePolicy.h"
 #include "MergeScheduler.h"
@@ -676,7 +675,6 @@ void IndexWriter::addDocument(Document* doc, Analyzer* analyzer) {
       success = true;
     } _CLFINALLY (
       if (!success) {
-
         if (infoStream != NULL)
           message(string("hit exception adding document"));
 
@@ -699,7 +697,7 @@ void IndexWriter::addDocument(Document* doc, Analyzer* analyzer) {
   }
 }
 
-void IndexWriter::deleteDocuments(Term* term) {
+void IndexWriter::deleteDocuments(boost::shared_ptr<Term> const& term) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerm(term);
@@ -711,7 +709,7 @@ void IndexWriter::deleteDocuments(Term* term) {
   }
 }
 
-void IndexWriter::deleteDocuments(const ArrayBase<Term*>* terms) {
+void IndexWriter::deleteDocuments(const ArrayBase<boost::shared_ptr<Term> >* terms) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerms(terms);
@@ -723,12 +721,12 @@ void IndexWriter::deleteDocuments(const ArrayBase<Term*>* terms) {
   }
 }
 
-void IndexWriter::updateDocument(Term* term, Document* doc) {
+void IndexWriter::updateDocument(boost::shared_ptr<Term> const& term, Document* doc) {
   ensureOpen();
   updateDocument(term, doc, getAnalyzer());
 }
 
-void IndexWriter::updateDocument(Term* term, Document* doc, Analyzer* analyzer)
+void IndexWriter::updateDocument(boost::shared_ptr<Term> const& term, Document* doc, Analyzer* analyzer)
 {
   ensureOpen();
   try {
@@ -2275,7 +2273,7 @@ void IndexWriter::Internal::applyDeletesSelectively(const DocumentsWriter::TermN
 {
   DocumentsWriter::TermNumMapType::const_iterator iter = deleteTerms.begin();
   while (iter != deleteTerms.end() ) {
-    Term* term = iter->first;
+    boost::shared_ptr<Term> const& term = iter->first;
     TermDocs* docs = reader->termDocs(term);
     if (docs != NULL) {
       int32_t num = iter->second->getNum();

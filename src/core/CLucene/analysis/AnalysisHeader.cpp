@@ -257,17 +257,24 @@ TokenFilter::TokenFilter(TokenStream* in, bool deleteTS):
 {
 }
 TokenFilter::~TokenFilter(){
-    if ( deleteTokenStream && input!=NULL ) {input->close();_CLLDELETE( input );}
+    if ( deleteTokenStream && input!=NULL ) {
+      input->close();
+      _CLLDELETE( input );
+    }
     //close(); -- ISH 04/11/09
 }
 
 // Close the input TokenStream.
 void TokenFilter::close() {
     if ( input != NULL ){
-		input->close();
+	input->close();
         //if ( deleteTokenStream ) _CLDELETE( input ); -- ISH 04/11/09
     }
     //input = NULL; -- ISH 04/11/09
+}
+void TokenFilter::reset(){
+  TokenStream::reset();
+  input->reset();
 }
 
 
@@ -290,7 +297,7 @@ void Tokenizer::close(){
 
 void Tokenizer::reset(CL_NS(util)::Reader* _input) {
 	// ? delete input;
-	this->input = _input;
+  this->input = _input;
 }
 
 Tokenizer::~Tokenizer(){

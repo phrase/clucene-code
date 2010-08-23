@@ -10,7 +10,7 @@
 
 CL_CLASS_DEF(store,Lock)
 #include "CLucene/store/Directory.h"
-#include "CLucene/store/IndexInput.h"
+#include "CLucene/store/BufferedIndexInput.h"
 #include "_SegmentMerger.h"
 
 CL_NS_DEF(index)

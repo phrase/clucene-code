@@ -104,9 +104,9 @@ CL_NS_DEF(store)
 		* @param length the number of characters to read
 		* @see IndexOutput#writeChars(String,int32_t,int32_t)
 		*/
-		void readChars( TCHAR* buffer, const int32_t start, const int32_t len);
+		virtual void readChars( TCHAR* buffer, const int32_t start, const int32_t len);
 
-		void skipChars( const int32_t count);
+		virtual void skipChars( const int32_t count);
 
 		/** Closes the stream to futher operations. */
 		virtual void close() =0;
@@ -129,68 +129,5 @@ CL_NS_DEF(store)
 		virtual const char* getObjectName() const = 0;
 	};
 
-   /** Abstract base class for input from a file in a {@link Directory}.  A
-   * random-access input stream.  Used for all Lucene index input operations.
-   * @see Directory
-   * @see IndexOutput
-   */
-	class CLUCENE_EXPORT BufferedIndexInput: public IndexInput{
-	private:
-		uint8_t* buffer; //array of bytes
-		void refill();
-	protected:
-		int32_t bufferSize;				//size of the buffer
-		int64_t bufferStart;			  // position in file of buffer
-		int32_t bufferLength;			  // end of valid l_byte_ts
-		int32_t bufferPosition;		  // next uint8_t to read
-
-      /** Returns a clone of this stream.
-      *
-      * <p>Clones of a stream access the same data, and are positioned at the same
-      * point as the stream they were cloned from.
-      *
-      * <p>Expert: Subclasses must ensure that clones may be positioned at
-      * different points in the input from each other and from the stream they
-      * were cloned from.
-      */
-		BufferedIndexInput(const BufferedIndexInput& clone);
-		BufferedIndexInput(int32_t bufferSize = -1);
-	public:
-		LUCENE_STATIC_CONSTANT(int32_t, BUFFER_SIZE=LUCENE_STREAM_BUFFER_SIZE);
-
-		virtual ~BufferedIndexInput();
-		virtual IndexInput* clone() const = 0;
-		void close();
-		inline uint8_t readByte(){
-			if (bufferPosition >= bufferLength)
-				refill();
-
-			return buffer[bufferPosition++];
-		}
-		void readBytes(uint8_t* b, const int32_t len);
-		void readBytes(uint8_t* b, const int32_t len, bool useBuffer);
-		int64_t getFilePointer() const;
-		void seek(const int64_t pos);
-
-		void setBufferSize( int32_t newSize );
-
-		const char* getObjectName();
-		static const char* getClassName();
-
-	protected:
-      /** Expert: implements buffer refill.  Reads bytes from the current position
-      * in the input.
-      * @param b the array to read bytes into
-      * @param offset the offset in the array to start storing bytes
-      * @param length the number of bytes to read
-      */
-		virtual void readInternal(uint8_t* b, const int32_t len) = 0;
-
-      /** Expert: implements seek.  Sets current position in this file, where the
-      * next {@link #readInternal(byte[],int32_t,int32_t)} will occur.
-      * @see #readInternal(byte[],int32_t,int32_t)
-      */
-		virtual void seekInternal(const int64_t pos) = 0;
-	};
 CL_NS_END
 #endif

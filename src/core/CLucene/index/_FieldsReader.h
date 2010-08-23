@@ -11,6 +11,7 @@
 CL_CLASS_DEF(store,Directory)
 CL_CLASS_DEF(document,Document)
 #include "CLucene/document/Field.h"
+#include "CLucene/store/BufferedIndexInput.h"
 CL_CLASS_DEF(document,FieldSelector)
 CL_CLASS_DEF(index, FieldInfo)
 CL_CLASS_DEF(index, FieldInfos)

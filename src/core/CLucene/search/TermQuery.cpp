@@ -17,6 +17,7 @@
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/index/Terms.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_DEF(search)
@@ -32,10 +33,10 @@ CL_NS_DEF(search)
 		float_t queryWeight;
 
 		TermQuery* parentQuery;	// CLucene specific
-		CL_NS(index)::Term* _term;
+		boost::shared_ptr<CL_NS(index)::Term> _term;
 
 	public:
-		TermWeight(Searcher* searcher, TermQuery* parentQuery, CL_NS(index)::Term* _term);
+		TermWeight(Searcher* searcher, TermQuery* parentQuery, boost::shared_ptr<CL_NS(index)::Term> const& _term);
 		virtual ~TermWeight();
 		
 		// return a *new* string describing this object
@@ -51,16 +52,15 @@ CL_NS_DEF(search)
 
 
 	/** Constructs a query for the term <code>t</code>. */
-	TermQuery::TermQuery(Term* t):
-		term( _CL_POINTER(t) )
+	TermQuery::TermQuery(boost::shared_ptr<CL_NS(index)::Term> const& t):
+		term( t )
 	{
 	}
 	TermQuery::TermQuery(const TermQuery& clone):
   		Query(clone){
-		this->term=_CL_POINTER(clone.term);
+		this->term=clone.term;
 	}
 	TermQuery::~TermQuery(){
-	    _CLLDECDELETE(term);
 	}
 
 	Query* TermQuery::clone() const{
@@ -78,21 +78,18 @@ CL_NS_DEF(search)
 	}
 
 	//added by search highlighter
-	Term* TermQuery::getTerm(bool pointer) const
+	boost::shared_ptr<Term> const& TermQuery::getTerm() const
 	{
-		if ( pointer )
-			return _CL_POINTER(term);
-		else
-			return term;
+		return term;
 	}
 
 	TCHAR* TermQuery::toString(const TCHAR* field) const{
 		CL_NS(util)::StringBuffer buffer;
-		if ( field==NULL || _tcscmp(term->field(),field)!= 0 ) {
-			buffer.append(term->field());
+		if ( field==NULL || _tcscmp(term.get()->field(),field)!= 0 ) {
+			buffer.append(term.get()->field());
 			buffer.append(_T(":"));
 		}
-		buffer.append(term->text());
+		buffer.append(term.get()->text());
 		if (getBoost() != 1.0f) {
 			buffer.append(_T("^"));
 			buffer.appendFloat( getBoost(),1 );
@@ -106,10 +103,10 @@ CL_NS_DEF(search)
 
 		TermQuery* tq = (TermQuery*)other;
 		return (this->getBoost() == tq->getBoost())
-			&& this->term->equals(tq->term);
+			&& this->term.get()->equals(tq->term.get());
 	}
 
-   TermWeight::TermWeight(Searcher* _searcher, TermQuery* _parentQuery, Term* term):similarity(_searcher->getSimilarity()),
+   TermWeight::TermWeight(Searcher* _searcher, TermQuery* _parentQuery, boost::shared_ptr<Term> const& term):similarity(_searcher->getSimilarity()),
 	   value(0), queryNorm(0),queryWeight(0), parentQuery(_parentQuery),_term(term)
    {
 		   idf = similarity->idf(term, _searcher); // compute idf
@@ -145,7 +142,7 @@ CL_NS_DEF(search)
 			return NULL;
 		    
 		return _CLNEW TermScorer(this, termDocs, similarity,
-								reader->norms(_term->field()));
+								reader->norms(_term.get()->field()));
 	}
 
 	Explanation* TermWeight::explain(IndexReader* reader, int32_t doc){

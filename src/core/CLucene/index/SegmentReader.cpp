@@ -18,6 +18,7 @@
 #include "CLucene/util/PriorityQueue.h"
 #include "_SegmentMerger.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -439,7 +440,7 @@ CL_NS_DEF(index)
       return tis->terms();
   }
 
-  TermEnum* SegmentReader::terms(const Term* t) {
+  TermEnum* SegmentReader::terms(boost::shared_ptr<Term const> const& t) {
   //Func - Returns an enumeration of terms starting at or after the named term t
   //Pre  - t != NULL
   //       tis != NULL
@@ -507,7 +508,7 @@ CL_NS_DEF(index)
       return _CLNEW SegmentTermPositions(this);
   }
 
-  int32_t SegmentReader::docFreq(const Term* t) {
+  int32_t SegmentReader::docFreq(boost::shared_ptr<Term const> const& t) {
   //Func - Returns the number of documents which contain the term t
   //Pre  - t holds a valid reference to a Term
   //Post - The number of documents which contain term t has been returned
@@ -1031,19 +1032,16 @@ bool SegmentReader::hasNorms(const TCHAR* field){
     )
 
     //disown this memory
-    this->freqStream = NULL;
     this->_fieldInfos = NULL;
-    this->tis = NULL;
+    this->cfsReader = NULL;
     this->deletedDocs = NULL;
-    this->ones = NULL;
-    this->termVectorsReaderOrig = NULL;
-    this->cfsReader = NULL;
     this->freqStream = NULL;
+    this->ones = NULL;
     this->proxStream = NULL;
-    this->termVectorsReaderOrig = NULL;
-    this->cfsReader = NULL;
-    this->storeCFSReader = NULL;
     this->singleNormStream = NULL;
+    this->storeCFSReader = NULL;
+    this->termVectorsReaderOrig = NULL;
+    this->tis = NULL;
 
     return clone;
   }

@@ -4,6 +4,7 @@ INCLUDE (DefineOptions)
 DEFINE_OPTIONS(EXTRA_OPTIONS EXTRA_LIBS)
 ADD_DEFINITIONS(${EXTRA_OPTIONS})
 
+INCLUDE_DIRECTORIES( ${_CL_BOOST_INCLUDE_PATH} )
 INCLUDE_DIRECTORIES( ${clucene-contribs-lib-test_SOURCE_DIR} )
 INCLUDE_DIRECTORIES( ${clucene-contribs-lib_SOURCE_DIR} )
 
@@ -13,7 +14,6 @@ SET(test_files
   ./contribTests.cpp
   ./TestHighlight.cpp
   ./TestSnowball.cpp
-  ./TestStreams.cpp
   ./TestUtf8.cpp
   ./TestAnalysis.cpp
   ./CuTest.cpp

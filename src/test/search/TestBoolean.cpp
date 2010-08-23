@@ -5,39 +5,36 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "test.h"
+#include <boost/shared_ptr.hpp>
 
 /// TestBooleanQuery.java, ported 5/9/2009
 void testEquality(CuTest *tc) {
     BooleanQuery* bq1 = _CLNEW BooleanQuery();
-    Term* t = _CLNEW Term(_T("field"), _T("value1"));
+    boost::shared_ptr<Term> t(_CLNEW Term(_T("field"), _T("value1")));
     bq1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("value2"));
+    t.reset(_CLNEW Term(_T("field"), _T("value2")));
     bq1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
+    t.reset();
     BooleanQuery* nested1 = _CLNEW BooleanQuery();
-    t = _CLNEW Term(_T("field"), _T("nestedvalue1"));
+    t.reset(_CLNEW Term(_T("field"), _T("nestedvalue1")));
     nested1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("nestedvalue2"));
+    t.reset(_CLNEW Term(_T("field"), _T("nestedvalue2")));
     nested1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
+    t.reset();
     bq1->add(nested1, true, BooleanClause::SHOULD);
 
     BooleanQuery* bq2 = _CLNEW BooleanQuery();
-    t = _CLNEW Term(_T("field"), _T("value1"));
+    t.reset(_CLNEW Term(_T("field"), _T("value1")));
     bq2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("value2"));
+    t.reset(_CLNEW Term(_T("field"), _T("value2")));
     bq2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
+    t.reset();
     BooleanQuery* nested2 = _CLNEW BooleanQuery();
-    t = _CLNEW Term(_T("field"), _T("nestedvalue1"));
+    t.reset(_CLNEW Term(_T("field"), _T("nestedvalue1")));
     nested2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
-    t = _CLNEW Term(_T("field"), _T("nestedvalue2"));
+    t.reset(_CLNEW Term(_T("field"), _T("nestedvalue2")));
     nested2->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-    _CLDECDELETE(t);
+    t.reset();
     bq2->add(nested2, true, BooleanClause::SHOULD);
 
     CLUCENE_ASSERT(bq1->equals(bq2));
@@ -74,18 +71,17 @@ void testBooleanScorer(CuTest *tc) {
         _CLLDELETE(writer);
 
         BooleanQuery* booleanQuery1 = _CLNEW BooleanQuery();
-        Term *t = _CLNEW Term(FIELD, _T("1"));
+        boost::shared_ptr<Term> t(_CLNEW Term(FIELD, _T("1")));
         booleanQuery1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-        _CLDECDELETE(t);
-        t = _CLNEW Term(FIELD, _T("2"));
+        t.reset(_CLNEW Term(FIELD, _T("2")));
         booleanQuery1->add(_CLNEW TermQuery(t), true, BooleanClause::SHOULD);
-        _CLDECDELETE(t);
+	t.reset();
 
         BooleanQuery* query = _CLNEW BooleanQuery();
         query->add(booleanQuery1, true, BooleanClause::MUST);
-        t = _CLNEW Term(FIELD, _T("9"));
+        t.reset(_CLNEW Term(FIELD, _T("9")));
         query->add(_CLNEW TermQuery(t), true, BooleanClause::MUST_NOT);
-        _CLDECDELETE(t);
+	t.reset();
 
         IndexSearcher *indexSearcher = _CLNEW IndexSearcher(&directory);
         Hits *hits = indexSearcher->search(query);
@@ -122,9 +118,9 @@ void testBooleanPrefixQuery(CuTest* tc) {
         _CLLDELETE(writer);
 
         IndexReader* reader = IndexReader::open(&directory);
-        Term* t = _CLNEW Term(_T("category"), _T("foo"));
+        boost::shared_ptr<Term> t(_CLNEW Term(_T("category"), _T("foo")));
         PrefixQuery* query = _CLNEW PrefixQuery(t);
-        _CLDECDELETE(t);
+	t.reset();
 
         rw1 = query->rewrite(reader);
 

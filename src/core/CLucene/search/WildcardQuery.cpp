@@ -13,18 +13,19 @@
 #include "CLucene/util/BitSet.h"
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/index/IndexReader.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
 CL_NS_DEF(search)
 
 
-WildcardQuery::WildcardQuery(Term* term): 
+WildcardQuery::WildcardQuery(boost::shared_ptr<Term> const& term): 
 MultiTermQuery( term ){
 	//Func - Constructor
 	//Pre  - term != NULL
 	//Post - Instance has been created
-	termContainsWildcard = (_tcschr(term->text(), _T('*')) == NULL || _tcschr(term->text(), _T('?')) == NULL);
+	termContainsWildcard = (_tcschr(term.get()->text(), _T('*')) == NULL || _tcschr(term.get()->text(), _T('?')) == NULL);
 }
 
 WildcardQuery::~WildcardQuery(){
@@ -47,7 +48,7 @@ const char* WildcardQuery::getClassName(){
 
 
 FilteredTermEnum* WildcardQuery::getEnum(IndexReader* reader) {
-	return _CLNEW WildcardTermEnum(reader, getTerm(false));
+	return _CLNEW WildcardTermEnum(reader, getTerm());
 }
 
 WildcardQuery::WildcardQuery(const WildcardQuery& clone):
@@ -61,7 +62,7 @@ Query* WildcardQuery::clone() const{
 size_t WildcardQuery::hashCode() const{
 	//todo: we should give the query a seeding value... but
 	//need to do it for all hascode functions
-	return Similarity::floatToByte(getBoost()) ^ getTerm()->hashCode();
+	return Similarity::floatToByte(getBoost()) ^ getTerm().get()->hashCode();
 }
 bool WildcardQuery::equals(Query* other) const{
 	if (!(other->instanceOf(WildcardQuery::getClassName())))
@@ -69,7 +70,7 @@ bool WildcardQuery::equals(Query* other) const{
 
 	WildcardQuery* tq = (WildcardQuery*)other;
 	return (this->getBoost() == tq->getBoost())
-		&& getTerm()->equals(tq->getTerm());
+		&& getTerm().get()->equals(tq->getTerm().get());
 }
 
 
@@ -77,22 +78,21 @@ Query* WildcardQuery::rewrite(CL_NS(index)::IndexReader* reader) {
 	if (termContainsWildcard)
 		return MultiTermQuery::rewrite(reader);
 
-	return _CLNEW TermQuery( getTerm(false) );
+	return _CLNEW TermQuery( getTerm() );
 }
 
 
-WildcardFilter::WildcardFilter( Term* term )
+WildcardFilter::WildcardFilter( boost::shared_ptr<Term> const& term )
 {
-	this->term = _CL_POINTER(term);
+	this->term = term;
 }
 
 WildcardFilter::~WildcardFilter()
 {
-	_CLDECDELETE(term);
 }
 
 WildcardFilter::WildcardFilter( const WildcardFilter& copy ) : 
-term( _CL_POINTER(copy.term) )
+term( copy.term )
 {
 }
 
@@ -106,14 +106,14 @@ TCHAR* WildcardFilter::toString()
 	//Instantiate a stringbuffer buffer to store the readable version temporarily
 	CL_NS(util)::StringBuffer buffer;
 	//check if field equal to the field of prefix
-	if( term->field() != NULL ) {
+	if( term.get()->field() != NULL ) {
 		//Append the field of prefix to the buffer
-		buffer.append(term->field());
+		buffer.append(term.get()->field());
 		//Append a colon
 		buffer.append(_T(":") );
 	}
 	//Append the text of the prefix
-	buffer.append(term->text());
+	buffer.append(term.get()->text());
 
 	//Convert StringBuffer buffer to TCHAR block and return it
 	return buffer.toString();
@@ -127,7 +127,7 @@ BitSet* WildcardFilter::bits( IndexReader* reader )
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
 
 	WildcardTermEnum termEnum (reader, term);
-	if (termEnum.term(false) == NULL)
+	if (termEnum.term().get() == NULL)
 		return bts;
 
 	TermDocs* termDocs = reader->termDocs();

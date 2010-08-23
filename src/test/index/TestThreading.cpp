@@ -34,9 +34,8 @@ _LUCENE_THREAD_FUNC(atomicIndexTest, _writer){
 
         _i64tot(i,buf,10);
         d.add(*_CLNEW Field(_T("id"), buf, Field::STORE_YES | Field::INDEX_UNTOKENIZED));
-        Term* t = _CLNEW Term(_T("id"), buf);
+        boost::shared_ptr<Term> t(_CLNEW Term(_T("id"), buf));
         writer->updateDocument(t, &d);
-        _CLDECDELETE(t);
       }
 
       count++;

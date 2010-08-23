@@ -11,8 +11,8 @@
 #include "SearchHeader.h"
 #include "Query.h"
 
-CL_CLASS_DEF(index,Explanation)
-CL_CLASS_DEF(index,Similarity)
+CL_CLASS_DEF(search,Explanation)
+CL_CLASS_DEF(search,Similarity)
 CL_CLASS_DEF(index,IndexReader)
 
 CL_NS_DEF(search)
@@ -22,15 +22,14 @@ CL_NS_DEF(search)
 	* A query that matches all documents.
 	* 
 	*/ 
-	class CLUCENE_EXPORT MatchAllDocsQuery : public Query { 
+	class CLUCENE_EXPORT MatchAllDocsQuery : public Query {
+          class MatchAllScorer;
+          class MatchAllDocsWeight;
 	protected:
 		MatchAllDocsQuery(const MatchAllDocsQuery& clone);
 	public:
 		MatchAllDocsQuery();
 		virtual ~MatchAllDocsQuery();
-
-		class MatchAllScorer;
-		class MatchAllDocsWeight;
 
 		/** Prints a query to a string, with <code>field</code> assumed to be the 
 		* default field and omitted.

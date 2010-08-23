@@ -17,42 +17,42 @@
 #include "CLucene/index/Terms.h"
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/StringBuffer.h"
-
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
 CL_NS_DEF(search)
 
-	RangeQuery::RangeQuery(Term* lowerTerm, Term* upperTerm, const bool Inclusive){
+	RangeQuery::RangeQuery(boost::shared_ptr<Term> const& lowerTerm, boost::shared_ptr<Term> const& upperTerm, const bool Inclusive){
 	//Func - Constructor
 	//Pre  - (LowerTerm != NULL OR UpperTerm != NULL) AND
 	//       if LowerTerm and UpperTerm are valid pointer then the fieldnames must be the same
 	//Post - The instance has been created
 
-		if (lowerTerm == NULL && upperTerm == NULL)
+		if (lowerTerm.get() == NULL && upperTerm.get() == NULL)
         {
             _CLTHROWA(CL_ERR_IllegalArgument,"At least one term must be non-null");
         }
-        if (lowerTerm != NULL && upperTerm != NULL && lowerTerm->field() != upperTerm->field())
+        if (lowerTerm.get() != NULL && upperTerm.get() != NULL && lowerTerm.get()->field() != upperTerm.get()->field())
         {
             _CLTHROWA(CL_ERR_IllegalArgument,"Both terms must be for the same field");
         }
 
 		// if we have a lowerTerm, start there. otherwise, start at beginning
-        if (lowerTerm != NULL) {
-            this->lowerTerm = _CL_POINTER(lowerTerm);
+        if (lowerTerm.get() != NULL) {
+            this->lowerTerm = lowerTerm;
         }
         else {
-            this->lowerTerm = _CLNEW Term(upperTerm, LUCENE_BLANK_STRING);
+            this->lowerTerm.reset(_CLNEW Term(upperTerm, LUCENE_BLANK_STRING));
         }
-        this->upperTerm = (upperTerm != NULL ? _CL_POINTER(upperTerm) : NULL);
+	this->upperTerm = upperTerm;
         this->inclusive = Inclusive;
     }
 	RangeQuery::RangeQuery(const RangeQuery& clone):
 		Query(clone){
 		this->inclusive = clone.inclusive;
-		this->upperTerm = (clone.upperTerm != NULL ? _CL_POINTER(clone.upperTerm) : NULL );
-		this->lowerTerm = (clone.lowerTerm != NULL ? _CL_POINTER(clone.lowerTerm) : NULL );
+		this->upperTerm = clone.upperTerm;
+		this->lowerTerm = clone.lowerTerm;
 	}
 	Query* RangeQuery::clone() const{
 	  return _CLNEW RangeQuery(*this);
@@ -63,15 +63,13 @@ CL_NS_DEF(search)
     //Pre  - true
     //Post - The instance has been destroyed
 
-        _CLDECDELETE(lowerTerm);
-        _CLDECDELETE(upperTerm);
     }
 
 	/** Returns a hash code value for this object.*/
     size_t RangeQuery::hashCode() const {
 			return Similarity::floatToByte(getBoost()) ^
-	            (lowerTerm != NULL ? lowerTerm->hashCode() : 0) ^
-	            (upperTerm != NULL ? upperTerm->hashCode() : 0) ^
+	            (lowerTerm.get() != NULL ? lowerTerm.get()->hashCode() : 0) ^
+	            (upperTerm.get() != NULL ? upperTerm.get()->hashCode() : 0) ^
 	            (this->inclusive ? 1 : 0);
     }
 
@@ -93,8 +91,8 @@ CL_NS_DEF(search)
         RangeQuery* rq = (RangeQuery*)other;
 		bool ret = (this->getBoost() == rq->getBoost())
 			&& (this->isInclusive() == rq->isInclusive())
-			&& (this->getLowerTerm()->equals(rq->getLowerTerm()))
-			&& (this->getUpperTerm()->equals(rq->getUpperTerm()));
+			&& (this->getLowerTerm().get()->equals(rq->getLowerTerm().get()))
+			&& (this->getUpperTerm().get()->equals(rq->getUpperTerm().get()));
 
 		return ret;
 	}
@@ -104,7 +102,7 @@ CL_NS_DEF(search)
 
         BooleanQuery* query = _CLNEW BooleanQuery( true );
         TermEnum* enumerator = reader->terms(lowerTerm);
-		Term* lastTerm = NULL;
+	boost::shared_ptr<Term> lastTerm;
         try {
             bool checkLower = false;
             if (!inclusive) // make adjustments to set to exclusive
@@ -113,11 +111,11 @@ CL_NS_DEF(search)
             const TCHAR* testField = getField();
             do {
                 lastTerm = enumerator->term();
-                if (lastTerm != NULL && lastTerm->field() == testField ) {
-                    if (!checkLower || _tcscmp(lastTerm->text(),lowerTerm->text()) > 0) {
+                if (lastTerm.get() != NULL && lastTerm.get()->field() == testField ) {
+                    if (!checkLower || _tcscmp(lastTerm.get()->text(),lowerTerm.get()->text()) > 0) {
                         checkLower = false;
-                        if (upperTerm != NULL) {
-                            int compare = _tcscmp(upperTerm->text(),lastTerm->text());
+                        if (upperTerm.get() != NULL) {
+                            int compare = _tcscmp(upperTerm.get()->text(),lastTerm.get()->text());
                             /* if beyond the upper term, or is exclusive and
                              * this is equal to the upper term, break out */
                             if ((compare < 0) || (!inclusive && compare == 0))
@@ -130,17 +128,14 @@ CL_NS_DEF(search)
                 }else {
                     break;
                 }
-				_CLDECDELETE(lastTerm);
             }
             while (enumerator->next());
 		}catch(...){
-			_CLDECDELETE(lastTerm); //always need to delete this
 			_CLDELETE(query); //in case of error, delete the query
             enumerator->close();
 			_CLDELETE(enumerator);
 			throw; //rethrow
 		}
-		_CLDECDELETE(lastTerm); //always need to delete this
 		enumerator->close();
 		_CLDELETE(enumerator);
 
@@ -156,9 +151,9 @@ CL_NS_DEF(search)
             buffer.append( _T(":"));
         }
         buffer.append(inclusive ? _T("[") : _T("{"));
-        buffer.append(lowerTerm != NULL ? lowerTerm->text() : _T("NULL"));
+        buffer.append(lowerTerm.get() != NULL ? lowerTerm.get()->text() : _T("NULL"));
         buffer.append(_T(" TO "));
-        buffer.append(upperTerm != NULL ? upperTerm->text() : _T("NULL"));
+        buffer.append(upperTerm.get() != NULL ? upperTerm.get()->text() : _T("NULL"));
         buffer.append(inclusive ? _T("]") : _T("}"));
         if (getBoost() != 1.0f)
         {
@@ -170,23 +165,20 @@ CL_NS_DEF(search)
 
 
     const TCHAR* RangeQuery::getField() const	
-	{
-		return (lowerTerm != NULL ? lowerTerm->field() : upperTerm->field());
-	}
+    {
+            return (lowerTerm.get() != NULL ? lowerTerm.get()->field() : upperTerm.get()->field());
+    }
 
-    Term* RangeQuery::getLowerTerm(bool pointer) const { 
-		if ( pointer )
-			return _CL_POINTER(lowerTerm); 
-		else
-			return lowerTerm;
-	}
 
-    Term* RangeQuery::getUpperTerm(bool pointer) const { 
-		if ( pointer )
-			return _CL_POINTER(upperTerm); 
-		else
-			return upperTerm;
-	}
+    /** Returns the lower term of this range query */
+    boost::shared_ptr<Term> const& RangeQuery::getLowerTerm() const {
+            return lowerTerm;
+    }
+
+    /** Returns the upper term of this range query */
+    boost::shared_ptr<Term> const& RangeQuery::getUpperTerm() const {
+            return upperTerm;
+    }
 
     bool RangeQuery::isInclusive() const { return inclusive; }
 

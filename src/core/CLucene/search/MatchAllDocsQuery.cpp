@@ -72,7 +72,7 @@ MatchAllDocsQuery::MatchAllScorer::MatchAllScorer(CL_NS(index)::IndexReader* _re
 	_score = w->getValue();
 }
 
-Explanation* MatchAllDocsQuery::MatchAllScorer::explain(int32_t doc) {
+Explanation* MatchAllDocsQuery::MatchAllScorer::explain(int32_t /*doc*/) {
 	// not called... see MatchAllDocsWeight::explain()
 	return NULL;
 }
@@ -143,7 +143,7 @@ Scorer* MatchAllDocsQuery::MatchAllDocsWeight::scorer(CL_NS(index)::IndexReader*
 	return _CLNEW MatchAllScorer(reader, similarity, this);
 }
 
-Explanation* MatchAllDocsQuery::MatchAllDocsWeight::explain(CL_NS(index)::IndexReader* reader, int32_t doc) {
+Explanation* MatchAllDocsQuery::MatchAllDocsWeight::explain(CL_NS(index)::IndexReader* /*reader*/, int32_t /*doc*/) {
 	// explain query weight
 	Explanation* queryExpl = _CLNEW ComplexExplanation(true, getValue(), _T("MatchAllDocsQuery, product of:"));
 	if (parentQuery->getBoost() != 1.0f) {

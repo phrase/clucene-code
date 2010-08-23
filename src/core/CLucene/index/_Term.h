@@ -9,6 +9,7 @@
 
 #include "Term.h"
 #include <functional>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -29,6 +30,25 @@ public:
 	}
 	size_t operator()( Term* t ) const{
 		return t->hashCode();
+	}
+};
+
+class Term_Equals_Shared:public CL_NS_STD(binary_function)<const boost::shared_ptr<const Term>,const boost::shared_ptr<const Term>,bool>
+{
+public:
+	bool operator()( const boost::shared_ptr<const Term>& val1, const boost::shared_ptr<const Term>& val2 ) const{
+		return val1.get()->equals(val2.get());
+	}
+};
+
+class Term_Compare_Shared:LUCENE_BASE, public CL_NS(util)::Compare::_base //<Term*>
+{
+public:
+	bool operator()( const boost::shared_ptr<Term>& t1, const boost::shared_ptr<Term>& t2 ) const{
+		return ( t1.get()->compareTo(t2.get()) < 0 );
+	}
+	size_t operator()( const boost::shared_ptr<Term>& t ) const{
+		return t.get()->hashCode();
 	}
 };
 

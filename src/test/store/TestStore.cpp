@@ -19,7 +19,7 @@ void StoreTest(CuTest *tc,int32_t count, bool ram){
 
 	char fsdir[CL_MAX_PATH];
 	_snprintf(fsdir, CL_MAX_PATH, "%s/%s",cl_tempDir, "test.store");
-	Directory* store = (ram?(Directory*)_CLNEW RAMDirectory():(Directory*)FSDirectory::getDirectory(fsdir) );
+	Directory* store = (ram?(Directory*)_CLNEW RAMDirectory():(Directory*)FSDirectory::getDirectory(fsdir, true) );
 	int32_t LENGTH_MASK = 0xFFF;
 	char name[260];
 

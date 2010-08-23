@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
 #include "_SkipListReader.h"
+#include "CLucene/store/BufferedIndexInput.h"
 
 CL_NS_USE(store)
 CL_NS_DEF(index)

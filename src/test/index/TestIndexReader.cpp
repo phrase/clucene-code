@@ -89,7 +89,7 @@ void assertReaderClosed(CuTest* tc, IndexReader* reader, bool checkSubReaders, b
   }
 }
 
-void assertReaderOpen(CuTest* tc, IndexReader* reader) {
+void assertReaderOpen(CuTest* /*tc*/, IndexReader* reader) {
   Document doc;
   reader->document(0, doc);//hack to call ensureOpen...
 
@@ -102,17 +102,15 @@ void assertReaderOpen(CuTest* tc, IndexReader* reader) {
 }
 
 Directory* defaultModifyIndexTestDir1 = NULL;
-IndexReader* defaultModifyIndexTest(CuTest* tc, IndexReader* reader, int i){
+IndexReader* defaultModifyIndexTest(CuTest* /*tc*/, IndexReader* reader, int i){
   WhitespaceAnalyzer whitespaceAnalyzer;
   switch (i) {
     case 0: {
       IndexWriter w(defaultModifyIndexTestDir1, &whitespaceAnalyzer, false);
-      Term* t1 = _CLNEW Term(_T("field2"), _T("a11"));
+      boost::shared_ptr<Term> t1(_CLNEW Term(_T("field2"), _T("a11")));
       w.deleteDocuments(t1);
-      Term* t2 = _CLNEW Term(_T("field2"), _T("b30"));
+      boost::shared_ptr<Term> t2(_CLNEW Term(_T("field2"), _T("b30")));
       w.deleteDocuments(t2);
-      _CLDECDELETE(t1);
-      _CLDECDELETE(t2);
       w.close();
       break;
     }

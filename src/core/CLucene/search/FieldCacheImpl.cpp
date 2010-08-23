@@ -12,6 +12,7 @@
 #include "CLucene/util/_StringIntern.h"
 #include "CLucene/util/Misc.h"
 #include "Sort.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(index)
@@ -242,19 +243,18 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
       if (retLen > 0) {
         TermDocs* termDocs = reader->termDocs();
 
-	    Term* term = _CLNEW Term (field, LUCENE_BLANK_STRING, false);
+	    boost::shared_ptr<Term> term(_CLNEW Term (field, LUCENE_BLANK_STRING, false));
       TermEnum* termEnum = reader->terms (term);
-	    _CLDECDELETE(term);
       try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term().get() == NULL) {
 			      _CLTHROWA(CL_ERR_Runtime,"no terms in field"); //todo: add detailed error:  + field);
           }
           do {
-            Term* term = termEnum->term(false);
-            if (term->field() != field)
+            boost::shared_ptr<Term> const& term = termEnum->term();
+            if (term.get()->field() != field)
 				      break;
 
-            int32_t termval = _ttoi(term->text());
+            int32_t termval = _ttoi(term.get()->text());
             termDocs->seek (termEnum);
             while (termDocs->next()) {
               retArray[termDocs->doc()] = termval;
@@ -290,20 +290,19 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
       if (retLen > 0) {
         TermDocs* termDocs = reader->termDocs();
 
-		Term* term = _CLNEW Term (field, LUCENE_BLANK_STRING, false);
+		boost::shared_ptr<Term> term(_CLNEW Term (field, LUCENE_BLANK_STRING, false));
         TermEnum* termEnum = reader->terms (term);
-		_CLDECDELETE(term);
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term().get() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field "); //todo: make richer error + field);
           }
           do {
-            Term* term = termEnum->term(false);
+            boost::shared_ptr<Term> const& term = termEnum->term();
             if (term->field() != field)
 				break;
 
-            float_t termval = _tcstod(term->text(),NULL);
+            float_t termval = _tcstod(term.get()->text(),NULL);
             termDocs->seek (termEnum);
             while (termDocs->next()) {
               retArray[termDocs->doc()] = termval;
@@ -341,19 +340,18 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
       if (retLen > 0) {
         TermDocs* termDocs = reader->termDocs();
 
-		    Term* term = _CLNEW Term (field, LUCENE_BLANK_STRING, false);
+		    boost::shared_ptr<Term> term(_CLNEW Term (field, LUCENE_BLANK_STRING, false));
         TermEnum* termEnum = reader->terms (term);
-		    _CLDECDELETE(term);
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term().get() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field "); //todo: extend to + field);
           }
           do {
-            Term* term = termEnum->term(false);
-            if (term->field() != field)
+            boost::shared_ptr<Term> const& term = termEnum->term();
+            if (term.get()->field() != field)
 				break;
-            const TCHAR* termval = term->text();
+            const TCHAR* termval = term.get()->text();
             termDocs->seek (termEnum);
             while (termDocs->next()) {
               retArray[termDocs->doc()] = STRDUP_TtoT(termval); //todo: any better way of doing this???
@@ -393,9 +391,8 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
       if ( retLen > 0 ) {
         TermDocs* termDocs = reader->termDocs();
 
-		    Term* term = _CLNEW Term (field, LUCENE_BLANK_STRING, false);
+		    boost::shared_ptr<Term> term(_CLNEW Term (field, LUCENE_BLANK_STRING, false));
         TermEnum* termEnum = reader->terms (term);
-		    _CLDECDELETE(term);
 
 
 		    CND_PRECONDITION(t+1 <= retLen, "t out of bounds");
@@ -407,19 +404,19 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
         mterms[t++] = NULL;
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term().get() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field"); //todo: make rich message " + field);
           }
           do {
-            Term* term = termEnum->term(false);
-            if (term->field() != field)
+            boost::shared_ptr<Term> const& term = termEnum->term();
+            if (term.get()->field() != field)
 			        break;
 
             // store term text
             // we expect that there is at most one term per document
             if (t >= retLen+1)
 			        _CLTHROWA(CL_ERR_Runtime,"there are more terms than documents in field"); //todo: rich error \"" + field + "\"");
-            mterms[t] = STRDUP_TtoT(term->text());
+            mterms[t] = STRDUP_TtoT(term.get()->text());
 
             termDocs->seek (termEnum);
             while (termDocs->next()) {
@@ -472,18 +469,17 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
 	  field = CLStringIntern::intern(field);
     FieldCacheAuto* ret = lookup (reader, field, SortField::AUTO);
     if (ret == NULL) {
-	    Term* term = _CLNEW Term (field, LUCENE_BLANK_STRING, false);
+	    boost::shared_ptr<Term> term(_CLNEW Term (field, LUCENE_BLANK_STRING, false));
       TermEnum* enumerator = reader->terms (term);
-	    _CLDECDELETE(term);
 
       try {
-        Term* term = enumerator->term(false);
-        if (term == NULL) {
+        boost::shared_ptr<Term> const& term = enumerator->term();
+        if (term.get() == NULL) {
           _CLTHROWA(CL_ERR_Runtime,"no terms in field - cannot determine sort type"); //todo: make rich error: " + field + "
         }
-        if (term->field() == field) {
-          const TCHAR* termtext = term->text();
-		      size_t termTextLen = term->textLength();
+        if (term.get()->field() == field) {
+          const TCHAR* termtext = term.get()->text();
+		      size_t termTextLen = term.get()->textLength();
 
 		      bool isint=true;
 		      for ( size_t i=0;i<termTextLen;i++ ){
@@ -541,14 +537,14 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
         TermEnum* termEnum = reader->terms ();
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term().get() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field "); //todo: make rich error + field);
           }
           do {
-            Term* term = termEnum->term(false);
-            if (term->field() != field)
+            boost::shared_ptr<Term> const& term = termEnum->term();
+            if (term.get()->field() != field)
 				    break;
-            Comparable* termval = comparator->getComparable (term->text());
+            Comparable* termval = comparator->getComparable (term.get()->text());
             termDocs->seek (termEnum);
             while (termDocs->next()) {
               retArray[termDocs->doc()] = termval;

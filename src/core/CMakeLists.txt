@@ -48,14 +48,19 @@ SET(clucene_core_Files
 	./CLucene/analysis/standard/StandardTokenizer.cpp
 	./CLucene/analysis/Analyzers.cpp
 	./CLucene/analysis/AnalysisHeader.cpp
-	./CLucene/store/MMapInput.cpp
+	#./CLucene/store/MMapInput.cpp
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
+	./CLucene/store/BufferedIndexInput.cpp
+	./CLucene/store/BufferedIndexOutput.cpp
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
+	./CLucene/store/MMapDirectory.cpp
+	./CLucene/store/MMapInput.cpp
 	./CLucene/store/RAMDirectory.cpp
+	./CLucene/store/SharedHandle.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp
@@ -151,7 +156,6 @@ ENDIF ( USE_SHARED_OBJECT_FILES )
 
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-core_SOURCE_DIR}/*.h)
-
 
 #create the libraries
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )

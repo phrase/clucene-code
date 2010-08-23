@@ -102,7 +102,7 @@ CL_NS_USE(util)
 	    _internal(__internal)
 	{
   }
-  
+
   bool MMapIndexInput::open(const char* path, IndexInput*& ret, CLuceneError& error, int32_t __bufferSize )    {
 
 	//Func - Constructor.

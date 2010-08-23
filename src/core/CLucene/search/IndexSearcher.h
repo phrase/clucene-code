@@ -24,6 +24,7 @@ CL_CLASS_DEF(index,IndexReader)
 //#include "CLucene/util/BitSet.h"
 //#include "HitQueue.h"
 //#include "FieldSortedHitQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 /** Implements search over a single IndexReader.
@@ -61,7 +62,7 @@ public:
 	*/
 	void close();
 
-	int32_t docFreq(const CL_NS(index)::Term* term) const;
+	int32_t docFreq(boost::shared_ptr<const CL_NS(index)::Term> const& term) const;
 
 	bool doc(int32_t i, CL_NS(document)::Document& document);
 	bool doc(int32_t i, CL_NS(document)::Document* document);

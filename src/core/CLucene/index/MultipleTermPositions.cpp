@@ -9,12 +9,13 @@
 #include "IndexReader.h"
 #include "CLucene/util/Array.h"
 #include "CLucene/util/PriorityQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 
 CL_NS_DEF(index)
 
-void MultipleTermPositions::seek(Term*) {
+void MultipleTermPositions::seek(boost::shared_ptr<Term> const&) {
 	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
 }
 
@@ -113,7 +114,9 @@ public:
 	}
 };
 
-MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<Term*>* terms) : _posList(_CLNEW IntQueue()){
+MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms) : 
+  _posList(_CLNEW IntQueue())
+{
 	CLLinkedList<TermPositions*> termPositions;
   for ( size_t i=0;i<terms->length;i++){
     termPositions.push_back( indexReader->termPositions(terms->values[i]));
@@ -126,9 +129,9 @@ MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const CL_
 	_CLDELETE_LARRAY(tps);
 }
 
-MultipleTermPositions::~MultipleTermPositions() {
-	_CLLDELETE(_termPositionsQueue);
-	_CLLDELETE(_posList);
+MultipleTermPositions::~MultipleTermPositions(){
+  _CLDELETE(_termPositionsQueue);
+  _CLDELETE(_posList);
 }
 
 bool MultipleTermPositions::next() {

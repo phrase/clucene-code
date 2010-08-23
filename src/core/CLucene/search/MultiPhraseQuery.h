@@ -10,6 +10,7 @@
 #include "Query.h"
 #include "CLucene/util/Array.h"
 #include "CLucene/util/VoidList.h"
+#include <boost/shared_ptr.hpp>
 
 CL_CLASS_DEF(index,Term)
 
@@ -30,12 +31,11 @@ class MultiPhraseWeight;
 */
 class CLUCENE_EXPORT MultiPhraseQuery : public Query {
 private:
-	TCHAR* field;
-    CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>* termArrays;
-	CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>* positions;
+  TCHAR* field;
+  CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >*>* termArrays;
+  CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>* positions;
 
-	int32_t slop;
-
+  int32_t slop;
 public:
 	MultiPhraseQuery();
 	virtual ~MultiPhraseQuery();
@@ -55,14 +55,14 @@ public:
 	* @see PhraseQuery#add(Term)
   * @memory A pointer is taken to term
 	*/
-	void add(CL_NS(index)::Term* term);
+	void add(boost::shared_ptr<CL_NS(index)::Term> const& term);
 
 	/** Add multiple terms at the next position in the phrase.  Any of the terms
 	* may match.
 	* @memory A pointer is taken of each term, the array memory must be cleaned up by calle
 	* @see PhraseQuery#add(Term)
 	*/
-	void add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* terms);
+	void add(const CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >* terms);
 
 	/**
 	* Allows to specify the relative position of terms within the phrase.
@@ -72,13 +72,13 @@ public:
 	* @param position
   * @memory A pointer is taken of each term, the array memory must be cleaned up by calle
 	*/
-  void add(const CL_NS(util)::ArrayBase<CL_NS(index)::Term*>* terms, const int32_t position);
+  void add(const CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >* terms, const int32_t position);
 
 	/**
 	* Returns a ArrayBase<Term[]> of the terms in the multiphrase.
 	* Do not modify the List or its contents.
 	*/
-	const CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<CL_NS(index)::Term*>*>* getTermArrays();
+	const CL_NS(util)::CLArrayList<CL_NS(util)::ArrayBase<boost::shared_ptr<CL_NS(index)::Term> >*>* getTermArrays();
 
 
 	/**
@@ -86,7 +86,7 @@ public:
 	*/
 	void getPositions(CL_NS(util)::ValueArray<int32_t>& result) const;
 
-	void extractTerms(CL_NS(util)::RefCountArray<CL_NS(index)::Term*>& terms);
+	void extractTerms(CL_NS(util)::RefCountArray<boost::shared_ptr<CL_NS(index)::Term> >& terms);
 
 	Query* rewrite(CL_NS(index)::IndexReader* reader);
 

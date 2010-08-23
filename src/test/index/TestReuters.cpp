@@ -93,7 +93,7 @@ void testReuters(CuTest *tc) {
   strcat(reuters_origdirectory, "/reuters-21578-index");
   CuAssert(tc,_T("Index does not exist"),Misc::dir_Exists(reuters_origdirectory));
 
-  FSDirectory* fsdir = FSDirectory::getDirectory(reuters_fsdirectory);
+  Directory* fsdir = FSDirectory::getDirectory(reuters_fsdirectory,true);
   ReutersAnalyzer a;
 
   IndexWriter writer(fsdir,&a,true);

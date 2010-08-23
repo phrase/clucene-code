@@ -308,7 +308,7 @@ public:
     this->deleteArray();
     }
   void deleteValue(T v){
-    _CLDECDELETE(v);
+    v.reset();
   } //nothing to do...
   virtual ~RefCountArray(){
     deleteValues();

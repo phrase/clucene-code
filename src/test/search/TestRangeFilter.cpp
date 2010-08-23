@@ -163,9 +163,8 @@ public:
         assertEqualsMsg(_T("num of docs"), numDocs, static_cast<size_t>(1+ maxId - minId));
 
         Hits* result;
-        Term* term = _CLNEW Term(_T("body"),_T("body"));
+        boost::shared_ptr<CL_NS(index)::Term> term(_CLNEW Term(_T("body"),_T("body")));
         Query* q = _CLNEW TermQuery(term);
-        _CLDECDELETE(term);
 
         // test id, bounded on both ends
 
@@ -306,9 +305,8 @@ public:
         assertEqualsMsg(_T("num of docs"), numDocs, 1+ maxId - minId);
 
         Hits* result;
-        Term* term = _CLNEW Term(_T("body"),_T("body"));
+        boost::shared_ptr<CL_NS(index)::Term> term(_CLNEW Term(_T("body"),_T("body")));
         Query* q = _CLNEW TermQuery(term);
-        _CLDECDELETE(term);
 
         // test extremes, bounded on both ends
 
@@ -423,13 +421,11 @@ void testIncludeLowerTrue(CuTest* tc)
     IndexSearcher* s = _CLNEW IndexSearcher(index);
     Filter* f = _CLNEW RangeFilter(_T("Category"), _T("3"), _T("3"), true, true);
 
-    Term* t = _CLNEW Term(_T("Category"), _T("a"));
+    boost::shared_ptr<CL_NS(index)::Term> t(_CLNEW Term(_T("Category"), _T("a")));
     Query* q1 = _CLNEW TermQuery(t);
-    _CLLDECDELETE(t);
 
-    t = _CLNEW Term(_T("Category"), _T("3"));
+    t.reset(_CLNEW Term(_T("Category"), _T("3")));
     Query* q2 = _CLNEW TermQuery(t);
-    _CLLDECDELETE(t);
 
     Hits* h = s->search(q1);
     assertTrue(h->length() == 3);

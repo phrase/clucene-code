@@ -67,7 +67,7 @@ CL_NS_DEF(search)
      }
   }
 
-  int32_t MultiSearcher::docFreq(const Term* term) const {
+  int32_t MultiSearcher::docFreq(boost::shared_ptr<const Term> const& term) const {
     int32_t docFreq = 0;
 	for (int32_t i = 0; i < searchablesLen; ++i)
       docFreq += searchables[i]->docFreq(term);

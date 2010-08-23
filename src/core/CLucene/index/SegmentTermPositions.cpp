@@ -8,6 +8,7 @@
 #include "_SegmentHeader.h"
 
 #include "Terms.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_DEF(index)
@@ -30,7 +31,7 @@ TermPositions* SegmentTermPositions::__asTermPositions(){
     return (TermPositions*) this;
 }
 
-void SegmentTermPositions::seek(const TermInfo* ti, Term* term) {
+void SegmentTermPositions::seek(const TermInfo* ti, boost::shared_ptr<Term> const& term) {
     SegmentTermDocs::seek(ti, term);
     if (ti != NULL)
     	lazySkipPointer = ti->proxPointer;

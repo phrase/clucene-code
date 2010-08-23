@@ -323,12 +323,12 @@ void TestAssertIndexReaderEquals(CuTest *tc,  IndexReader* index1, IndexReader* 
   while(enum1->next()) {
 
     CuAssertTrue(tc,enum2->next());
-    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term(false)->field(), enum2->term(false)->field() );
-    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term(false)->text(), enum2->term(false)->text() );
-    CuAssert(tc, _T("Different term in dictionary."), enum1->term(false)->equals(enum2->term(false)) );
+    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term().get()->field(), enum2->term().get()->field() );
+    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term().get()->text(), enum2->term().get()->text() );
+    CuAssert(tc, _T("Different term in dictionary."), enum1->term().get()->equals(enum2->term().get()) );
 
-    tp1->seek(enum1->term(false));
-    tp2->seek(enum1->term(false));
+    tp1->seek(enum1->term());
+    tp2->seek(enum1->term());
     while(tp1->next()) {
       CuAssertTrue(tc, tp2->next());
       CuAssertIntEquals(tc,_T("Different doc id in postinglist of term"), tp1->doc(), tp2->doc());

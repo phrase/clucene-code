@@ -54,7 +54,7 @@
 		CuAssert(tc,_T("Index does not exist"), Misc::dir_Exists(loc));
 		s=_CLNEW IndexSearcher(loc);
   }
-	void testSrchCloseIndex(CuTest *tc ){
+	void testSrchCloseIndex(CuTest* /*tc*/ ){
 		if ( s!=NULL ){
 			s->close();
 			_CLDELETE(s);
@@ -113,16 +113,13 @@
 
 		//test problem reported by Gary Mangum
 		BooleanQuery* bq = _CLNEW BooleanQuery();
-		Term* upper = _CLNEW Term(_T("contents"),_T("0105"));
-		Term* lower = _CLNEW Term(_T("contents"),_T("0105"));
+		boost::shared_ptr<Term> upper(_CLNEW Term(_T("contents"),_T("0105")));
+		boost::shared_ptr<Term> lower(_CLNEW Term(_T("contents"),_T("0105")));
 		RangeQuery* rq=_CLNEW RangeQuery(lower,upper,true);
 		bq->add(rq,true,true,false);
-		_CLDECDELETE(upper);
-		_CLDECDELETE(lower);
 
-		Term* prefix = _CLNEW Term(_T("contents"),_T("reuters21578"));
+		boost::shared_ptr<Term> prefix(_CLNEW Term(_T("contents"),_T("reuters21578")));
 		PrefixQuery* pq = _CLNEW PrefixQuery(prefix);
-		_CLDECDELETE(prefix);
 		bq->add(pq,true,true,false);
 
 		Hits* h = NULL;
@@ -231,7 +228,7 @@ void SearchTest(CuTest *tc, bool bram) {
 
 	char fsdir[CL_MAX_PATH];
 	_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "test.search");
-	Directory* ram = (bram?(Directory*)_CLNEW RAMDirectory():(Directory*)FSDirectory::getDirectory(fsdir) );
+	Directory* ram = (bram?(Directory*)_CLNEW RAMDirectory():(Directory*)FSDirectory::getDirectory(fsdir, true) );
 
 	IndexWriter writer( ram, &analyzer, true);
 	writer.setUseCompoundFile(false);
@@ -293,15 +290,13 @@ void SearchTest(CuTest *tc, bool bram) {
   //test MultiPositionQuery...
   {
     MultiPhraseQuery* query = _CLNEW MultiPhraseQuery();
-    RefCountArray<Term*> terms(3);
-    Term* termE = _CLNEW Term(_T("contents"), _T("e"));
-    terms[0] = _CLNEW Term(_T("contents"), _T("asdf"));
-    terms[1] = _CLNEW Term(_T("contents"), _T("asdg"));
-    terms[2] = _CLNEW Term(_T("contents"), _T("asef"));
+    ValueArray<boost::shared_ptr<Term> > terms(3);
+    boost::shared_ptr<Term> termE(_CLNEW Term(_T("contents"), _T("e")));
+    terms[0].reset(_CLNEW Term(_T("contents"), _T("asdf")));
+    terms[1].reset(_CLNEW Term(_T("contents"), _T("asdg")));
+    terms[2].reset(_CLNEW Term(_T("contents"), _T("asef")));
 
     query->add(termE);
-		_CLDECDELETE(termE);
-    
     query->add(&terms);
     terms.deleteValues();
 
@@ -355,7 +350,7 @@ void testNormEncoding(CuTest *tc) {
     CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(CL_NS(search)::Similarity::decodeNorm(57)) == 57 );
 }
 
-void testSrchManyHits(CuTest *tc) {
+void testSrchManyHits(CuTest* /*tc*/) {
   SimpleAnalyzer analyzer;
 	RAMDirectory ram;
 	IndexWriter writer( &ram, &analyzer, true);
@@ -383,9 +378,8 @@ void testSrchManyHits(CuTest *tc) {
 	IndexSearcher searcher(&ram);
 
 	BooleanQuery query;
-	Term* t = _CLNEW Term(_T("contents"), _T("a"));
+	boost::shared_ptr<Term> t(_CLNEW Term(_T("contents"), _T("a")));
 	query.add(_CLNEW TermQuery(t),true,false, false);
-	_CLDECDELETE(t);
 	Hits* hits = searcher.search(&query);
 	for ( size_t x=0;x<hits->length();x++ ){
 	      hits->doc(x);
@@ -437,12 +431,13 @@ void testSrchMulti(CuTest *tc) {
 
 	MultiSearcher searcher(searchers);
 
-  Term* termA = _CLNEW Term(_T("contents"), _T("a"));
-  Term* termC = _CLNEW Term(_T("contents"), _T("c"));
-	RangeQuery query(termA, termC, true);
-  _CLDECDELETE(termA);
-  _CLDECDELETE(termC);
-
+	boost::shared_ptr<Term> a(_CLNEW Term(_T("contents"), _T("a")));
+	boost::shared_ptr<Term> c(_CLNEW Term(_T("contents"), _T("c")));
+	RangeQuery query(
+		a,
+		c,
+		true
+	);
 	Query* rewritten = searcher.rewrite(&query);
 	Hits* hits = searcher.search(rewritten);
 	for ( size_t x=0;x<hits->length();x++ ){

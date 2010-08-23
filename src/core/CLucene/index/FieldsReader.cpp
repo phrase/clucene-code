@@ -518,7 +518,9 @@ CL_NS(analysis)::TokenStream* FieldsReader::FieldForMerge::tokenStreamValue() co
 	return NULL;
 }
 
-FieldsReader::FieldForMerge::FieldForMerge(void* _value, ValueType _type, const FieldInfo* fi, const bool binary, const bool compressed, const bool tokenize) : Field(fi->name, 0) {
+FieldsReader::FieldForMerge::FieldForMerge(void* _value, ValueType _type, const FieldInfo* fi, const bool binary, const bool compressed, const bool tokenize) : 
+  Field(fi->name, 0) 
+{
 
 	uint32_t bits = STORE_YES;
 

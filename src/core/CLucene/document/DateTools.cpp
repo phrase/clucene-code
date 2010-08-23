@@ -56,9 +56,10 @@ tm* DateTools::stringToDate(const TCHAR* dateString){
 }
 
 int64_t DateTools::stringToTime(const TCHAR* dateString) {
+
   tm s_time;
-  memset(&s_time, 0, sizeof (s_time));
-  s_time.tm_mday = 1;
+  memset(&s_time, 0, sizeof(s_time));
+  s_time.tm_mday=1;
   int32_t ms = 0;
 
   switch (_tcslen(dateString)) {

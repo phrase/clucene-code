@@ -8,6 +8,7 @@
 #include "Term.h"
 #include "CLucene/util/_StringIntern.h"
 #include "CLucene/util/Misc.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_DEF(index)
@@ -54,7 +55,7 @@ Term::Term(const TCHAR* fld, const TCHAR* txt, bool internField){
 }
 
 
-Term::Term(const Term* fieldTerm, const TCHAR* txt){
+Term::Term(boost::shared_ptr<const Term> const& fieldTerm, const TCHAR* txt){
 	_field = LUCENE_BLANK_STRING;
 	internF = false;
 	textLen = 0;
@@ -118,8 +119,8 @@ const TCHAR* Term::text() const {
 }
 
 
-void Term::set(const Term* term, const TCHAR* txt){
-	set(term->field(),txt,false);
+void Term::set(boost::shared_ptr<const Term> const& term, const TCHAR* txt){
+	set(term.get()->field(),txt,false);
 }
 
 void Term::set(const TCHAR* fld, const TCHAR* txt,const bool internField){

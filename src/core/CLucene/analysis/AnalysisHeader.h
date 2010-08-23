@@ -354,6 +354,9 @@ protected:
 public:
     /** Close the input TokenStream. */
 	void close();
+
+  /** Reset the filter as well as the input TokenStream. */
+  virtual void reset();
 };
 
 CL_NS_END
