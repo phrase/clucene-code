@@ -463,6 +463,7 @@ void testWickedLongTerm(CuTest *tc) {
     _tcscat(contents, bigTerm);
     _tcscat(contents, _T(" another term"));
     doc->add(* _CLNEW Field(_T("content"), contents, Field::STORE_NO | Field::INDEX_TOKENIZED));
+    _CLDELETE_CARRAY(contents);
     writer->addDocument(doc);
     _CLLDELETE(doc);
 
@@ -472,6 +473,7 @@ void testWickedLongTerm(CuTest *tc) {
     writer->addDocument(doc);
     _CLLDELETE(doc);
     writer->close();
+    _CLDELETE(writer);
 
     IndexReader* reader = IndexReader::open(dir);
 
@@ -537,6 +539,7 @@ void testDeleteDocument(CuTest* tc) {
         TCHAR* contents = _CL_NEWARRAY(TCHAR, (size / 10) + 1);
         _i64tot(i, contents, 10);
         doc->add(* _CLNEW Field(_T("content"), contents, Field::STORE_NO | Field::INDEX_TOKENIZED));
+    	_CLDELETE_CARRAY(contents);
         writer->addDocument(doc);
         _CLLDELETE(doc);
     }
@@ -545,12 +548,14 @@ void testDeleteDocument(CuTest* tc) {
     writer->optimize();
     // close and flush index
     writer->close();
+    _CLLDELETE(writer);
 
     // reopen the index and delete the document next to last
     writer = _CLNEW IndexWriter(dir, &a, false);
     TCHAR* contents = _CL_NEWARRAY(TCHAR, (size / 10) + 1);
     _i64tot(size - 2, contents, 10);
     boost::shared_ptr<Term> t(_CLNEW Term(_T("content"), contents));
+    _CLDELETE_CARRAY(contents);
     writer->deleteDocuments(t);
     writer->close();
 
@@ -564,6 +569,7 @@ void testDeleteDocument(CuTest* tc) {
     reader->close();
     _CLLDELETE(searcher);
     _CLLDELETE(reader);
+    _CLDECDELETE(dir);
 }
 
 CuSuite *testindexwriter(void)
