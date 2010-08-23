@@ -69,9 +69,9 @@ public:
   void applyDeletes(const DocumentsWriter::TermNumMapType& deleteTerms, IndexReader* reader);
 };
 
-IndexWriter::~IndexWriter(){
-  if (writeLock != NULL) {
-    writeLock->release();                        // release write lock
+void IndexWriter::deinit(bool releaseWriteLock) throw() {
+  if (writeLock != NULL && releaseWriteLock) {
+    writeLock->release(); // release write lock
     _CLLDELETE(writeLock);
   }
   _CLLDELETE(segmentInfos);
@@ -86,6 +86,10 @@ IndexWriter::~IndexWriter(){
   _CLLDELETE(docWriter);
   _CLLDECDELETE(directory);
   delete _internal;
+}
+
+IndexWriter::~IndexWriter(){
+  deinit();
 }
 
 void IndexWriter::ensureOpen()   {
@@ -215,10 +219,16 @@ void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool 
     directory->clearLock(IndexWriter::WRITE_LOCK_NAME);
   }
 
-  LuceneLock* writeLock = directory->makeLock(IndexWriter::WRITE_LOCK_NAME);
-  if (!writeLock->obtain(writeLockTimeout)) // obtain write lock
-    _CLTHROWA(CL_ERR_LockObtainFailed, (string("Index locked for write: ") + writeLock->getObjectName()).c_str() );
-  this->writeLock = writeLock;                   // save it
+  bool hasLock = false;
+  try {
+    writeLock = directory->makeLock(IndexWriter::WRITE_LOCK_NAME);
+    hasLock = writeLock->obtain(writeLockTimeout);
+    if (!hasLock) // obtain write lock
+      _CLTHROWA(CL_ERR_LockObtainFailed, (string("Index locked for write: ") + writeLock->getObjectName()).c_str() );
+  } catch (...) {
+    deinit(hasLock);
+    throw;
+  }
 
   try {
     if (create) {
@@ -262,10 +272,7 @@ void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool 
     }
 
   } catch (CLuceneError& e) {
-    if ( e.number() != CL_ERR_IO ) throw e;
-
-    this->writeLock->release();
-    _CLDELETE(this->writeLock);
+    deinit(e.number() == CL_ERR_IO);
     throw e;
   }
 }
