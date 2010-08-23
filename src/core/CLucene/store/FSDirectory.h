@@ -149,8 +149,11 @@ public:
 
   /**
    * Sets the file mode for new files. This is passed to new output streams
-   * and to the lock factory. The mode should be a valid mode for the 3rd
-   * parameter of the file open function (such as 0644)
+   * and to the lock factory. The mode should be a valid octal file mode for
+   * the 3rd parameter of the file open function (such as 0644)
+   *
+   * Tip: _tcstoi64(_T("644"), NULL, 8) is also a valid way of
+   * creating a file mode
    */
   void setFileMode(int mode);
 
