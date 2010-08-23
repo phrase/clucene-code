@@ -50,9 +50,9 @@ DocumentsWriter::ThreadState::ThreadState(DocumentsWriter* __parent):
   fieldDataHash(ValueArray<FieldData*>(16)),
   postingsVectors(ObjectArray<PostingVector>(1)),
   postingsPool( _CLNEW ByteBlockPool(true, __parent) ),
+  allFieldDataArray(ValueArray<FieldData*>(10)),
   vectorsPool( _CLNEW ByteBlockPool(false, __parent) ),
   charPool( _CLNEW CharBlockPool(__parent) ),
-  allFieldDataArray(ValueArray<FieldData*>(10)),
   _parent(__parent)
 {
   fieldDataHashMask = 15;
@@ -62,8 +62,8 @@ DocumentsWriter::ThreadState::ThreadState(DocumentsWriter* __parent):
   isIdle = true;
   numThreads = 1;
 
-  tvfLocal = _CLNEW RAMOutputStream();    // Term vectors for one doc
-  fdtLocal = _CLNEW RAMOutputStream();    // Stored fields for one doc
+  tvfLocal = _CLNEW CL_NS(store)::RAMOutputStream();    // Term vectors for one doc
+  fdtLocal = _CLNEW CL_NS(store)::RAMOutputStream();    // Stored fields for one doc
 
   this->docBoost = 0.0;
   this->fieldGen = this->posUpto = this->maxPostingsVectors = this->numStoredFields = 0;
@@ -852,7 +852,7 @@ void DocumentsWriter::ThreadState::FieldData::invertField(Field* field, Analyzer
 
   if (!field->isTokenized()) {     // un-tokenized field
     const TCHAR* stringValue = field->stringValue();
-    size_t valueLength = _tcslen(stringValue);
+    const size_t valueLength = _tcslen(stringValue);
     Token* token = localToken;
     token->clear();
 

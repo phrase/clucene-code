@@ -19,6 +19,7 @@
 #include "_TermInfo.h"
 #include "_TermInfosWriter.h"
 #include "_TermInfosReader.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(store)
 CL_NS_USE(util)
@@ -107,14 +108,13 @@ CL_NS_DEF(index)
 
 	  //Check if indexTerms and indexInfos exist
      if (indexTerms && indexInfos){
-          //Iterate through arrays indexTerms and indexPointer to
+        //Iterate through arrays indexTerms and indexPointer to
 	      //destroy their elements
-#ifdef _DEBUG
-         for ( int32_t i=0; i<indexTermsLength;++i ){
-            indexTerms[i].__cl_refcount--;
-         }
-#endif
-         //Delete the arrays
+        for ( int32_t i=0; i<indexTermsLength;++i ){
+           indexTerms[i].reset();
+        }
+
+        //Delete the arrays
          delete [] indexTerms;
          _CLDELETE_ARRAY(indexInfos);
      }
@@ -161,20 +161,20 @@ CL_NS_DEF(index)
   }
 
 
-  Term* TermInfosReader::get(const int32_t position) {
+  boost::shared_ptr<Term> TermInfosReader::get(const int32_t position) {
   //Func - Returns the nth term in the set
   //Pre  - position > = 0
   //Post - The n-th term in the set has been returned
 
 	  //Check if the size is 0 because then there are no terms
       if (_size == 0)
-          return NULL;
+          return boost::shared_ptr<Term>();
 
 	  SegmentTermEnum* enumerator = getEnum();
 
 	  if (
 	      enumerator != NULL //an enumeration exists
-	      && enumerator->term(false) != NULL // term is at or past current
+	      && enumerator->term().get() != NULL // term is at or past current
 	      && position >= enumerator->position
 		  && position < (enumerator->position + totalIndexInterval)
 	     )
@@ -198,7 +198,7 @@ CL_NS_DEF(index)
     return termEnum;
   }
 
-  TermInfo* TermInfosReader::get(const Term* term){
+  TermInfo* TermInfosReader::get(boost::shared_ptr<Term const> const& term){
   //Func - Returns a TermInfo for a term
   //Pre  - term holds a valid reference to term
   //Post - if term can be found its TermInfo has been returned otherwise NULL
@@ -215,12 +215,12 @@ CL_NS_DEF(index)
     // optimize sequential access: first try scanning cached enumerator w/o seeking
     if (
 	      //the current term of the enumeration enumerator is not at the end AND
-      	enumerator->term(false) != NULL	 &&
+      	enumerator->term().get() != NULL	 &&
       	(
             //there exists a previous current called prev and term is positioned after this prev OR
-            ( enumerator->prev != NULL && term->compareTo(enumerator->prev) > 0) ||
+            ( enumerator->prev.get() != NULL && term.get()->compareTo(enumerator->prev.get()) > 0) ||
             //term is positioned at the same position as the current of enumerator or at a higher position
-            term->compareTo(enumerator->term(false)) >= 0 )
+            term.get()->compareTo(enumerator->term().get()) >= 0 )
       	)
      {
 
@@ -233,7 +233,7 @@ CL_NS_DEF(index)
 			//_enum_offset OR
 			indexTermsLength == _enumOffset	 ||
 			//term is positioned in front of term found at _enumOffset in indexTerms
-			term->compareTo(&indexTerms[_enumOffset]) < 0){
+			term.get()->compareTo(indexTerms[_enumOffset].get()) < 0){
 
 			//no need to seek, retrieve the TermInfo for term
 			return scanEnum(term);
@@ -247,7 +247,7 @@ CL_NS_DEF(index)
   }
 
 
-  int64_t TermInfosReader::getPosition(const Term* term) {
+  int64_t TermInfosReader::getPosition(boost::shared_ptr<Term const> const& term) {
   //Func - Returns the position of a Term in the set
   //Pre  - term holds a valid reference to a Term
   //       enumerator != NULL
@@ -265,15 +265,15 @@ CL_NS_DEF(index)
 
 	  SegmentTermEnum* enumerator = getEnum();
 
-      while(term->compareTo(enumerator->term(false)) > 0 && enumerator->next()) {}
+      while(term.get()->compareTo(enumerator->term().get()) > 0 && enumerator->next()) {}
 
-	  if ( term->equals(enumerator->term(false)) ){
+	  if ( term.get()->equals(enumerator->term().get()) ){
           return enumerator->position;
 	  }else
           return -1;
   }
 
-  SegmentTermEnum* TermInfosReader::terms(const Term* term) {
+  SegmentTermEnum* TermInfosReader::terms(boost::shared_ptr<Term const> const& term) {
   //Func - Returns an enumeration of terms starting at or after the named term.
   //       If term is null then enumerator is set to the beginning
   //Pre  - term holds a valid reference to a Term
@@ -281,7 +281,7 @@ CL_NS_DEF(index)
   //Post - An enumeration of terms starting at or after the named term has been returned
 
 	  SegmentTermEnum* enumerator = NULL;
-	  if ( term != NULL ){
+	  if ( term.get() != NULL ){
 		//Seek enumerator to term; delete the new TermInfo that's returned.
 		TermInfo* ti = get(term);
 		_CLLDELETE(ti);
@@ -318,7 +318,7 @@ CL_NS_DEF(index)
           indexTermsLength = (size_t)indexEnum->size;
 
 		      //Instantiate an block of Term's,so that each one doesn't have to be new'd
-          indexTerms    = new Term[indexTermsLength];
+          indexTerms    = new boost::shared_ptr<Term>[indexTermsLength];
           CND_CONDITION(indexTerms != NULL,"No memory could be allocated for indexTerms");//Check if is indexTerms is a valid array
 
 		  //Instantiate an big block of TermInfo's, so that each one doesn't have to be new'd
@@ -331,7 +331,7 @@ CL_NS_DEF(index)
 
 		  //Iterate through the terms of indexEnum
           for (int32_t i = 0; indexEnum->next(); ++i){
-              indexTerms[i].set(indexEnum->term(false),indexEnum->term(false)->text());
+              indexTerms[i].reset(_CLNEW Term(indexEnum->term(),indexEnum->term().get()->text()));
               indexEnum->getTermInfo(&indexInfos[i]);
               indexPointers[i] = indexEnum->indexPointer;
 
@@ -348,7 +348,7 @@ CL_NS_DEF(index)
   }
 
 
-  int32_t TermInfosReader::getIndexOffset(const Term* term){
+  int32_t TermInfosReader::getIndexOffset(boost::shared_ptr<Term const> const& term){
   //Func - Returns the offset of the greatest index entry which is less than or equal to term.
   //Pre  - term holds a reference to a valid term
   //       indexTerms != NULL
@@ -367,11 +367,11 @@ CL_NS_DEF(index)
           mid = (lo + hi) >> 1;
 
           //Check if is indexTerms[mid] is a valid instance of Term
-          CND_PRECONDITION(&indexTerms[mid] != NULL,"indexTerms[mid] is NULL");
+          CND_PRECONDITION(indexTerms[mid].get() != NULL,"indexTerms[mid] is NULL");
           CND_PRECONDITION(mid < indexTermsLength,"mid >= indexTermsLength");
 
 		  //Determine if term is before mid or after mid
-          delta = term->compareTo(&indexTerms[mid]);
+          delta = term.get()->compareTo(indexTerms[mid].get());
           if (delta < 0){
               //Calculate the new hi
               hi = mid - 1;
@@ -404,13 +404,13 @@ CL_NS_DEF(index)
 	  enumerator->seek(
           indexPointers[indexOffset],
 		  (indexOffset * totalIndexInterval) - 1,
-          &indexTerms[indexOffset],
+          indexTerms[indexOffset],
 		  &indexInfos[indexOffset]
 	      );
   }
 
 
-  TermInfo* TermInfosReader::scanEnum(const Term* term) {
+  TermInfo* TermInfosReader::scanEnum(boost::shared_ptr<Term const> const& term) {
   //Func - Scans the Enumeration of terms for term and returns the corresponding TermInfo instance if found.
   //       The search is started from the current term.
   //Pre  - term contains a valid reference to a Term
@@ -422,7 +422,7 @@ CL_NS_DEF(index)
 	  enumerator->scanTo(term);
 
       //Check if the at the position the Term term can be found
-	  if (enumerator->term(false) != NULL && term->equals(enumerator->term(false)) ){
+	  if (enumerator->term().get() != NULL && term.get()->equals(enumerator->term().get()) ){
 		  //Return the TermInfo instance about term
           return enumerator->getTermInfo();
      }else{
@@ -431,7 +431,7 @@ CL_NS_DEF(index)
      }
   }
 
-  Term* TermInfosReader::scanEnum(const int32_t position) {
+  boost::shared_ptr<Term> TermInfosReader::scanEnum(const int32_t position) {
   //Func - Scans the enumeration to the requested position and returns the
   //       Term located at that position
   //Pre  - position > = 0
@@ -445,7 +445,7 @@ CL_NS_DEF(index)
 		  //Move the current of enumerator to the next
 		  if (!enumerator->next()){
 			  //If there is no next it means that the requested position was to big
-              return NULL;
+              return boost::shared_ptr<Term>();
           }
 	  }
 

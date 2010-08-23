@@ -25,6 +25,7 @@
 #include "DirectoryIndexReader.h"
 #include "_SkipListReader.h"
 #include "CLucene/util/_ThreadLocal.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 class SegmentReader;
@@ -58,9 +59,9 @@ public:
   SegmentTermDocs( const SegmentReader* Parent);
   virtual ~SegmentTermDocs();
 
-  virtual void seek(Term* term);
+  virtual void seek(boost::shared_ptr<Term> const& term);
   virtual void seek(TermEnum* termEnum);
-  virtual void seek(const TermInfo* ti,Term* term);
+  virtual void seek(const TermInfo* ti,boost::shared_ptr<Term> const& term);
 
   virtual void close();
   virtual int32_t doc()const;
@@ -102,10 +103,10 @@ private:
 public:
   ///\param Parent must be a segment reader
   SegmentTermPositions(const SegmentReader* Parent);
-  ~SegmentTermPositions();
+  virtual ~SegmentTermPositions();
 
 private:
-  void seek(const TermInfo* ti, Term* term);
+  void seek(const TermInfo* ti, boost::shared_ptr<Term> const& term);
 
 public:
   void close();
@@ -140,6 +141,7 @@ private:
   // So we move the prox pointer lazily to the document
   // as soon as positions are requested.
   void lazySkip();
+
 public:
   int32_t getPayloadLength() const;
 
@@ -152,7 +154,7 @@ private:
   virtual TermPositions* __asTermPositions();
 
   //resolve SegmentTermDocs/TermPositions ambiguity
-  void seek(Term* term){ SegmentTermDocs::seek(term); }
+  void seek(boost::shared_ptr<Term> const& term){ SegmentTermDocs::seek(term); }
   void seek(TermEnum* termEnum){ SegmentTermDocs::seek(termEnum); }
   int32_t doc() const{ return SegmentTermDocs::doc(); }
   int32_t freq() const{ return SegmentTermDocs::freq(); }
@@ -278,51 +280,30 @@ public:
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(SegmentInfo* si);
+  static SegmentReader* get(SegmentInfo* si, bool doOpenStores=true);
 
   /**
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(SegmentInfo* si, bool doOpenStores);
+  static SegmentReader* get(SegmentInfo* si, int32_t readBufferSize, bool doOpenStores=true);
 
   /**
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
    */
-  static SegmentReader* get(SegmentInfo* si, int32_t readBufferSize);
+  static SegmentReader* get(SegmentInfos* sis, SegmentInfo* si, bool closeDir);
 
   /**
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
-   */
-  static SegmentReader* get(SegmentInfo* si, int32_t readBufferSize, bool doOpenStores);
-
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
-  static SegmentReader* get(SegmentInfos* sis, SegmentInfo* si,
-      bool closeDir);
-
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
+   * @param readBufferSize defaults to BufferedIndexInput::BUFFER_SIZE
    */
   static SegmentReader* get(CL_NS(store)::Directory* dir, SegmentInfo* si,
       SegmentInfos* sis,
       bool closeDir, bool ownDir,
-      int32_t readBufferSize);
-
-  /**
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws IOException if there is a low-level IO error
-   */
-  static SegmentReader* get(CL_NS(store)::Directory* dir, SegmentInfo* si,
-      SegmentInfos* sis,
-      bool closeDir, bool ownDir,
-      int32_t readBufferSize,
-      bool doOpenStores);
+      int32_t readBufferSize=-1,
+      bool doOpenStores=true);
 
 
 
@@ -343,7 +324,7 @@ public:
   ///Returns an enumeration of all the Terms and TermInfos in the set.
   TermEnum* terms();
   ///Returns an enumeration of terms starting at or after the named term t
-  TermEnum* terms(const Term* t);
+  TermEnum* terms(boost::shared_ptr<const Term> const& t);
 
   ///Gets the document identified by n
   bool document(int32_t n, CL_NS(document)::Document& doc, const CL_NS(document)::FieldSelector* fieldSelector);
@@ -357,7 +338,7 @@ public:
   TermPositions* termPositions();
 
   ///Returns the number of documents which contain the term t
-  int32_t docFreq(const Term* t);
+  int32_t docFreq(boost::shared_ptr<Term const> const& t);
 
   ///Returns the actual number of documents in the segment
   int32_t numDocs();

@@ -9,6 +9,7 @@
 #include "CLucene/index/_SegmentHeader.h"
 #include "CLucene/index/_MultiSegmentReader.h"
 #include "CLucene/index/MultiReader.h"
+#include <stdio.h>
 
 
 _LUCENE_THREADID_TYPE* atomicSearchThreads = NULL;
@@ -29,19 +30,18 @@ _LUCENE_THREAD_FUNC(atomicIndexTest, _writer){
 
         sb.clear();
         English::IntToEnglish(i+10*count, &sb);
-        d.add(*_CLNEW Field(_T("id"), buf, Field::STORE_YES | Field::INDEX_UNTOKENIZED));
         d.add(*_CLNEW Field(_T("contents"), sb.getBuffer() , Field::STORE_NO | Field::INDEX_TOKENIZED));
-        //wprintf(L"update on thread %lld #%d, doc %s\n", _LUCENE_CURRTHREADID, i, buf);
+
         _i64tot(i,buf,10);
-        Term* t = _CLNEW Term(_T("id"), buf);
+        d.add(*_CLNEW Field(_T("id"), buf, Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+        boost::shared_ptr<Term> t(_CLNEW Term(_T("id"), buf));
         writer->updateDocument(t, &d);
-        _CLDECDELETE(t);
       }
 
       count++;
     }
   } catch (CLuceneError& e) {
-    fprintf(stderr, "err: %d:%s\n", e.number(), e.what());
+    fprintf(stderr, "err 1: #%d: %s\n", e.number(), e.what());
     atomicSearchFailed = true;
   }
 
@@ -59,10 +59,11 @@ _LUCENE_THREAD_FUNC(atomicSearchTest, _directory){
 
       try {
         if ( 100 != r->numDocs() ){
-          fprintf(stderr, "err: 100 != %d \n", r->numDocs());
+          fprintf(stderr, "err 2: 100 != %d \n", r->numDocs());
+          atomicSearchFailed = true;
         }
       } catch (CLuceneError& e) {
-        fprintf(stderr, "err: %d:%s\n", e.number(), e.what());
+        fprintf(stderr, "err 3: %d:%s\n", e.number(), e.what());
         atomicSearchFailed = true;
         break;
       }
@@ -72,7 +73,7 @@ _LUCENE_THREAD_FUNC(atomicSearchTest, _directory){
       count++;
     }
   } catch (CLuceneError& e) {
-    fprintf(stderr, "err: %d:%s\n", e.number(), e.what());
+    fprintf(stderr, "err 4: #%d: %s\n", e.number(), e.what());
     atomicSearchFailed = true;
   }
 
@@ -102,7 +103,6 @@ void runThreadingTests(CuTest* tc, Directory& directory){
     writer.addDocument(&d);
   }
   writer.flush();
-
 
   //read using multiple threads...
   atomicSearchThreads = _CL_NEWARRAY(_LUCENE_THREADID_TYPE, 4);
@@ -142,7 +142,7 @@ void testFSThreading(CuTest *tc){
   strcat(tmpfsdirectory,"/threading-index");
 
   // Second in an FSDirectory:
-  Directory* directory = FSDirectory::getDirectory(tmpfsdirectory, true);
+  Directory* directory = FSDirectory::getDirectory(tmpfsdirectory);
   runThreadingTests(tc,*directory);
   directory->close();
   _CLDECDELETE(directory);

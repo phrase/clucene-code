@@ -109,7 +109,9 @@ CL_NS_DEF(search)
       return maxClauseCount;
    }
 
-   void BooleanQuery::setMaxClauseCount(size_t maxClauseCount){
+   void BooleanQuery::setMaxClauseCount(const size_t maxClauseCount){
+       if (maxClauseCount < 1)
+           _CLTHROWA(CL_ERR_IllegalArgument, "maxClauseCount must be >= 1");
 	   BooleanQuery::maxClauseCount = maxClauseCount;
    }
 
@@ -396,8 +398,8 @@ CL_NS_DEF(search)
 				r->addDetail(e);
 				sumExpl->addDetail(r);
 				fail = true;
-			}else{
-			  _CLDELETE(e);
+			} else {
+				_CLLDELETE(e);
 			}
 		}
 		if (fail) {

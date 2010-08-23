@@ -13,6 +13,7 @@
 CL_CLASS_DEF(document,Document)
 //#include "Terms.h"
 //#include "SegmentMergeQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -95,10 +96,10 @@ public:
 	uint8_t* norms(const TCHAR* field);
 	void norms(const TCHAR* field, uint8_t* result);
 	TermEnum* terms();
-	TermEnum* terms(const Term* term);
+	TermEnum* terms(boost::shared_ptr<const Term> const& term);
 
 	//Returns the document frequency of the current term in the set
-	int32_t docFreq(const Term* t=NULL);
+	int32_t docFreq(boost::shared_ptr<const Term> const& t=boost::shared_ptr<const Term>());
 	TermDocs* termDocs();
 	TermPositions* termPositions();
 

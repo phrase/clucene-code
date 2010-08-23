@@ -8,6 +8,7 @@
 #define _lucene_index_Terms_
 
 #include "CLucene/util/Equators.h"
+#include <boost/shared_ptr.hpp>
 CL_NS_DEF(index)
 
 //predefine
@@ -23,13 +24,13 @@ class TermPositions;
 
  @see IndexReader#termDocs()
  */
-class CLUCENE_EXPORT TermDocs: LUCENE_BASE {
+class CLUCENE_EXPORT TermDocs {
 public:
 	virtual ~TermDocs();
 
 	// Sets this to the data for a term.
 	// The enumeration is reset to the start of the data for this term.
-	virtual void seek(Term* term)=0;
+	virtual void seek(boost::shared_ptr<Term> const& term)=0;
 
 	/** Sets this to the data for the current term in a {@link TermEnum}.
 	* This may be optimized in some implementations.
@@ -96,7 +97,7 @@ public:
 	* Returns the current Term in the enumeration.
 	* @param pointer if true, then increment the reference count before returning
 	*/
-	virtual Term* term(bool pointer=true)=0;
+	virtual boost::shared_ptr<Term> const& term()=0;
 
 	/** Returns the docFreq of the current Term in the enumeration.*/
 	virtual int32_t docFreq() const=0;
@@ -120,7 +121,7 @@ public:
 	* </pre>
 	* Some implementations are considerably more efficient than that.
 	*/
-	virtual bool skipTo(Term* target);
+	virtual bool skipTo(boost::shared_ptr<Term> const& target);
 };
 
 

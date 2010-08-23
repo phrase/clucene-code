@@ -12,11 +12,12 @@
 
 CL_NS_DEF(store)
 
-
-Directory::Directory(){
+Directory::Directory() {
   this->lockFactory = NULL;
 }
 Directory::~Directory(){
+	if (lockFactory != NULL)
+		_CLDELETE(lockFactory);
 }
 
 LuceneLock* Directory::makeLock(const char* name) {

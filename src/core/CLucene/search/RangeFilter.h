@@ -8,12 +8,9 @@
 #ifndef _lucene_search_RangeFilter_
 #define _lucene_search_RangeFilter_
 
-//#include "CLucene/document/DateField.h"
-CL_CLASS_DEF(index,Term)
-//#include "CLucene/index/Terms.h"
-//#include "CLucene/index/IndexReader.h"
-//#include "CLucene/util/BitSet.h"
 #include "Filter.h"
+
+CL_CLASS_DEF(index,Term)
 
 CL_NS_DEF(search)
 
@@ -29,31 +26,49 @@ CL_NS_DEF(search)
 class CLUCENE_EXPORT RangeFilter: public Filter 
 {
 private:
-	TCHAR* field;
-	TCHAR* lowerValue;
-	TCHAR* upperValue;
+	TCHAR* fieldName;
+	TCHAR* lowerTerm;
+	TCHAR* upperTerm;
 	bool   includeLower;
 	bool   includeUpper;
-	
-protected:
-	RangeFilter( const RangeFilter& copy );
-	
+
 public:
-	RangeFilter( const TCHAR* fieldName, const TCHAR* lowerValue, const TCHAR* upperValue, bool includeLower, bool includeUpper );
+    /**
+     * @param fieldName The field this range applies to
+     * @param lowerTerm The lower bound on this range
+     * @param upperTerm The upper bound on this range
+     * @param includeLower Does this range include the lower bound?
+     * @param includeUpper Does this range include the upper bound?
+     */
+	RangeFilter( const TCHAR* fieldName, const TCHAR* lowerTerm, const TCHAR* upperTerm,
+        bool includeLower, bool includeUpper );
+    virtual ~RangeFilter();
 	
-	static RangeFilter* Less( TCHAR* fieldName, TCHAR* upperTerm );
+    /**
+    * Constructs a filter for field <code>fieldName</code> matching
+    * less than or equal to <code>upperTerm</code>.
+    */
+	static RangeFilter* Less( const TCHAR* fieldName, const TCHAR* upperTerm );
 	
-	static RangeFilter* More( TCHAR* fieldName, TCHAR* lowerTerm );
+    /**
+    * Constructs a filter for field <code>fieldName</code> matching
+    * more than or equal to <code>lowerTerm</code>.
+    */
+	static RangeFilter* More( const TCHAR* fieldName, const TCHAR* lowerTerm );
 	
-	~RangeFilter();
-	
-	/** Returns a BitSet with true for documents which should be permitted in
-	search results, and false for those that should not. */
+    /**
+    * Returns a BitSet with true for documents which should be
+    * permitted in search results, and false for those that should
+    * not.
+    */
 	CL_NS(util)::BitSet* bits( CL_NS(index)::IndexReader* reader );
 	
 	Filter* clone() const;
 	
 	TCHAR* toString();
+
+protected:
+	RangeFilter( const RangeFilter& copy );
 };
 
 CL_NS_END

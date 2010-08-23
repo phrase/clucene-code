@@ -62,13 +62,13 @@ public:
 	* @see IndexInput#readString()
 	*/
 	void writeString(const TCHAR* s, const int32_t length);
+    void writeString(const std::string& s);
 	
 	#ifdef _UCS2
 	/** Writes an ascii string. converts to TCHAR* before writing
 	* @see IndexInput#readString()
 	*/
 	void writeString(const char* s, const int32_t length);
-  void writeString(const std::string& s);
 	#endif
 
 	/** Writes a sequence of UTF-8 encoded characters from a string.
@@ -77,7 +77,7 @@ public:
 	* @param length the number of characters in the sequence
 	* @see IndexInput#readChars(char[],int32_t,int32_t)
 	*/
-	void writeChars(const TCHAR* s, const int32_t length);
+	virtual void writeChars(const TCHAR* s, const int32_t length);
 
 	/** Closes this stream to further operations. */
 	virtual void close() = 0;
@@ -106,60 +106,6 @@ private:
 public:
 	/** Copy numBytes bytes from input to ourself. */
 	void copyBytes(CL_NS(store)::IndexInput* input, int64_t numBytes);
-};
-
-/** Base implementation class for buffered {@link IndexOutput}. */
-class CLUCENE_EXPORT BufferedIndexOutput : public IndexOutput{
-public:
-	LUCENE_STATIC_CONSTANT(int32_t, BUFFER_SIZE=16384);
-private:
-	uint8_t* buffer;
-	int64_t bufferStart;			  // position in file of buffer
-	int32_t bufferPosition;		  // position in buffer
-
-public:
-	BufferedIndexOutput();
-	virtual ~BufferedIndexOutput();
-
-	/** Writes a single byte.
-	* @see IndexInput#readByte()
-	*/
-	virtual void writeByte(const uint8_t b);
-
-	/** Writes an array of bytes.
-	* @param b the bytes to write
-	* @param length the number of bytes to write
-	* @see IndexInput#readBytes(byte[],int32_t,int32_t)
-	*/
-	virtual void writeBytes(const uint8_t* b, const int32_t length);
-
-	/** Closes this stream to further operations. */
-	virtual void close();
-
-	/** Returns the current position in this file, where the next write will
-	* occur.
-	* @see #seek(long)
-	*/
-	int64_t getFilePointer() const;
-
-	/** Sets current position in this file, where the next write will occur.
-	* @see #getFilePointer()
-	*/
-	virtual void seek(const int64_t pos);
-
-	/** The number of bytes in the file. */
-	virtual int64_t length() const = 0;
-
-	/** Forces any buffered output to be written. */
-	void flush();
-
-protected:
-	/** Expert: implements buffer write.  Writes bytes at the current position in
-	* the output.
-	* @param b the bytes to write
-	* @param len the number of bytes to write
-	*/
-	virtual void flushBuffer(const uint8_t* b, const int32_t len) = 0;
 };
 
 CL_NS_END

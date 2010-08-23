@@ -61,7 +61,7 @@ CL_NS_DEF(index)
         CND_PRECONDITION(stiB != NULL, "stiB is NULL");
 
 		//Compare the two terms 
-		int32_t comparison = stiA->term->compareTo(stiB->term);
+		int32_t comparison = stiA->term.get()->compareTo(stiB->term.get());
 		//Check if they match
 		if (comparison == 0){ //todo: can we do an optimized compare here? compare using equals, then compare properly?
 			//If the match check if the base of stiA is smaller than the base of stiB

@@ -69,33 +69,29 @@ Searcher* sort_getIndex (bool even, bool odd){
 	return res;
 }
 
-void testSortSetup(CuTest *tc) {
+void testSortSetup(CuTest* /*tc*/) {
     sort_full = sort_getIndex (true, true);
 	sort_searchX = sort_getIndex (true, false);
 	sort_searchY = sort_getIndex (false, true);
 
-    Term* tmp;
+    boost::shared_ptr<Term> tmp;
 
-    tmp = _CLNEW Term (_T("contents"), _T("x"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("x")));
 	sort_queryX = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
-    tmp = _CLNEW Term (_T("contents"), _T("y"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("y")));
 	sort_queryY = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
-    tmp = _CLNEW Term (_T("contents"), _T("a"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("a")));
 	sort_queryA = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
-    tmp = _CLNEW Term (_T("contents"), _T("f"));
+    tmp.reset(_CLNEW Term (_T("contents"), _T("f")));
 	sort_queryF = _CLNEW TermQuery (tmp);
-    _CLDECDELETE(tmp);
 
 	_sort   = _CLNEW Sort();
 }
 
-void testSortCleanup(CuTest *tc) {
+void testSortCleanup(CuTest* /*tc*/) {
     _CLDELETE(sort_full);
     _CLDELETE(sort_searchX);
     _CLDELETE(sort_searchY);

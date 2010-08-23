@@ -20,9 +20,6 @@ SOURCE_GROUP("snowball-impl" ./CLucene/snowball/runtime/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/src_c/*)
 
 SET(clucene_contribs_Files
-    ./CLucene/util/gzipcompressstream.cpp
-    ./CLucene/util/gzipinputstream.cpp
-
     ./CLucene/analysis/LanguageBasedAnalyzer.cpp
     ./CLucene/analysis/cjk/CJKAnalyzer.cpp
     
@@ -76,16 +73,7 @@ SET ( clucene_contrib_extra_libs clucene-core clucene-shared ${EXTRA_LIBS})
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-contribs-lib_SOURCE_DIR}/*.h)
 
-#add extra capabilities
-find_package(ZLIB)
-IF ( NOT ZLIB_FOUND )
-  MESSAGE ( FATAL "ZLib not found" )
-ENDIF ( NOT ZLIB_FOUND )
-INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
-SET ( clucene_contrib_extra_libs "${clucene_contrib_extra_libs}" ${ZLIB_LIBRARIES} )
-
 find_package(Iconv)
-#find_package(Strigi)
 SET ( clucene-contrib-libs "" )
 
 IF ( USE_SHARED_OBJECT_FILES )
@@ -93,6 +81,7 @@ IF ( USE_SHARED_OBJECT_FILES )
 ENDIF ( USE_SHARED_OBJECT_FILES )
 
 #create the libraries
+
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/contribs-lib )
 

@@ -40,12 +40,7 @@
 //   These options can be set depending on the particular needs of
 //   Your application
 ////////////////////////////////////////////////////////////////////
-//
-//define this to enable mmap support in the fsdirectory IndexInput
-//EXPERIMENTAL
-//#define LUCENE_FS_MMAP
-//
-//define to true to actually use it (not just enable it)
+//define to true to use it by default (not just build it)
 #ifdef LUCENE_FS_MMAP
 	#define LUCENE_USE_MMAP true //yes, use if it's turned on.
 #else
@@ -199,6 +194,21 @@
 //
 //Size of the CharTokenizer buffersize. Required.
 #define LUCENE_IO_BUFFER_SIZE 1024
+//
+////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////
+//   Date conversion settings for DateTools and DateField
+////////////////////////////////////////////////////////////////////
+//
+//  DateField, which is now deprecated, had it's buffer size
+//  defined for 9 chars. DateTools currently is configured
+//  for 30 chars, but this needs to be revised after tests
+//  are written for those.
+//	
+#define DATETOOLS_BUFFER_SIZE 30
+#define DATEFIELD_DATE_LEN DATETOOLS_BUFFER_SIZE
 //
 ////////////////////////////////////////////////////////////////////
 

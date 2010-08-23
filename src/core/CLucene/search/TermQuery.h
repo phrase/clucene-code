@@ -11,6 +11,7 @@ CL_CLASS_DEF(index,Term)
 CL_CLASS_DEF(util,StringBuffer)
 
 #include "Query.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
     /** A Query that matches documents containing a term.
@@ -18,20 +19,20 @@ CL_NS_DEF(search)
 	*/
     class CLUCENE_EXPORT TermQuery: public Query {
     private:
-		CL_NS(index)::Term* term;
+		boost::shared_ptr<CL_NS(index)::Term> term;
     protected:
         Weight* _createWeight(Searcher* searcher);
         TermQuery(const TermQuery& clone);
 	public:
 		// Constructs a query for the term <code>t</code>. 
-		TermQuery(CL_NS(index)::Term* t);
+		TermQuery(boost::shared_ptr<CL_NS(index)::Term> const& t);
 		virtual ~TermQuery();
 
 		static const char* getClassName();
 		const char* getObjectName() const;
 	    
 		/** Returns the term of this query. */
-		CL_NS(index)::Term* getTerm(bool pointer=true) const;
+		boost::shared_ptr<CL_NS(index)::Term> const& getTerm() const;
 	    
 		/** Prints a user-readable version of this query. */
 		TCHAR* toString(const TCHAR* field) const;

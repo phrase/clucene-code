@@ -11,6 +11,7 @@
 #include <list>
 #include <set>
 #include <vector>
+#include <stdlib.h>
 //#include "CLucene/LuceneThreads.h"
 
 CL_NS_DEF(util)
@@ -66,7 +67,7 @@ public:
 	virtual const char* getObjectName() const = 0;
   virtual bool instanceOf(const char* otherobject) const;
 };
-class CLUCENE_INLINE_EXPORT Comparable:public NamedObject{
+class CLUCENE_EXPORT Comparable:public NamedObject{
 public:
    virtual ~Comparable(){
    }
@@ -77,7 +78,7 @@ public:
 /** @internal */
 class CLUCENE_INLINE_EXPORT Compare{
 public:
-	class CLUCENE_INLINE_EXPORT _base
+	class CLUCENE_EXPORT _base
 	{	// traits class for hash containers
 	public:
 		enum
@@ -116,7 +117,7 @@ public:
 	};
 
 
-	class CLUCENE_INLINE_EXPORT Char: public _base, public Comparable //<char*>
+	class CLUCENE_EXPORT Char: public _base, public Comparable //<char*>
 	{
 	    const char* s;
 	public:
@@ -132,7 +133,7 @@ public:
 	};
 
 #ifdef _UCS2
-	class CLUCENE_INLINE_EXPORT WChar: public _base, public Comparable //<wchar_t*>
+	class CLUCENE_EXPORT WChar: public _base, public Comparable //<wchar_t*>
 	{
 	    const wchar_t* s;
 	public:

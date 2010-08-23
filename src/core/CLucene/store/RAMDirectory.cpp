@@ -11,6 +11,7 @@
 #include "LockFactory.h"
 #include "Directory.h"
 #include "FSDirectory.h"
+#include "BufferedIndexOutput.h"
 #include "CLucene/index/IndexReader.h"
 //#include "CLucene/util/VoidMap.h"
 #include "CLucene/util/Misc.h"
@@ -45,9 +46,6 @@ CL_NS_DEF(store)
 	   lastModified = Misc::currentTimeMillis();
 	   this->directory = _directory;
 	   sizeInBytes = 0;
-     #ifdef _DEBUG
-     filename = NULL;
-     #endif
   }
 
   RAMFile::~RAMFile(){
@@ -427,11 +425,13 @@ CL_NS_DEF(store)
       Directory(),files( _CLNEW FileMap(true,true) )
    {
       this->sizeInBytes = 0;
-      Directory* fsdir = FSDirectory::getDirectory(dir,false);
+      Directory* fsdir = FSDirectory::getDirectory(dir);
       try{
          _copyFromDir(fsdir,false);
-      }_CLFINALLY(fsdir->close();_CLDECDELETE(fsdir););
-
+      }_CLFINALLY(
+        fsdir->close();
+        _CLDECDELETE(fsdir);
+      );
    }
 
   bool RAMDirectory::fileExists(const char* name) const {
@@ -452,15 +452,15 @@ CL_NS_DEF(store)
   }
 
 
-  bool RAMDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t /*bufferSize*/) {
+  bool RAMDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t bufferSize) {
     SCOPED_LOCK_MUTEX(files_mutex);
     RAMFile* file = files->get((char*)name);
-    if (file == NULL) {
+    if (file == NULL) { /* DSR:PROPOSED: Better error checking. */
 		  error.set(CL_ERR_IO, "[RAMDirectory::open] The requested file does not exist.");
 		  return false;
     }
     ret = _CLNEW RAMInputStream( file );
-	  return true;
+	return true;
   }
 
   void RAMDirectory::close(){
@@ -538,9 +538,6 @@ CL_NS_DEF(store)
 	}
 
     RAMFile* file = _CLNEW RAMFile();
-    #ifdef _DEBUG
-      file->filename = n;
-    #endif
     (*files)[n] = file;
 
     return _CLNEW RAMOutputStream(file);

@@ -15,10 +15,9 @@ CL_CLASS_DEF(index, IndexReader)
 CL_CLASS_DEF(index, Term)
 CL_CLASS_DEF(index, TermDocs)
 CL_CLASS_DEF(index, TermEnum)
+
 #include "CLucene/analysis/AnalysisHeader.h"
-//#include "Term.h"
-//#include "IndexWriter.h"
-//#include "IndexReader.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 
@@ -77,7 +76,7 @@ CL_NS_DEF(index)
 *
 * @deprecated Please use {@link IndexWriter} instead.
 */
-class CLUCENE_EXPORT IndexModifier :LUCENE_BASE{
+class CLUCENE_EXPORT IndexModifier {
 protected:
 	IndexWriter* indexWriter;
 	IndexReader* indexReader;
@@ -87,6 +86,7 @@ protected:
 	bool open;
 
 	// Lucene defaults:
+    std::ostream* infoStream;
 	bool useCompoundFile;
 	int32_t maxBufferedDocs;
 	int32_t maxFieldLength;
@@ -104,8 +104,6 @@ public:
 	*/
 	IndexModifier(CL_NS(store)::Directory* directory, CL_NS(analysis)::Analyzer* analyzer, bool create);
 
-	~IndexModifier();
-
 	/**
 	* Open an index with write access.
 	*
@@ -115,6 +113,8 @@ public:
 	* 	<code>false</code> to append to the existing index
 	*/
 	IndexModifier(const char* dirName, CL_NS(analysis)::Analyzer* analyzer, bool create);
+		
+	virtual ~IndexModifier();
 
 protected:
 
@@ -170,7 +170,7 @@ public:
 	* @see IndexReader#deleteDocuments(Term*)
 	* @throws IllegalStateException if the index is closed
 	*/
-	int32_t deleteDocuments(Term* term);
+	int32_t deleteDocuments(boost::shared_ptr<Term> const& term);
 
 	/**
 	* Deletes the document numbered <code>docNum</code>.
@@ -296,7 +296,7 @@ public:
 	* while using the TermDocs. If the IndexReader that the modifier manages
 	* is closed, the TermDocs object will fail.
 	*/
-	TermDocs* termDocs(Term* term=NULL);
+	TermDocs* termDocs(boost::shared_ptr<Term> const& term=boost::shared_ptr<Term>());
 
 	/**
 	* Returns an enumeration of all terms after a given term.
@@ -309,7 +309,7 @@ public:
 	* while using the TermDocs. If the IndexReader that the modifier manages
 	* is closed, the Document will be invalid
 	*/
-	TermEnum* terms(Term* term=NULL);
+	TermEnum* terms(boost::shared_ptr<Term> const& term=boost::shared_ptr<Term>());
 
 	/**
 	* Returns the stored fields of the n-th Document in this index.

@@ -5,6 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "test.h"
+#include <stdio.h>
 
   void assertAnalyzersTo(CuTest *tc,Analyzer* a, const TCHAR* input, const TCHAR* output){
    Reader* reader = _CLNEW StringReader(input);
@@ -46,6 +47,22 @@
     _CLDELETE(a);
   }
   
+  
+   void testKeywordAnalyzer(CuTest *tc){
+    Analyzer* a = _CLNEW KeywordAnalyzer();
+    
+    assertAnalyzersTo(tc,a, _T("foo bar FOO BAR"), _T("foo bar FOO BAR;") );
+    assertAnalyzersTo(tc,a, _T("foo      bar .  FOO <> BAR"), _T("foo      bar .  FOO <> BAR;"));
+    assertAnalyzersTo(tc,a, _T("foo.bar.FOO.BAR"), _T("foo.bar.FOO.BAR;"));
+    assertAnalyzersTo(tc,a, _T("U.S.A."), _T("U.S.A.;") );
+    assertAnalyzersTo(tc,a, _T("C++"), _T("C++;") );
+    assertAnalyzersTo(tc,a, _T("B2B"), _T("B2B;"));
+    assertAnalyzersTo(tc,a, _T("2B"), _T("2B;"));
+    assertAnalyzersTo(tc,a, _T("\"QUOTED\" word"), _T("\"QUOTED\" word;"));
+    
+    _CLDELETE(a);
+   }
+
    void testStandardAnalyzer(CuTest *tc){
     Analyzer* a = _CLNEW StandardAnalyzer();
     
@@ -79,6 +96,69 @@
         _CLDELETE(tokenStream);
    }
 
+#define USE_PER_FIELD_ANALYZER
+//#define SUB_ANALYZER_TYPE lucene::analysis::WhitespaceAnalyzer
+#define SUB_ANALYZER_TYPE lucene::analysis::standard::StandardAnalyzer
+
+   void testPerFieldAnalzyerWrapper2(CuTest *tc){
+       try {
+#ifdef USE_PER_FIELD_ANALYZER
+           lucene::analysis::PerFieldAnalyzerWrapper analyzer(
+               _CLNEW lucene::analysis::standard::StandardAnalyzer());
+           analyzer.addAnalyzer(_T("First"), _CLNEW SUB_ANALYZER_TYPE());
+           analyzer.addAnalyzer(_T("Second"), _CLNEW SUB_ANALYZER_TYPE());
+           analyzer.addAnalyzer(_T("Third"), _CLNEW SUB_ANALYZER_TYPE());
+           analyzer.addAnalyzer(_T("Fourth"), _CLNEW SUB_ANALYZER_TYPE());
+           analyzer.addAnalyzer(_T("Fifth"), _CLNEW SUB_ANALYZER_TYPE());
+#else
+           lucene::analysis::WhitespaceAnalyzer analyzer;
+#endif
+           char INDEX_PATH[CL_MAX_PATH];
+           sprintf(INDEX_PATH,"%s/%s",cl_tempDir, "test.analyzers");
+           lucene::index::IndexWriter writer(INDEX_PATH, &analyzer, true);
+           lucene::document::Document doc;
+           int flags = lucene::document::Field::STORE_YES
+               | lucene::document::Field::INDEX_TOKENIZED;
+           for (int i = 0; i < 100/*00000*/; i++) {
+               doc.clear();
+               doc.add(*(_CLNEW lucene::document::Field(
+                   _T("First"), _T("Blah blah blah"), flags)));
+               doc.add(*(_CLNEW lucene::document::Field(
+                   _T("Second"), _T("Blah blah-- blah"), flags)));
+               doc.add(*(_CLNEW lucene::document::Field(
+                   _T("Fifth"), _T("Blah blah__ blah"), flags)));
+               doc.add(*(_CLNEW lucene::document::Field(
+                   _T("Eigth"), _T("Blah blah blah++"), flags)));
+               doc.add(*(_CLNEW lucene::document::Field(
+                   _T("Ninth"), _T("Blah123 blah blah"), flags)));
+               writer.addDocument(&doc);
+           }
+           writer.close();
+       } catch (CLuceneError err) {
+           printf("CLuceneError: %s", err.what());
+       }
+   }
+
+   void testEmptyStopList(CuTest *tc)
+   {
+       const TCHAR* stopWords = { NULL };
+       StandardAnalyzer a(&stopWords);
+       RAMDirectory ram;
+       IndexWriter writer(&ram, &a, true);
+       
+       Document doc;
+       doc.add(*(_CLNEW lucene::document::Field(
+           _T("First"), _T("Blah blah blah"), Field::STORE_YES | Field::INDEX_TOKENIZED)));
+       writer.addDocument(&doc);
+       writer.close();
+
+       IndexSearcher searcher(&ram);
+       Query* q = QueryParser::parse(_T("blah"), _T("First"), &a);
+       Hits* h = searcher.search(q);
+       _CLLDELETE(h);
+       _CLLDELETE(q);
+   }
+
   void testNullAnalyzer(CuTest *tc){
     Analyzer* a = _CLNEW WhitespaceAnalyzer();
     assertAnalyzersTo(tc,a, _T("foo bar FOO BAR"), _T("foo;bar;FOO;BAR;"));
@@ -103,18 +183,18 @@
 
   void testISOLatin1AccentFilter(CuTest *tc){
 	  TCHAR str[200];
-	  _tcscpy(str, _T("Des mot cl\xe9s \xc0 LA CHA\xceNE \xc0 \xc1 \xc2 ") //Des mot cl�s � LA CHA�NE � � � 
-						_T("\xc3 \xc4 \xc5 \xc6 \xc7 \xc8 \xc9 \xca \xcb \xcc \xcd \xce \xcf") //� � � � � � � � � � � � � 
-						_T(" \xd0 \xd1 \xd2 \xd3 \xd4 \xd5 \xd6 \xd8 \xde \xd9 \xda \xdb") //� � � � � � � � � � � � � 
-						_T(" \xdc \xdd \xe0 \xe1 \xe2 \xe3 \xe4 \xe5 \xe6 \xe7 \xe8 \xe9 ") //� � � � � � � � � � � 
-						_T("\xea \xeb \xec \xed \xee \xef \xf0 \xf1 \xf2 \xf3 \xf4 \xf5 \xf6 ") //� � � � � � � � � � � � � 
-						_T("\xf8 \xdf \xfe \xf9 \xfa \xfb \xfc \xfd \xff") //� � � � � � � � �
+	  _tcscpy(str, _T("Des mot cl\xe9s \xc0 LA CHA\xceNE \xc0 \xc1 \xc2 ") //Des mot cl?s ? LA CHA?NE ? ? ? 
+						_T("\xc3 \xc4 \xc5 \xc6 \xc7 \xc8 \xc9 \xca \xcb \xcc \xcd \xce \xcf") //? ? ? ? ? ? ? ? ? ? ? ? ? 
+						_T(" \xd0 \xd1 \xd2 \xd3 \xd4 \xd5 \xd6 \xd8 \xde \xd9 \xda \xdb") //? ? ? ? ? ? ? ? ? ? ? ? ? 
+						_T(" \xdc \xdd \xe0 \xe1 \xe2 \xe3 \xe4 \xe5 \xe6 \xe7 \xe8 \xe9 ") //? ? ? ? ? ? ? ? ? ? ? 
+						_T("\xea \xeb \xec \xed \xee \xef \xf0 \xf1 \xf2 \xf3 \xf4 \xf5 \xf6 ") //? ? ? ? ? ? ? ? ? ? ? ? ? 
+						_T("\xf8 \xdf \xfe \xf9 \xfa \xfb \xfc \xfd \xff") //? ? ? ? ? ? ? ? ?
 						_T("      ") ); //room for extra latin stuff
 	#ifdef _UCS2
 		int p = _tcslen(str)-6;
-		str[p+1] = 0x152;// �
-		str[p+3] = 0x153;// � 
-		str[p+5] = 0x178;//� 
+		str[p+1] = 0x152;// ?
+		str[p+3] = 0x153;// ? 
+		str[p+5] = 0x178;//? 
 	#endif
 	
 	StringReader reader(str);
@@ -236,17 +316,48 @@
 	  _tcscpy(testString, _T(" t est "));
 	  CuAssertStrEquals(tc, _T("stringTrim compare"), CL_NS(util)::Misc::wordTrim(testString), _T("t"));
   }
+
+  void testMutipleDocument(CuTest *tc) {
+      RAMDirectory dir;
+      KeywordAnalyzer a;
+      IndexWriter* writer = _CLNEW IndexWriter(&dir,&a, true);
+      Document* doc = _CLNEW Document();
+      doc->add(*_CLNEW Field(_T("partnum"), _T("Q36"), Field::STORE_YES | Field::INDEX_TOKENIZED));
+      writer->addDocument(doc);
+      doc = _CLNEW Document();
+      doc->add(*_CLNEW Field(_T("partnum"), _T("Q37"), Field::STORE_YES | Field::INDEX_TOKENIZED));
+      writer->addDocument(doc);
+      writer->close();
+      _CLLDELETE(writer);
+
+      IndexReader* reader = IndexReader::open(&dir);
+      boost::shared_ptr<Term> t(_CLNEW Term(_T("partnum"), _T("Q36")));
+      TermDocs* td = reader->termDocs(t);
+
+      CLUCENE_ASSERT(td->next());
+      t.reset(_CLNEW Term(_T("partnum"), _T("Q37")));
+      td = reader->termDocs(t);
+
+      reader->close();
+      CLUCENE_ASSERT(td->next());
+      _CLLDELETE(reader);
+  }
   
 CuSuite *testanalyzers(void)
 {
 	CuSuite *suite = CuSuiteNew(_T("CLucene Analyzers Test"));
 
+    SUITE_ADD_TEST(suite, testKeywordAnalyzer);
     SUITE_ADD_TEST(suite, testISOLatin1AccentFilter);
     SUITE_ADD_TEST(suite, testStopAnalyzer);
     SUITE_ADD_TEST(suite, testNullAnalyzer);
     SUITE_ADD_TEST(suite, testSimpleAnalyzer);
     SUITE_ADD_TEST(suite, testPerFieldAnalzyerWrapper);
+    SUITE_ADD_TEST(suite, testPerFieldAnalzyerWrapper2);
     SUITE_ADD_TEST(suite, testWordlistLoader);
+    //SUITE_ADD_TEST(suite, testMutipleDocument);
+    SUITE_ADD_TEST(suite, testEmptyStopList);
+
     return suite; 
 }
 // EOF

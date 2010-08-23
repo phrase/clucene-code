@@ -22,7 +22,6 @@
 #include "_SegmentInfos.h"
 #include "_SegmentMerger.h"
 #include "_SegmentHeader.h"
-#include "CLucene/search/Similarity.h"
 #include "CLucene/index/MergePolicy.h"
 #include "MergePolicy.h"
 #include "MergeScheduler.h"
@@ -70,22 +69,27 @@ public:
   void applyDeletes(const DocumentsWriter::TermNumMapType& deleteTerms, IndexReader* reader);
 };
 
-IndexWriter::~IndexWriter(){
-  if (writeLock != NULL) {
-    writeLock->release();                        // release write lock
-    _CLDELETE(writeLock);
+void IndexWriter::deinit(bool releaseWriteLock) throw() {
+  if (writeLock != NULL && releaseWriteLock) {
+    writeLock->release(); // release write lock
+    _CLLDELETE(writeLock);
   }
-  _CLDELETE(segmentInfos);
-  _CLDELETE(mergingSegments);
-  _CLDELETE(pendingMerges);
-  _CLDELETE(runningMerges);
-  _CLDELETE(mergeExceptions);
-  _CLDELETE(segmentsToOptimize);
-  _CLDELETE(mergeScheduler);
-  _CLDELETE(mergePolicy);
-  _CLDELETE(deleter);
-  _CLDELETE(docWriter);
+  _CLLDELETE(segmentInfos);
+  _CLLDELETE(mergingSegments);
+  _CLLDELETE(pendingMerges);
+  _CLLDELETE(runningMerges);
+  _CLLDELETE(mergeExceptions);
+  _CLLDELETE(segmentsToOptimize);
+  _CLLDELETE(mergeScheduler);
+  _CLLDELETE(mergePolicy);
+  _CLLDELETE(deleter);
+  _CLLDELETE(docWriter);
+  _CLLDECDELETE(directory);
   delete _internal;
+}
+
+IndexWriter::~IndexWriter(){
+  deinit();
 }
 
 void IndexWriter::ensureOpen()   {
@@ -149,7 +153,9 @@ int32_t IndexWriter::getTermIndexInterval() {
 }
 
 IndexWriter::IndexWriter(const char* path, Analyzer* a, bool create){
-  init(FSDirectory::getDirectory(path), a, create, true, (IndexDeletionPolicy*)NULL, true);
+  Directory* dir = FSDirectory::getDirectory(path, create);
+  init(dir, a, create, true, (IndexDeletionPolicy*)NULL, true);
+  _CLDECDELETE(dir);
 }
 
 IndexWriter::IndexWriter(Directory* d, Analyzer* a, bool create, bool closeDir){
@@ -172,7 +178,8 @@ void IndexWriter::init(Directory* d, Analyzer* a, bool closeDir, IndexDeletionPo
   }
 }
 
-void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool closeDir, IndexDeletionPolicy* deletionPolicy, const bool autoCommit){
+void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool closeDir,
+                       IndexDeletionPolicy* deletionPolicy, const bool autoCommit){
   this->_internal = new Internal(this);
 
   this->termIndexInterval = IndexWriter::DEFAULT_TERM_INDEX_INTERVAL;
@@ -212,10 +219,16 @@ void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool 
     directory->clearLock(IndexWriter::WRITE_LOCK_NAME);
   }
 
-  LuceneLock* writeLock = directory->makeLock(IndexWriter::WRITE_LOCK_NAME);
-  if (!writeLock->obtain(writeLockTimeout)) // obtain write lock
-    _CLTHROWA(CL_ERR_LockObtainFailed, (string("Index locked for write: ") + writeLock->getObjectName()).c_str() );
-  this->writeLock = writeLock;                   // save it
+  bool hasLock = false;
+  try {
+    writeLock = directory->makeLock(IndexWriter::WRITE_LOCK_NAME);
+    hasLock = writeLock->obtain(writeLockTimeout);
+    if (!hasLock) // obtain write lock
+      _CLTHROWA(CL_ERR_LockObtainFailed, (string("Index locked for write: ") + writeLock->getObjectName()).c_str() );
+  } catch (...) {
+    deinit(hasLock);
+    throw;
+  }
 
   try {
     if (create) {
@@ -259,10 +272,7 @@ void IndexWriter::init(Directory* d, Analyzer* a, const bool create, const bool 
     }
 
   } catch (CLuceneError& e) {
-    if ( e.number() != CL_ERR_IO ) throw e;
-
-    this->writeLock->release();
-    _CLDELETE(this->writeLock);
+    deinit(e.number() == CL_ERR_IO);
     throw e;
   }
 }
@@ -411,6 +421,7 @@ std::ostream* IndexWriter::getDefaultInfoStream() {
   return IndexWriter::defaultInfoStream;
 }
 
+//TODO: infoStream - unicode
 void IndexWriter::setInfoStream(std::ostream* infoStream) {
   ensureOpen();
   this->infoStream = infoStream;
@@ -540,10 +551,10 @@ void IndexWriter::closeInternal(bool waitForMerges) {
       deleter->close();
     }
 
-    if (closeDir)
+    if (closeDir){
       directory->close();
-    _CLDECDELETE(directory);
-
+    }
+ 	  _CLDECDELETE(directory);
     if (writeLock != NULL) {
       writeLock->release();                          // release write lock
       _CLDELETE(writeLock);
@@ -598,8 +609,8 @@ bool IndexWriter::flushDocStores() {
 
       try {
         CompoundFileWriter cfsWriter(directory, compoundFileName.c_str());
-        const int32_t size = files.size();
-        for(int32_t i=0;i<size;i++)
+        const size_t size = files.size();
+        for(size_t i=0;i<size;++i)
           cfsWriter.addFile(files[i].c_str());
 
         // Perform the merge
@@ -671,7 +682,6 @@ void IndexWriter::addDocument(Document* doc, Analyzer* analyzer) {
       success = true;
     } _CLFINALLY (
       if (!success) {
-
         if (infoStream != NULL)
           message(string("hit exception adding document"));
 
@@ -694,7 +704,7 @@ void IndexWriter::addDocument(Document* doc, Analyzer* analyzer) {
   }
 }
 
-void IndexWriter::deleteDocuments(Term* term) {
+void IndexWriter::deleteDocuments(boost::shared_ptr<Term> const& term) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerm(term);
@@ -706,7 +716,7 @@ void IndexWriter::deleteDocuments(Term* term) {
   }
 }
 
-void IndexWriter::deleteDocuments(const ArrayBase<Term*>* terms) {
+void IndexWriter::deleteDocuments(const ArrayBase<boost::shared_ptr<Term> >* terms) {
   ensureOpen();
   try {
     bool doFlush = docWriter->bufferDeleteTerms(terms);
@@ -718,12 +728,12 @@ void IndexWriter::deleteDocuments(const ArrayBase<Term*>* terms) {
   }
 }
 
-void IndexWriter::updateDocument(Term* term, Document* doc) {
+void IndexWriter::updateDocument(boost::shared_ptr<Term> const& term, Document* doc) {
   ensureOpen();
   updateDocument(term, doc, getAnalyzer());
 }
 
-void IndexWriter::updateDocument(Term* term, Document* doc, Analyzer* analyzer)
+void IndexWriter::updateDocument(boost::shared_ptr<Term> const& term, Document* doc, Analyzer* analyzer)
 {
   ensureOpen();
   try {
@@ -1477,8 +1487,8 @@ bool IndexWriter::doFlush(bool _flushDocStores) {
 
           if (!segment.empty())
             deleter->refresh(segment.c_str());
-        }else{
-          _CLDELETE(rollback);
+        }else if (flushDeletes){
+            _CLDELETE(rollback);
         }
       )
 
@@ -2220,6 +2230,7 @@ void IndexWriter::applyDeletes(bool flushedNewSegment) {
           reader->doCommit();
         } _CLFINALLY (
           reader->doClose();
+          _CLLDELETE(reader);
         )
       }
     )
@@ -2269,7 +2280,7 @@ void IndexWriter::Internal::applyDeletesSelectively(const DocumentsWriter::TermN
 {
   DocumentsWriter::TermNumMapType::const_iterator iter = deleteTerms.begin();
   while (iter != deleteTerms.end() ) {
-    Term* term = iter->first;
+    boost::shared_ptr<Term> const& term = iter->first;
     TermDocs* docs = reader->termDocs(term);
     if (docs != NULL) {
       int32_t num = iter->second->getNum();
@@ -2292,8 +2303,10 @@ void IndexWriter::Internal::applyDeletesSelectively(const DocumentsWriter::TermN
 
   if (deleteIds.size() > 0) {
     vector<int32_t>::const_iterator iter2 = deleteIds.begin();
-    while(iter2 != deleteIds.end() )
+    while (iter2 != deleteIds.end()){
       reader->deleteDocument(*iter2);
+      ++iter2;
+    }
   }
 }
 

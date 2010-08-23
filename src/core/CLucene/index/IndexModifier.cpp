@@ -17,6 +17,8 @@
 #include "IndexReader.h"
 #include "CLucene/store/FSDirectory.h"
 #include "CLucene/document/Document.h"
+#include "MergeScheduler.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(index)
 CL_NS_USE(util)
@@ -29,15 +31,15 @@ IndexModifier::IndexModifier(Directory* directory, Analyzer* analyzer, bool crea
 }
 
 IndexModifier::IndexModifier(const char* dirName, Analyzer* analyzer, bool create) {
-	Directory* dir = FSDirectory::getDirectory(dirName, create);
+	Directory* dir = FSDirectory::getDirectory(dirName);
 	init(dir, analyzer, create);
 }
 
 void IndexModifier::init(Directory* directory, Analyzer* analyzer, bool create) {
 	indexWriter = NULL;
 	indexReader = NULL;
-	this->analyzer = analyzer;
 	open = false;
+	infoStream = NULL;
 
 	useCompoundFile = true;
 	this->maxBufferedDocs = IndexWriter::DEFAULT_MAX_BUFFERED_DOCS;
@@ -45,16 +47,16 @@ void IndexModifier::init(Directory* directory, Analyzer* analyzer, bool create) 
 	this->mergeFactor = IndexWriter::DEFAULT_MERGE_FACTOR;
 
 	this->directory = _CL_POINTER(directory);
-	if (create) {
-		createIndexWriter(create);
-	} else {
-		createIndexReader();
-	}
+	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
+	this->analyzer = analyzer;
+	indexWriter = _CLNEW IndexWriter(directory, analyzer, create);
 	open = true;
 }
 
 IndexModifier::~IndexModifier(){
-	close();
+	if (open) {
+		close();
+	}
 }
 
 void IndexModifier::assureOpen() const{
@@ -69,11 +71,18 @@ void IndexModifier::createIndexWriter(bool create) {
 			indexReader->close();
 			_CLDELETE(indexReader);
 		}
-		indexWriter = _CLNEW IndexWriter(directory, analyzer, create);
+
+		indexWriter = _CLNEW IndexWriter(directory, analyzer, false);
+        // IndexModifier cannot use ConcurrentMergeScheduler
+        // because it synchronizes on the directory which can
+        // cause deadlock
+        indexWriter->setMergeScheduler(_CLNEW SerialMergeScheduler());
+        indexWriter->setInfoStream(infoStream);
 		indexWriter->setUseCompoundFile(useCompoundFile);
-		//indexWriter->setMaxBufferedDocs(maxBufferedDocs);
+        if (maxBufferedDocs != IndexWriter::DISABLE_AUTO_FLUSH)
+            indexWriter->setMaxBufferedDocs(maxBufferedDocs);
 		indexWriter->setMaxFieldLength(maxFieldLength);
-		//indexWriter->setMergeFactor(mergeFactor);
+		indexWriter->setMergeFactor(mergeFactor);
 	}
 }
 
@@ -111,7 +120,7 @@ void IndexModifier::addDocument(Document* doc, Analyzer* docAnalyzer) {
 		indexWriter->addDocument(doc);
 }
 
-int32_t IndexModifier::deleteDocuments(Term* term) {
+int32_t IndexModifier::deleteDocuments(boost::shared_ptr<Term> const& term) {
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
@@ -201,13 +210,13 @@ int32_t IndexModifier::getMergeFactor() {
 }
 
 void IndexModifier::close() {
-    if (!open)
-        return;
+	if (!open)
+		_CLTHROWA(CL_ERR_IllegalState, "Index is closed already");
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	if (indexWriter != NULL) {
 		indexWriter->close();
 		_CLDELETE(indexWriter);
-	} else {
+	} else if (indexReader != NULL) {
 		indexReader->close();
 		_CLDELETE(indexReader);
 	}
@@ -226,18 +235,18 @@ int64_t IndexModifier::getCurrentVersion() const{
 	return IndexReader::getCurrentVersion(directory);
 }
 
-TermDocs* IndexModifier::termDocs(Term* term){
+TermDocs* IndexModifier::termDocs(boost::shared_ptr<Term> const& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
 	return indexReader->termDocs(term);
 }
 
-TermEnum* IndexModifier::terms(Term* term){
+TermEnum* IndexModifier::terms(boost::shared_ptr<Term> const& term){
 	SCOPED_LOCK_MUTEX(directory->THIS_LOCK)
 	assureOpen();
 	createIndexReader();
-	if ( term != NULL )
+	if ( term.get() != NULL )
 		return indexReader->terms(term);
 	else
 		return indexReader->terms();

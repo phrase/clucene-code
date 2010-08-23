@@ -20,6 +20,7 @@
 #include "CLucene/util/BitSet.h"
 #include "FieldSortedHitQueue.h"
 #include "Explanation.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -159,7 +160,7 @@ CL_NS_DEF(search)
   }
 
   // inherit javadoc
-  int32_t IndexSearcher::docFreq(const Term* term) const{
+  int32_t IndexSearcher::docFreq(boost::shared_ptr<const Term> const& term) const{
   //Func - 
   //Pre  - reader != NULL
   //Post -
@@ -219,11 +220,15 @@ CL_NS_DEF(search)
       CND_PRECONDITION(reader != NULL, "reader is NULL");
       CND_PRECONDITION(query != NULL, "query is NULL");
 
-	  Weight* weight = query->weight(this);
-    Scorer* scorer = weight->scorer(reader);
-	  if (scorer == NULL){
+      Weight* weight = query->weight(this);
+      Scorer* scorer = weight->scorer(reader);
+      if (scorer == NULL) {
+        Query* wq = weight->getQuery();
+        if (wq != query)
+          _CLLDELETE(wq);
+        _CLLDELETE(weight);
           return _CLNEW TopDocs(0, NULL, 0);
-	  }
+      }
 
       BitSet* bits = filter != NULL ? filter->bits(reader) : NULL;
       HitQueue* hq = _CLNEW HitQueue(nDocs);
@@ -334,6 +339,9 @@ CL_NS_DEF(search)
       }
 
     _CLLDELETE(fc);
+	Query* wq = weight->getQuery();
+	if (wq != query) // query was rewritten
+		_CLLDELETE(wq);
 	_CLLDELETE(weight);
 	if ( bits != NULL && filter->shouldDeleteBitSet(bits) )
 		_CLLDELETE(bits);

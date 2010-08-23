@@ -62,28 +62,34 @@
 #else
 class CLUCENE_EXPORT CLuceneError
 {
+#ifndef _ASCII
 	char* _awhat;
+#endif
 	TCHAR* _twhat;
 	int error_number;
 public:
 	CLuceneError();
 	CLuceneError(const CLuceneError& clone);
+#ifndef _ASCII
 	CLuceneError(int num, const char* str, bool ownstr);
-#ifdef _UCS2
-	CLuceneError(int num, const TCHAR* str, bool ownstr);
 #endif
+	CLuceneError(int num, const TCHAR* str, bool ownstr);
   	int number() const{return error_number;}
 		char* what();
 		TCHAR* twhat();
 		~CLuceneError() throw();
 
-	void set(int num, const char*, bool ownstr=false);
 	void set(int num, const TCHAR*, bool ownstr=false);
+#ifndef _ASCII
+	void set(int num, const char*, bool ownstr=false);
+#endif
 };
 	
  //#define _THROWS //does nothing
  #define _TRY try
- #define _CLCATCH_ERR(err_num, cleanup, x) catch(CLuceneError& err){if (err.number()!=err_num){cleanup;throw err;}else {x;}}
+ #define _CLCATCH_ERR(err_num, cleanup_code, else_code) catch(CLuceneError& err){if (err.number()!=err_num){cleanup_code;throw err;}else {else_code;}}
+ #define _CLCATCH_ERR_ELSE(err_num, else_code) catch(CLuceneError& err){if (err.number()!=err_num){throw err;}else {else_code;}}
+ #define _CLCATCH_ERR_CLEANUP(err_num, cleanup_code) catch(CLuceneError& err){if (err.number()!=err_num){cleanup_code;throw err;}}
  #define _CLFINALLY(x) catch(...){ x; throw; } x //note: code x is not run if return is called
  #define _CLTHROWA(number, str) throw CLuceneError(number, str,false)
  #define _CLTHROWT(number, str) throw CLuceneError(number, str,false)

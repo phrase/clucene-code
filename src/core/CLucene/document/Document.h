@@ -134,15 +134,6 @@ public:
    */
   const FieldsType* getFields() const;
 
-  /**
-   * Returns an array of {@link Field}s with the given name.
-   * This method can return <code>null</code>.
-   *
-   * @param name the name of the field
-   * @return a <code>Field[]</code> array or <code>null</code>
-   */
-  void getFields(const TCHAR* name, std::vector<Field*>& ret);
-
 	/** Prints the fields of a document for human consumption. */
 	TCHAR* toString() const;
         

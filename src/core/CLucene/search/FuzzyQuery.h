@@ -9,6 +9,7 @@
 
 #include "MultiTermQuery.h"
 #include "FilteredTermEnum.h"
+#include <boost/shared_ptr.hpp>
 
 CL_CLASS_DEF(index,Term)
 
@@ -17,11 +18,8 @@ CL_NS_DEF(search)
 /** Implements the fuzzy search query. The similiarity measurement
 * is based on the Levenshtein (edit distance) algorithm.
 */
-class CLUCENE_EXPORT FuzzyQuery: public MultiTermQuery {
+class CLUCENE_EXPORT FuzzyQuery : public MultiTermQuery {
 private:
-	class ScoreTerm;
-	class ScoreTermQueue; 
-
 	float_t minimumSimilarity;
 	size_t prefixLength;
 protected:
@@ -46,7 +44,7 @@ public:
 	* @throws IllegalArgumentException if minimumSimilarity is &gt; 1 or &lt; 0
 	* or if prefixLength &lt; 0 or &gt; <code>term.text().length()</code>.
 	*/
-	FuzzyQuery(CL_NS(index)::Term* term, float_t minimumSimilarity=-1, size_t prefixLength=0);
+	FuzzyQuery(boost::shared_ptr<CL_NS(index)::Term> const& term, float_t minimumSimilarity=-1, size_t prefixLength=0);
 	virtual ~FuzzyQuery();
 
 	/**
@@ -96,7 +94,7 @@ private:
 	float_t _similarity;
 	bool _endEnum;
 
-	CL_NS(index)::Term* searchTerm; 
+	boost::shared_ptr<CL_NS(index)::Term> searchTerm; 
 	//String field;
 	TCHAR* text;
 	size_t textLen;
@@ -168,7 +166,7 @@ protected:
 	* The termCompare method in FuzzyTermEnum uses Levenshtein distance to 
 	* calculate the distance between the given term and the comparing term. 
 	*/
-	bool termCompare(CL_NS(index)::Term* term) ;
+	bool termCompare(boost::shared_ptr<CL_NS(index)::Term> const& term) ;
 
 	/** Returns the fact if the current term in the enumeration has reached the end */
 	bool endEnum();
@@ -188,7 +186,7 @@ public:
 	* @param prefixLength Length of required common prefix. Default value is 0.
 	* @throws IOException
 	*/
-	FuzzyTermEnum(CL_NS(index)::IndexReader* reader, CL_NS(index)::Term* term, float_t minSimilarity=FuzzyQuery::defaultMinSimilarity, size_t prefixLength=0);
+	FuzzyTermEnum(CL_NS(index)::IndexReader* reader, boost::shared_ptr<CL_NS(index)::Term> const& term, float_t minSimilarity=FuzzyQuery::defaultMinSimilarity, size_t prefixLength=0);
 	virtual ~FuzzyTermEnum();
 
 	/** Close the enumeration */

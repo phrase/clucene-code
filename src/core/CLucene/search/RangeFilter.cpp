@@ -10,6 +10,7 @@
 #include "CLucene/index/IndexReader.h"
 #include "CLucene/util/BitSet.h"
 #include "RangeFilter.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
 CL_NS_USE(index)
@@ -17,86 +18,61 @@ CL_NS_USE(util)
 CL_NS_USE(document)
 
 
-RangeFilter::RangeFilter( const TCHAR* fieldName, const TCHAR* lowerTerm, const TCHAR* upperTerm, bool includeLower, bool includeUpper )
+RangeFilter::RangeFilter( const TCHAR* _fieldName, const TCHAR* _lowerTerm, const TCHAR* _upperTerm,
+                         bool _includeLower, bool _includeUpper )
+                         : fieldName(NULL), lowerTerm(NULL), upperTerm(NULL)
+                         , includeLower(_includeLower), includeUpper(_includeUpper)
 {
-	this->field = STRDUP_TtoT(fieldName);
-	if ( lowerTerm != NULL )
-		this->lowerValue = STRDUP_TtoT(lowerTerm);
-	else
-		this->lowerValue = NULL;
-	if ( upperTerm != NULL )
-		this->upperValue = STRDUP_TtoT(upperTerm);
-	else
-		this->upperValue = NULL;
-	this->includeLower = includeLower;
-	this->includeUpper = includeUpper;
+    if (NULL == _lowerTerm && NULL == _upperTerm) {
+        _CLTHROWT(CL_ERR_IllegalArgument, _T("At least one value must be non-null"));
+    }
+    if (_includeLower && NULL == _lowerTerm) {
+        _CLTHROWT(CL_ERR_IllegalArgument, _T("The lower bound must be non-null to be inclusive"));
+    }
+    if (_includeUpper && NULL == _upperTerm) {
+        _CLTHROWT(CL_ERR_IllegalArgument, _T("The upper bound must be non-null to be inclusive"));
+    }
+
+	this->fieldName = STRDUP_TtoT(_fieldName);
+	if ( _lowerTerm != NULL )
+		this->lowerTerm = STRDUP_TtoT(_lowerTerm);
+	if ( _upperTerm != NULL )
+		this->upperTerm = STRDUP_TtoT(_upperTerm);
 }
-
-
-/**
- * Constructs a filter for field <code>fieldName</code> matching
- * less than or equal to <code>upperTerm</code>.
- */
-RangeFilter* RangeFilter::Less( TCHAR* fieldName, TCHAR* upperTerm ) {
-	return new RangeFilter( fieldName, NULL, upperTerm, false, true );
-}
-
-
-/**
-* Constructs a filter for field <code>fieldName</code> matching
-* more than or equal to <code>lowerTerm</code>.
-*/
-RangeFilter* RangeFilter::More( TCHAR* fieldName, TCHAR* lowerTerm ) {
-	return new RangeFilter( fieldName, lowerTerm, NULL, true, false );
-}
-
-
-RangeFilter::~RangeFilter()
-{
-	_CLDELETE_CARRAY( lowerValue );
-	_CLDELETE_CARRAY( field );
-	_CLDELETE_CARRAY( upperValue );
-}
-
 
 RangeFilter::RangeFilter( const RangeFilter& copy ) : 
-	field( STRDUP_TtoT(copy.field) ),
-	lowerValue( STRDUP_TtoT(copy.lowerValue) ), 
-	upperValue( STRDUP_TtoT(copy.upperValue) ),
+	fieldName( STRDUP_TtoT(copy.fieldName) ),
+	lowerTerm( STRDUP_TtoT(copy.lowerTerm) ), 
+	upperTerm( STRDUP_TtoT(copy.upperTerm) ),
 	includeLower( copy.includeLower ),
 	includeUpper( copy.includeUpper )
 {
 }
 
-
-Filter* RangeFilter::clone() const {
-	return _CLNEW RangeFilter(*this );
-}
-
-
-TCHAR* RangeFilter::toString()
+RangeFilter::~RangeFilter()
 {
-	size_t len = (field ? _tcslen(field) : 0) + (lowerValue ? _tcslen(lowerValue) : 0) + (upperValue ? _tcslen(upperValue) : 0) + 8;
-	TCHAR* ret = _CL_NEWARRAY( TCHAR, len );
-	ret[0] = 0;
-	_sntprintf( ret, len, _T("%s: [%s-%s]"), field, (lowerValue?lowerValue:_T("")), (upperValue?upperValue:_T("")) );
-	
-	return ret;
+    _CLDELETE_LCARRAY( fieldName );
+	_CLDELETE_LCARRAY( lowerTerm );
+	_CLDELETE_LCARRAY( upperTerm );
 }
 
+RangeFilter* RangeFilter::Less( const TCHAR* _fieldName, const TCHAR* _upperTerm ) {
+	return _CLNEW RangeFilter( _fieldName, NULL, _upperTerm, false, true );
+}
 
-/** Returns a BitSet with true for documents which should be permitted in
-search results, and false for those that should not. */
+RangeFilter* RangeFilter::More( const TCHAR* _fieldName, const TCHAR* _lowerTerm ) {
+	return _CLNEW RangeFilter( _fieldName, _lowerTerm, NULL, true, false );
+}
+
 BitSet* RangeFilter::bits( IndexReader* reader )
 {
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
-	Term* term = NULL;
+	boost::shared_ptr<Term> term;
 	
-	Term* t = _CLNEW Term( field, (lowerValue ? lowerValue : _T("")), false );
+	boost::shared_ptr<Term> t(_CLNEW Term( fieldName, (lowerTerm ? lowerTerm : _T("")), false ));
 	TermEnum* enumerator = reader->terms( t );	// get enumeration of all terms after lowerValue
-	_CLDECDELETE( t );
 	
-	if( enumerator->term(false) == NULL ) {
+	if( enumerator->term().get() == NULL ) {
 		_CLDELETE( enumerator );
 		return bts;
 	}
@@ -107,21 +83,27 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 	
 	TermDocs* termDocs = reader->termDocs();
 	
+  #define CLEANUP \
+    termDocs->close(); \
+    _CLLDELETE( termDocs ); \
+    enumerator->close(); \
+    _CLLDELETE( enumerator )
+    
 	try
 	{
 		do
 		{
 			term = enumerator->term();
 			
-			if( term == NULL || _tcscmp(term->field(), field) )
+			if( term.get() == NULL || _tcscmp(term.get()->field(), fieldName) )
 				break;
 			
-			if( !checkLower || lowerValue == NULL || _tcscmp(term->text(), lowerValue) > 0 )
+			if( !checkLower || lowerTerm == NULL || _tcscmp(term.get()->text(), lowerTerm) > 0 )
 			{
 				checkLower = false;
-				if( upperValue != NULL )
+				if( upperTerm != NULL )
 				{
-					int compare = _tcscmp( upperValue, term->text() );
+					int compare = _tcscmp( upperTerm, term.get()->text() );
 					
 					/* if beyond the upper term, or is exclusive and
 					 * this is equal to the upper term, break out */
@@ -129,26 +111,35 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 						break;
 				}
 				
-				termDocs->seek( enumerator->term(false) );
+				termDocs->seek( enumerator->term() );
 				while( termDocs->next() ) {
 					bts->set( termDocs->doc() );
 				}
 			}
-			
-			_CLDECDELETE( term );
 		}
 		while( enumerator->next() );
-	}
-	_CLFINALLY
-	(
-		_CLDECDELETE( term );
-		termDocs->close();
-		_CLVDELETE( termDocs );
-		enumerator->close();
-		_CLDELETE( enumerator );
-	);
+	}catch(CLuceneError& err){
+          _CLDELETE(bts);
+          CLEANUP;
+          throw err;
+        }
+        CLEANUP;
 	
 	return bts;
+}
+
+TCHAR* RangeFilter::toString()
+{
+	size_t len = (fieldName ? _tcslen(fieldName) : 0) + (lowerTerm ? _tcslen(lowerTerm) : 0) + (upperTerm ? _tcslen(upperTerm) : 0) + 8;
+	TCHAR* ret = _CL_NEWARRAY( TCHAR, len );
+	ret[0] = 0;
+	_sntprintf( ret, len, _T("%s: [%s-%s]"), fieldName, (lowerTerm?lowerTerm:_T("")), (upperTerm?upperTerm:_T("")) );
+	
+	return ret;
+}
+
+Filter* RangeFilter::clone() const {
+	return _CLNEW RangeFilter(*this );
 }
 
 CL_NS_END

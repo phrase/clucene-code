@@ -100,10 +100,13 @@ void NoLockFactory::clearLock( const char* /*lockName*/ )
 }
 
 
-FSLockFactory::FSLockFactory( const char* lockDir )
+FSLockFactory::FSLockFactory( const char* lockDir, int filemode )
 {
-	setLockDir( lockDir );
-	// TODO: Ensure that lockDir exists and is a directory
+  setLockDir( lockDir );
+  if ( filemode > 0 )
+    this->filemode = filemode;
+  else
+    this->filemode = _tcstoi64(_T("644"), NULL, 8);
 }
 
 FSLockFactory::~FSLockFactory()
@@ -125,7 +128,7 @@ LuceneLock* FSLockFactory::makeLock( const char* lockName )
 		cl_strcpy(name,lockName,CL_MAX_DIR);
 	}
 
-	return _CLNEW FSLock( lockDir.c_str(), name );
+	return _CLNEW FSLock( lockDir.c_str(), name, this->filemode );
 }
 
 void FSLockFactory::clearLock( const char* lockName )

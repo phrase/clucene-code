@@ -7,6 +7,12 @@
 CL_NS_DEF(index)
 
 class IndexFileNames {
+	static CL_NS(util)::ConstValueArray<const char*> _INDEX_EXTENSIONS;
+	static CL_NS(util)::ConstValueArray<const char*> _INDEX_EXTENSIONS_IN_COMPOUND_FILE;
+	static CL_NS(util)::ConstValueArray<const char*> _STORE_INDEX_EXTENSIONS;
+	static CL_NS(util)::ConstValueArray<const char*> _NON_STORE_INDEX_EXTENSIONS;
+	static CL_NS(util)::ConstValueArray<const char*> _COMPOUND_EXTENSIONS;
+	static CL_NS(util)::ConstValueArray<const char*> _VECTOR_EXTENSIONS;
 public:
 	
 	static const char* SEGMENTS;
@@ -30,16 +36,12 @@ public:
 	static const char* SEPARATE_NORMS_EXTENSION;
 	static const char* GEN_EXTENSION;
 	
-	LUCENE_STATIC_CONSTANT(int32_t,COMPOUND_EXTENSIONS_LENGTH=7);
-	LUCENE_STATIC_CONSTANT(int32_t,VECTOR_EXTENSIONS_LENGTH=3);
-	LUCENE_STATIC_CONSTANT(int32_t,STORE_INDEX_EXTENSIONS_LENGTH=5);
-	
-	static CL_NS(util)::ConstValueArray<const char*> INDEX_EXTENSIONS;
-	static CL_NS(util)::ConstValueArray<const char*> INDEX_EXTENSIONS_IN_COMPOUND_FILE;
-	static CL_NS(util)::ConstValueArray<const char*> STORE_INDEX_EXTENSIONS;
-	static CL_NS(util)::ConstValueArray<const char*> NON_STORE_INDEX_EXTENSIONS;
-	static CL_NS(util)::ConstValueArray<const char*> COMPOUND_EXTENSIONS;
-	static CL_NS(util)::ConstValueArray<const char*> VECTOR_EXTENSIONS;
+	static CL_NS(util)::ConstValueArray<const char*>& INDEX_EXTENSIONS();
+	static CL_NS(util)::ConstValueArray<const char*>& INDEX_EXTENSIONS_IN_COMPOUND_FILE();
+	static CL_NS(util)::ConstValueArray<const char*>& STORE_INDEX_EXTENSIONS();
+	static CL_NS(util)::ConstValueArray<const char*>& NON_STORE_INDEX_EXTENSIONS();
+	static CL_NS(util)::ConstValueArray<const char*>& COMPOUND_EXTENSIONS();
+	static CL_NS(util)::ConstValueArray<const char*>& VECTOR_EXTENSIONS();
 	
   static std::string fileNameFromGeneration( const char* base, const char* extension, int64_t gen );
 	static bool isDocStoreFile( const char* fileName );

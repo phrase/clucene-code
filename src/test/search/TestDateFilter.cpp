@@ -9,9 +9,9 @@
 	void testBefore(CuTest *tc) {
 	// create an index
 		char fsdir[CL_MAX_PATH];
-		sprintf(fsdir,"%s/%s",cl_tempDir, "dfindex");
+		_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "dfindex");
 		
-		FSDirectory* indexStore = FSDirectory::getDirectory( fsdir,true);
+		Directory* indexStore = FSDirectory::getDirectory( fsdir,true);
 		Analyzer* a = _CLNEW SimpleAnalyzer();
 		IndexWriter* writer = _CLNEW IndexWriter(indexStore, a, true);
      	int64_t now = Misc::currentTimeMillis()/1000;
@@ -36,14 +36,12 @@
     	DateFilter* df2 = DateFilter::Before(_T("datefield"), now - 999999);
 	
     	// search something that doesn't exist with DateFilter
-		Term* term = _CLNEW Term(_T("body"), _T("NoMatchForThis"));
+	boost::shared_ptr<Term> term(_CLNEW Term(_T("body"), _T("NoMatchForThis")));
     	Query* query1 = _CLNEW TermQuery(term);
-		_CLDECDELETE(term);
 
     	// search for something that does exists
-		term=_CLNEW Term(_T("body"), _T("sunny"));
+	term.reset(_CLNEW Term(_T("body"), _T("sunny")));
     	Query* query2 = _CLNEW TermQuery(term);
-		_CLDECDELETE(term);
 	
     	Hits* result = NULL;
 	
@@ -119,14 +117,12 @@
     	DateFilter* df2 = DateFilter::After(_T("datefield"), now + 999999);
 	
     	// search something that doesn't exist with DateFilter
-		Term* term = _CLNEW Term(_T("body"), _T("NoMatchForThis"));
+	boost::shared_ptr<Term> term(_CLNEW Term(_T("body"), _T("NoMatchForThis")));
     	Query* query1 = _CLNEW TermQuery(term);
-		_CLDECDELETE(term);
 	
     	// search for something that does exists
-		term=_CLNEW Term(_T("body"), _T("sunny"));
+	term.reset(_CLNEW Term(_T("body"), _T("sunny")));
     	Query* query2 = _CLNEW TermQuery(term);
-		_CLDECDELETE(term);
 	
     	Hits* result = NULL;
 

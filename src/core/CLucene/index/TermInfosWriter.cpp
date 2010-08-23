@@ -14,6 +14,7 @@
 #include "_FieldInfos.h"
 #include "_TermInfosWriter.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -94,14 +95,14 @@ CL_NS_DEF(index)
 		close();
 	}
 
-  void TermInfosWriter::add(Term* term, TermInfo* ti){
+  void TermInfosWriter::add(boost::shared_ptr<Term> const& term, TermInfo* ti){
     const size_t length = term->textLength();
     if ( termTextBuffer.values == NULL || termTextBuffer.length < length ){
       termTextBuffer.resize( (int32_t)(length*1.25) );
     }
     _tcsncpy(termTextBuffer.values, term->text(), length);
 
-    add(fieldInfos->fieldNumber(term->field()), termTextBuffer.values, length, ti);
+    add(fieldInfos->fieldNumber(term.get()->field()), termTextBuffer.values, length, ti);
   }
 
   // Currently used only by assert statement
@@ -144,12 +145,22 @@ CL_NS_DEF(index)
 	//Pre  - Term must be lexicographically greater than all previous Terms added.
     //       Pointers of TermInfo ti (freqPointer and proxPointer) must be positive and greater than all previous.
 
+// TODO: This is a hack. If _ASCII is defined, Misc::toString(const TCHAR*, int) will cause linking errors,
+//       at least on VS. Needs a prettier fix no doubt... ISH 2009-11-08
+#ifdef _ASCII
+        assert(compareToLastTerm(fieldNumber, termText, termTextLength) < 0 ||
+            (isIndex && termTextLength == 0 && lastTermTextLength == 0));
+#else
     CND_PRECONDITION(compareToLastTerm(fieldNumber, termText, termTextLength) < 0 ||
       (isIndex && termTextLength == 0 && lastTermTextLength == 0),
-      (string("Terms are out of order: field=")  + Misc::toString(fieldInfos->fieldName(fieldNumber)) + " (number " + Misc::toString(fieldNumber) + ")" +
-      " lastField=" + Misc::toString(fieldInfos->fieldName(lastFieldNumber)) + " (number " + Misc::toString(lastFieldNumber) + ")" +
-      " text=" + Misc::toString(termText, termTextLength) + " lastText=" + Misc::toString(lastTermText.values, lastTermTextLength)
+      (string("Terms are out of order: field=") + Misc::toString(fieldInfos->fieldName(fieldNumber)) +
+      " (number " + Misc::toString(fieldNumber) + ")" +
+      " lastField=" + Misc::toString(fieldInfos->fieldName(lastFieldNumber)) +
+      " (number " + Misc::toString(lastFieldNumber) + ")" +
+      " text=" + Misc::toString(termText, termTextLength) +
+      " lastText=" + Misc::toString(lastTermText.values, lastTermTextLength)
       ).c_str() );
+#endif
 
     CND_PRECONDITION(ti->freqPointer >= lastTi->freqPointer, ("freqPointer out of order (" + Misc::toString(ti->freqPointer) + " < " + Misc::toString(lastTi->freqPointer) + ")").c_str());
     CND_PRECONDITION(ti->proxPointer >= lastTi->proxPointer, ("proxPointer out of order (" + Misc::toString(ti->proxPointer) + " < " + Misc::toString(lastTi->proxPointer) + ")").c_str());

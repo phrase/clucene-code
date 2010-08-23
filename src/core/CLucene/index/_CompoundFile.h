@@ -10,7 +10,7 @@
 
 CL_CLASS_DEF(store,Lock)
 #include "CLucene/store/Directory.h"
-#include "CLucene/store/IndexInput.h"
+#include "CLucene/store/BufferedIndexInput.h"
 #include "_SegmentMerger.h"
 
 CL_NS_DEF(index)
@@ -46,7 +46,7 @@ protected:
 
 public:
 	CompoundFileReader(CL_NS(store)::Directory* dir, const char* name, int32_t _readBufferSize=CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
-	~CompoundFileReader();
+	virtual ~CompoundFileReader();
 	CL_NS(store)::Directory* getDirectory();
 	const char* getName() const;
 

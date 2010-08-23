@@ -25,12 +25,17 @@
 #include "CLucene/search/RangeQuery.h"
 #include "CLucene/search/MatchAllDocsQuery.h"
 #include "CLucene/search/MultiPhraseQuery.h"
+#include "CLucene/search/ConstantScoreQuery.h"
+
+#include "CLucene/document/DateField.h"
+#include "CLucene/document/DateTools.h"
 
 #include "CLucene/index/Term.h"
 #include "QueryToken.h"
 
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/util/StringBuffer.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(index)
@@ -337,15 +342,14 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
   try {
     source->close();
   }
-  _CLCATCH_ERR(CL_ERR_IO, {_CLLDELETE(source);_CLLDELETE(t);_CLDELETE_LCARRAY(queryText);},/*ignore CL_ERR_IO */);
+  _CLCATCH_ERR_CLEANUP(CL_ERR_IO, {_CLLDELETE(source);_CLLDELETE(t);_CLDELETE_LCARRAY(queryText);} ); /* cleanup */
   _CLLDELETE(source);
 
   if (v.size() == 0)
     return NULL;
   else if (v.size() == 1) {
-    Term* tm = _CLNEW Term(_field, v.at(0)->termBuffer());
+    boost::shared_ptr<Term> tm(_CLNEW Term(_field, v.at(0)->termBuffer()));
     Query* ret = _CLNEW TermQuery( tm );
-    _CLDECDELETE(tm);
     return ret;
   } else {
     if (severalTokensAtSamePosition) {
@@ -353,21 +357,20 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
         // no phrase query:
         BooleanQuery* q = _CLNEW BooleanQuery(true);
         for(size_t i=0; i<v.size(); i++ ){
-          Term* tm = _CLNEW Term(_field, v.at(i)->termBuffer());
+          boost::shared_ptr<Term> tm(_CLNEW Term(_field, v.at(i)->termBuffer()));
           q->add(_CLNEW TermQuery(tm),BooleanClause::SHOULD);
-          _CLDECDELETE(tm);
         }
         return q;
       }else {
 		    MultiPhraseQuery* mpq = _CLNEW MultiPhraseQuery();
 		    mpq->setSlop(phraseSlop);
-		    CLArrayList<Term*> multiTerms;
+		    CLArrayList<boost::shared_ptr<Term>,CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&> > multiTerms;
 		    int32_t position = -1;
 		    for (size_t i = 0; i < v.size(); i++) {
 			    t = v.at(i);
 			    if (t->getPositionIncrement() > 0 && multiTerms.size() > 0) {
-            ValueArray<Term*> termsArray(multiTerms.size());
-            multiTerms.toArray(termsArray.values, false);
+            ValueArray<boost::shared_ptr<Term> > termsArray(multiTerms.size());
+            multiTerms.toArray(termsArray.values);
 				    if (enablePositionIncrements) {
 					    mpq->add(&termsArray,position);
 				    } else {
@@ -376,10 +379,11 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
 				    multiTerms.clear();
 			    }
 			    position += t->getPositionIncrement();
-			    multiTerms.push_back(_CLNEW Term(field, t->termBuffer()));
+                            boost::shared_ptr<Term> added(_CLNEW Term(field, t->termBuffer()));
+			    multiTerms.push_back(added);
 		    }
-        ValueArray<Term*> termsArray(multiTerms.size());
-        multiTerms.toArray(termsArray.values, false);
+        ValueArray<boost::shared_ptr<Term> > termsArray(multiTerms.size());
+        multiTerms.toArray(termsArray.values);
 		    if (enablePositionIncrements) {
 			    mpq->add(&termsArray,position);
 		    } else {
@@ -394,14 +398,13 @@ Query* QueryParser::getFieldQuery(const TCHAR* _field, TCHAR* queryText) {
 
       for (size_t i = 0; i < v.size(); i++) {
         t = v.at(i);
-        Term* tm = _CLNEW Term(_field, t->termBuffer());
+        boost::shared_ptr<Term> tm(_CLNEW Term(_field, t->termBuffer()));
         if (enablePositionIncrements) {
           position += t->getPositionIncrement();
           pq->add(tm,position);
         } else {
           pq->add(tm);
         }
-        _CLDECDELETE(tm);
       }
       return pq;
     }
@@ -427,54 +430,59 @@ Query* QueryParser::getRangeQuery(const TCHAR* _field, TCHAR* part1, TCHAR* part
     _tcslwr(part1);
     _tcslwr(part2);
   }
-  /*
-  // TODO: Complete porting of the code below
+
+  TCHAR* _part1 = part1, *_part2 = part2; // just in case anything go wrong...
   try {
-  DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, locale);
-  df.setLenient(true);
-  Date d1 = df.parse(part1);
-  Date d2 = df.parse(part2);
-  if (inclusive) {
-  // The user can only specify the date, not the time, so make sure
-  // the time is set to the latest possible time of that date to really
-  // include all documents:
-  Calendar cal = Calendar.getInstance(locale);
-  cal.setTime(d2);
-  cal.set(Calendar.HOUR_OF_DAY, 23);
-  cal.set(Calendar.MINUTE, 59);
-  cal.set(Calendar.SECOND, 59);
-  cal.set(Calendar.MILLISECOND, 999);
-  d2 = cal.getTime();
-  }
-  CL_NS(document)::DateTools::Resolution resolution = getDateResolution(_field);
-  if (resolution == NULL) {
-  // no default or field specific date resolution has been set,
-  // use deprecated DateField to maintain compatibilty with
-  // pre-1.9 Lucene versions.
-  part1 = DateField.dateToString(d1);
-  part2 = DateField.dateToString(d2);
-  } else {
-  part1 = CL_NS(document)::DateTools::dateToString(d1, resolution);
-  part2 = CL_NS(document)::DateTools::dateToString(d2, resolution);
-  }
+      /*DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, locale); // SHORT means completely numeric
+      df.setLenient(true);
+      Date d1 = df.parse(part1);
+      Date d2 = df.parse(part2);
+      */
+      const int64_t d1 = CL_NS(document)::DateTools::stringToTime(part1);
+      int64_t d2 = CL_NS(document)::DateTools::stringToTime(part2);
+      if (inclusive) {
+          // The user can only specify the date, not the time, so make sure
+          // the time is set to the latest possible time of that date to really
+          // include all documents:
+          d2 = CL_NS(document)::DateTools::timeMakeInclusive(d2);
+      }
+
+      CL_NS(document)::DateTools::Resolution resolution = getDateResolution(_field);
+      if (resolution == CL_NS(document)::DateTools::NO_RESOLUTION) {
+          // no default or field specific date resolution has been set,
+          // use deprecated DateField to maintain compatibilty with
+          // pre-1.9 Lucene versions.
+          _part1 = CL_NS(document)::DateField::timeToString(d1);
+          _part2 = CL_NS(document)::DateField::timeToString(d2);
+      } else {
+          _part1 = CL_NS(document)::DateTools::timeToString(d1, resolution);
+          _part2 = CL_NS(document)::DateTools::timeToString(d2, resolution);
+      }
   }
   catch (...) { }
-  */
 
-  //if(useOldRangeQuery)
-  //{
-  Term* t1 = _CLNEW Term(_field,part1);
-  Term* t2 = _CLNEW Term(_field,part2);
-  Query* ret = _CLNEW RangeQuery(t1, t2, inclusive);
-  _CLDECDELETE(t1);
-  _CLDECDELETE(t2);
-  return ret;
-  /*}
+  if(useOldRangeQuery)
+  {
+      boost::shared_ptr<Term> t1( _CLNEW Term(_field,part1));
+      boost::shared_ptr<Term> t2( _CLNEW Term(_field,part2));
+      Query* ret = _CLNEW RangeQuery(t1, t2, inclusive);
+
+      // Make sure to delete the date strings we allocated only if we indeed allocated them
+      if (part1 != _part1) _CLDELETE_LCARRAY(_part1);
+      if (part2 != _part2) _CLDELETE_LCARRAY(_part2);
+      
+      return ret;
+  }
   else
   {
-  // TODO: Port ConstantScoreRangeQuery and enable this section
-  return _CLNEW ConstantScoreRangeQuery(_field,part1,part2,inclusive,inclusive);
-  }*/
+      Query* q = _CLNEW ConstantScoreRangeQuery(_field,part1,part2,inclusive,inclusive);
+      
+      // Make sure to delete the date strings we allocated only if we indeed allocated them
+      if (part1 != _part1) _CLDELETE_LCARRAY(_part1);
+      if (part2 != _part2) _CLDELETE_LCARRAY(_part2);
+      
+      return q;
+  }
 }
 
 Query* QueryParser::getBooleanQuery(std::vector<CL_NS(search)::BooleanClause*>& clauses, bool disableCoord)
@@ -504,9 +512,8 @@ Query* QueryParser::getWildcardQuery(const TCHAR* _field, TCHAR* termStr)
     _tcslwr(termStr);
   }
 
-  Term* t = _CLNEW Term(_field, termStr);
+  boost::shared_ptr<Term> t(_CLNEW Term(_field, termStr));
   Query* q = _CLNEW WildcardQuery(t);
-  _CLDECDELETE(t);
 
   return q;
 }
@@ -520,9 +527,8 @@ Query* QueryParser::getPrefixQuery(const TCHAR* _field, TCHAR* _termStr)
   if (lowercaseExpandedTerms) {
     _tcslwr(_termStr);
   }
-  Term* t = _CLNEW Term(_field, _termStr);
+  boost::shared_ptr<Term> t(_CLNEW Term(_field, _termStr));
   Query *q = _CLNEW PrefixQuery(t);
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -532,9 +538,8 @@ Query* QueryParser::getFuzzyQuery(const TCHAR* _field, TCHAR* termStr, const flo
     _tcslwr(termStr);
   }
 
-  Term* t = _CLNEW Term(_field, termStr);
+  boost::shared_ptr<Term> t(_CLNEW Term(_field, termStr));
   Query *q = _CLNEW FuzzyQuery(t, minSimilarity, fuzzyPrefixLength);
-  _CLDECDELETE(t);
   return q;
 }
 
@@ -715,15 +720,13 @@ Query* QueryParser::TopLevelQuery(TCHAR* _field) {
     q = fQuery(_field);
 	jj_consume_token(0);
   } catch (CLuceneError& e) {
-    if (_field!=field)_CLDELETE_LCARRAY(_field);
 	_CLLDELETE(q);
     throw e;
   }
-  if (_field!=field)_CLDELETE_LCARRAY(_field);
   return q;
 }
 
-Query* QueryParser::fQuery(TCHAR*& _field) {
+Query* QueryParser::fQuery(TCHAR* _field) {
   CLVector<CL_NS(search)::BooleanClause*, Deletor::Object<CL_NS(search)::BooleanClause> > clauses;
   Query *q, *firstQuery=NULL;
   int32_t conj, mods;
@@ -771,9 +774,10 @@ label_1_brk:
   }
 }
 
-Query* QueryParser::fClause(TCHAR*& _field) {
+Query* QueryParser::fClause(TCHAR* _field) {
   Query* q=NULL;
   QueryToken *fieldToken=NULL, *boost=NULL;
+  TCHAR* tmpField=NULL;
   if (jj_2_1(2)) {
     switch ((jj_ntk==-1)?f_jj_ntk():jj_ntk)
     {
@@ -782,15 +786,15 @@ Query* QueryParser::fClause(TCHAR*& _field) {
         fieldToken = jj_consume_token(TERM);
         jj_consume_token(COLON);
         // make sure to delete _field only if it's not contained already by the QP
-        if (_field != field) _CLDELETE_LARRAY(_field);
-        _field=discardEscapeChar(fieldToken->image);
+        tmpField=discardEscapeChar(fieldToken->image);
         break;
       }
     case STAR:
       jj_consume_token(STAR);
       jj_consume_token(COLON);
-      _field[0]=_T('*');
-	  _field[1]=0;
+      tmpField=_CL_NEWARRAY(TCHAR,2);
+      tmpField[0]=_T('*');
+	  tmpField[1]=0;
       break;
     default:
       jj_la1[5] = jj_gen;
@@ -798,6 +802,7 @@ Query* QueryParser::fClause(TCHAR*& _field) {
       _CLTHROWT(CL_ERR_Parse,_T(""));
     }
   }
+  
   switch ((jj_ntk==-1)?f_jj_ntk():jj_ntk)
   {
   case STAR:
@@ -809,13 +814,13 @@ Query* QueryParser::fClause(TCHAR*& _field) {
   case RANGEEX_START:
   case NUMBER:
     {
-      q = fTerm(_field);
+      q = fTerm( tmpField==NULL ? _field : tmpField );
       break;
     }
   case LPAREN:
     {
       jj_consume_token(LPAREN);
-      q = fQuery(_field);
+      q = fQuery( tmpField==NULL ? _field : tmpField );
       jj_consume_token(RPAREN);
       if (((jj_ntk==-1)?f_jj_ntk():jj_ntk) == CARAT)
       {
@@ -830,9 +835,11 @@ Query* QueryParser::fClause(TCHAR*& _field) {
     {
       jj_la1[7] = jj_gen;
       jj_consume_token(-1);
+      _CLDELETE_LCARRAY(tmpField);
       _CLTHROWT(CL_ERR_Parse,_T(""));
     }
   }
+  _CLDELETE_LCARRAY(tmpField);
   if (q && boost != NULL) {
     float_t f = 1.0;
     try {

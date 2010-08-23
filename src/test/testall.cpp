@@ -70,9 +70,10 @@ int main(int argc, char *argv[])
 	else if ( getenv("TMP") != NULL )
 		cl_tempDirS = getenv("TMP");
 
-  if ( Misc::dir_Exists( (cl_tempDirS + "/clucene").c_str() ) )
-		cl_tempDirS += "/clucene";
-  cl_tempDir = cl_tempDirS.c_str();
+        _mkdir( (cl_tempDirS + "/test-clucene").c_str() );
+        if ( Misc::dir_Exists( (cl_tempDirS + "/test-clucene").c_str() ) )
+          cl_tempDirS += "/test-clucene";
+        cl_tempDir = cl_tempDirS.c_str();
 
 	clucene_data_location[0]=0;
 	if ( CL_NS(util)::Misc::dir_Exists(CLUCENE_DATA_LOCATION1 "/reuters-21578-index/segments") )
@@ -322,12 +323,12 @@ void TestAssertIndexReaderEquals(CuTest *tc,  IndexReader* index1, IndexReader* 
   while(enum1->next()) {
 
     CuAssertTrue(tc,enum2->next());
-    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term(false)->field(), enum2->term(false)->field() );
-    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term(false)->text(), enum2->term(false)->text() );
-    CuAssert(tc, _T("Different term in dictionary."), enum1->term(false)->equals(enum2->term(false)) );
+    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term().get()->field(), enum2->term().get()->field() );
+    CuAssertStrEquals(tc, _T("Different term field in dictionary."), enum1->term().get()->text(), enum2->term().get()->text() );
+    CuAssert(tc, _T("Different term in dictionary."), enum1->term().get()->equals(enum2->term().get()) );
 
-    tp1->seek(enum1->term(false));
-    tp2->seek(enum1->term(false));
+    tp1->seek(enum1->term());
+    tp2->seek(enum1->term());
     while(tp1->next()) {
       CuAssertTrue(tc, tp2->next());
       CuAssertIntEquals(tc,_T("Different doc id in postinglist of term"), tp1->doc(), tp2->doc());

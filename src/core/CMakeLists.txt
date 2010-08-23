@@ -51,12 +51,15 @@ SET(clucene_core_Files
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
 	./CLucene/store/LockFactory.cpp
+	./CLucene/store/BufferedIndexInput.cpp
+	./CLucene/store/BufferedIndexOutput.cpp
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
 	./CLucene/store/MMapDirectory.cpp
+	./CLucene/store/MMapInput.cpp
 	./CLucene/store/RAMDirectory.cpp
-	#./CLucene/store/RAWDirectory.cpp
+	./CLucene/store/SharedHandle.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp
@@ -85,14 +88,14 @@ SET(clucene_core_Files
 	./CLucene/index/SkipListWriter.cpp
 	./CLucene/index/IndexFileDeleter.cpp
 	./CLucene/index/SegmentReader.cpp
-  ./CLucene/index/DirectoryIndexReader.cpp
+	./CLucene/index/DirectoryIndexReader.cpp
 	./CLucene/index/TermVectorWriter.cpp
 	./CLucene/index/IndexReader.cpp
 	./CLucene/index/SegmentTermPositions.cpp
 	./CLucene/index/SegmentMerger.cpp
 	./CLucene/index/IndexWriter.cpp
-  ./CLucene/index/MultiReader.cpp
-  ./CLucene/index/MultiSegmentReader.cpp
+	./CLucene/index/MultiReader.cpp
+	./CLucene/index/MultiSegmentReader.cpp
 	./CLucene/index/Payload.cpp
 	./CLucene/index/SegmentTermEnum.cpp
 	./CLucene/index/TermInfo.cpp
@@ -142,6 +145,7 @@ SET(clucene_core_Files
 	./CLucene/search/DateFilter.cpp
 	./CLucene/search/MatchAllDocsQuery.cpp
 	./CLucene/search/MultiPhraseQuery.cpp
+	./CLucene/search/ConstantScoreQuery.cpp
 )
 
 #if USE_SHARED_OBJECT_FILES then we link directly to the object files (means rebuilding them for the core)
@@ -151,7 +155,6 @@ ENDIF ( USE_SHARED_OBJECT_FILES )
 
 #find our headers
 file(GLOB_RECURSE HEADERS ${clucene-core_SOURCE_DIR}/*.h)
-
 
 #create the libraries
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )

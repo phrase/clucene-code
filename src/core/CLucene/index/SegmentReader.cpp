@@ -18,6 +18,7 @@
 #include "CLucene/util/PriorityQueue.h"
 #include "_SegmentMerger.h"
 #include <assert.h>
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -30,10 +31,10 @@ CL_NS_DEF(index)
 	normSeek(ns),
 	_this(r),
 	segment(seg),
-    useSingleNormStream(_useSingleNormStream),
+  useSingleNormStream(_useSingleNormStream),
 	in(instrm),
-	bytes(NULL),
-	dirty(false){
+	dirty(false),
+	bytes(NULL){
   //Func - Constructor
   //Pre  - instrm is a valid reference to an IndexInput
   //Post - A Norm instance has been created with an empty bytes array
@@ -222,34 +223,17 @@ CL_NS_DEF(index)
     )
   }
 
-  SegmentReader* SegmentReader::get(SegmentInfo* si){
-    return get(si->dir, si, NULL, false, false, BufferedIndexInput::BUFFER_SIZE, true);
-  }
-
   SegmentReader* SegmentReader::get(SegmentInfo* si, bool doOpenStores) {
     return get(si->dir, si, NULL, false, false, BufferedIndexInput::BUFFER_SIZE, doOpenStores);
-  }
-
-  SegmentReader* SegmentReader::get(SegmentInfo* si, int32_t readBufferSize){
-    return get(si->dir, si, NULL, false, false, readBufferSize, true);
   }
 
   SegmentReader* SegmentReader::get(SegmentInfo* si, int32_t readBufferSize, bool doOpenStores){
     return get(si->dir, si, NULL, false, false, readBufferSize, doOpenStores);
   }
-
   SegmentReader* SegmentReader::get(SegmentInfos* sis, SegmentInfo* si,
                                   bool closeDir) {
     return get(si->dir, si, sis, closeDir, true, BufferedIndexInput::BUFFER_SIZE, true);
   }
-
-  SegmentReader* SegmentReader::get(Directory* dir, SegmentInfo* si,
-                                  SegmentInfos* sis,
-                                  bool closeDir, bool ownDir,
-                                  int32_t readBufferSize) {
-    return get(dir, si, sis, closeDir, ownDir, readBufferSize, true);
-  }
-
   /**
    * @throws CorruptIndexException if the index is corrupt
    * @throws IOException if there is a low-level IO error
@@ -261,7 +245,7 @@ CL_NS_DEF(index)
                                   bool doOpenStores){
     SegmentReader* instance = _CLNEW SegmentReader(); //todo: make this configurable...
     instance->init(dir, sis, closeDir);
-    instance->initialize(si, readBufferSize, doOpenStores, false);
+    instance->initialize(si, readBufferSize==-1 ? BufferedIndexInput::BUFFER_SIZE : readBufferSize, doOpenStores, false);
     return instance;
   }
 
@@ -456,7 +440,7 @@ CL_NS_DEF(index)
       return tis->terms();
   }
 
-  TermEnum* SegmentReader::terms(const Term* t) {
+  TermEnum* SegmentReader::terms(boost::shared_ptr<Term const> const& t) {
   //Func - Returns an enumeration of terms starting at or after the named term t
   //Pre  - t != NULL
   //       tis != NULL
@@ -524,7 +508,7 @@ CL_NS_DEF(index)
       return _CLNEW SegmentTermPositions(this);
   }
 
-  int32_t SegmentReader::docFreq(const Term* t) {
+  int32_t SegmentReader::docFreq(boost::shared_ptr<Term const> const& t) {
   //Func - Returns the number of documents which contain the term t
   //Pre  - t holds a valid reference to a Term
   //Post - The number of documents which contain term t has been returned
@@ -1058,6 +1042,8 @@ bool SegmentReader::hasNorms(const TCHAR* field){
     this->storeCFSReader = NULL;
     this->termVectorsReaderOrig = NULL;
     this->tis = NULL;
+    _CLDELETE(fieldsReader);
+    _CLDELETE(this->singleNormStream);
 
     return clone;
   }

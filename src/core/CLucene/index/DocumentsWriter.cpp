@@ -110,14 +110,24 @@ DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory* directory, IndexWriter
   docStoreOffset = nextDocID = numDocsInRAM = numDocsInStore = nextWriteDocID = 0;
 }
 DocumentsWriter::~DocumentsWriter(){
-  _CLDELETE(bufferedDeleteTerms);
-  _CLDELETE(skipListWriter);
-  _CLDELETE_ARRAY(copyByteBuffer);
-  _CLDELETE(_files);
-  _CLDELETE(fieldInfos);
+  _CLLDELETE(bufferedDeleteTerms);
+  _CLLDELETE(skipListWriter);
+  _CLDELETE_LARRAY(copyByteBuffer);
+  _CLLDELETE(_files);
+  _CLLDELETE(fieldInfos);
 
   for(size_t i=0;i<threadStates.length;i++) {
-    _CLDELETE(threadStates.values[i]);
+    _CLLDELETE(threadStates.values[i]);
+  }
+
+  // Make sure unused posting slots aren't attempted delete on
+  if (this->postingsFreeListDW.values){
+      if (this->postingsFreeCountDW > this->postingsFreeListDW.length) {
+          memset(this->postingsFreeListDW.values + this->postingsFreeCountDW
+              , NULL
+              , sizeof(Posting*));
+      }
+      postingsFreeListDW.deleteUntilNULL();
   }
 }
 
@@ -832,7 +842,7 @@ void DocumentsWriter::close() {
   CONDITION_NOTIFYALL(THIS_WAIT_CONDITION)
 }
 
-DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Term* delTerm) {
+DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, boost::shared_ptr<Term> const& delTerm) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
 
   // First, find a thread state.  If this thread already
@@ -879,7 +889,7 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
     bool success = false;
     try {
       state->init(doc, nextDocID);
-      if (delTerm != NULL) {
+      if (delTerm.get() != NULL) {
         addDeleteTerm(delTerm, state->docID);
         state->doFlushAfter = timeToFlushDeletes();
       }
@@ -916,14 +926,15 @@ DocumentsWriter::ThreadState* DocumentsWriter::getThreadState(Document* doc, Ter
 }
 
 bool DocumentsWriter::addDocument(Document* doc, Analyzer* analyzer){
-  return updateDocument(doc, analyzer, NULL);
+  boost::shared_ptr<Term> null;
+  return updateDocument(doc, analyzer, null);
 }
 
-bool DocumentsWriter::updateDocument(Term* t, Document* doc, Analyzer* analyzer){
+bool DocumentsWriter::updateDocument(boost::shared_ptr<Term> const& t, Document* doc, Analyzer* analyzer){
   return updateDocument(doc, analyzer, t);
 }
 
-bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term* delTerm) {
+bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, boost::shared_ptr<Term> const& delTerm) {
 
   // This call is synchronized but fast
   ThreadState* state = getThreadState(doc, delTerm);
@@ -936,7 +947,7 @@ bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term* de
       } _CLFINALLY (
         // This call is synchronized but fast
         finishDocument(state);
-	    )
+ 	)
       success = true;
     } _CLFINALLY (
       if (!success) {
@@ -955,7 +966,7 @@ bool DocumentsWriter::updateDocument(Document* doc, Analyzer* analyzer, Term* de
         // keeps indexing as "all or none" (atomic) when
         // adding a document:
         addDeleteDocID(state->docID);
-	    }
+	}
     )
   } catch (AbortException& ae) {
     abort(&ae);
@@ -984,9 +995,8 @@ void DocumentsWriter::clearBufferedDeletes() {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   DocumentsWriter::TermNumMapType::iterator term = bufferedDeleteTerms->begin();
   while ( term != bufferedDeleteTerms->end() ){
-    Term* t = term->first;
+    boost::shared_ptr<Term> t = term->first;
     bufferedDeleteTerms->erase(term);
-    _CLDECDELETE(t);
     term = bufferedDeleteTerms->begin();
   }
   bufferedDeleteDocIDs.clear();
@@ -995,7 +1005,7 @@ void DocumentsWriter::clearBufferedDeletes() {
     resetPostingsData();
 }
 
-bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<Term*>* terms) {
+bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<boost::shared_ptr<Term> >* terms) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)
@@ -1005,7 +1015,7 @@ bool DocumentsWriter::bufferDeleteTerms(const ArrayBase<Term*>* terms) {
   return timeToFlushDeletes();
 }
 
-bool DocumentsWriter::bufferDeleteTerm(Term* term) {
+bool DocumentsWriter::bufferDeleteTerm(boost::shared_ptr<Term> const& term) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   while(pauseThreads != 0 || flushPending){
     CONDITION_WAIT(THIS_LOCK, THIS_WAIT_CONDITION)
@@ -1039,13 +1049,13 @@ bool DocumentsWriter::hasDeletes() {
 // current number of documents buffered in ram so that the
 // delete term will be applied to those documents as well
 // as the disk segments.
-void DocumentsWriter::addDeleteTerm(Term* term, int32_t docCount) {
+void DocumentsWriter::addDeleteTerm(boost::shared_ptr<Term> const& term, int32_t docCount) {
 	SCOPED_LOCK_MUTEX(THIS_LOCK)
   Num* num = bufferedDeleteTerms->get(term);
   if (num == NULL) {
-    bufferedDeleteTerms->put(_CL_POINTER(term), new Num(docCount));
+    bufferedDeleteTerms->put(term, new Num(docCount));
     // This is coarse approximation of actual bytes used:
-    numBytesUsed += ( _tcslen(term->field()) + term->textLength()) * BYTES_PER_CHAR
+    numBytesUsed += ( _tcslen(term.get()->field()) + term.get()->textLength()) * BYTES_PER_CHAR
         + 4 + 5 * OBJECT_HEADER_BYTES + 5 * OBJECT_POINTER_BYTES;
     if (ramBufferSize != IndexWriter::DISABLE_AUTO_FLUSH
         && numBytesUsed > ramBufferSize) {
@@ -1323,7 +1333,7 @@ void DocumentsWriter::balanceRAM() {
           numToFree = postingsFreeChunk;
         else
           numToFree = this->postingsFreeCountDW;
-        for ( size_t i = this->postingsFreeCountDW-numToFree;i< this->postingsFreeCountDW-numToFree; i++ ){
+        for ( size_t i = this->postingsFreeCountDW-numToFree;i< this->postingsFreeCountDW; i++ ){
           _CLDELETE(this->postingsFreeListDW.values[i]);
         }
         this->postingsFreeCountDW -= numToFree;

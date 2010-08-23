@@ -12,6 +12,7 @@
 #include "CLucene/util/Array.h"
 #include "CLucene/store/_RAMDirectory.h"
 #include "_TermInfo.h"
+#include <boost/shared_ptr.hpp>
 
 CL_CLASS_DEF(analysis,Analyzer)
 CL_CLASS_DEF(analysis,Token)
@@ -33,8 +34,8 @@ class TermInfo;
 class TermInfosWriter;
 class Term;
 class FieldInfo;
-class Term_Compare;
-class Term_Equals;
+class Term_Compare_Shared;
+class Term_Equals_Shared;
 
 /** Used only internally to DW to call abort "up the stack" */
 class AbortException{
@@ -149,8 +150,8 @@ public:
         this->num = num;
     }
   };
-  typedef CL_NS(util)::CLHashMap<Term*,Num*, Term_Compare,Term_Equals,
-    CL_NS(util)::Deletor::Object<Term>, CL_NS(util)::Deletor::Object<Num> > TermNumMapType;
+  typedef CL_NS(util)::CLHashMap<boost::shared_ptr<Term>,Num*, Term_Compare_Shared,Term_Equals_Shared,
+    CL_NS(util)::Deletor::NullVal<boost::shared_ptr<Term> const&>, CL_NS(util)::Deletor::Object<Num> > TermNumMapType;
 
 private:
   IndexWriter* writer;
@@ -230,7 +231,7 @@ private:
     int32_t endIndex;
   public:
     ByteSliceReader();
-    ~ByteSliceReader();
+    virtual ~ByteSliceReader();
     void init(ByteBlockPool* pool, int32_t startIndex, int32_t endIndex);
 
     uint8_t readByte();
@@ -357,7 +358,7 @@ private:
   // current number of documents buffered in ram so that the
   // delete term will be applied to those documents as well
   // as the disk segments.
-  void addDeleteTerm(Term* term, int32_t docCount);
+  void addDeleteTerm(boost::shared_ptr<Term> const& term, int32_t docCount);
 
   // Buffer a specific docID for deletion.  Currently only
   // used when we hit a exception when adding a document
@@ -394,7 +395,7 @@ private:
       int32_t postingsHashMask;
 
       int32_t postingsVectorsUpto;
-	    DocumentsWriter* _parent;
+      DocumentsWriter* _parent;
 
       int32_t offsetEnd;
       CL_NS(analysis)::Token* localToken;
@@ -563,11 +564,11 @@ private:
     CL_NS(util)::ValueArray<FieldData*> allFieldDataArray; // All FieldData instances
     bool doFlushAfter;
     int32_t docID;                            // docID we are now working on
-	  DocumentsWriter* _parent;
 
+    DocumentsWriter* _parent;
 
-	  ThreadState(DocumentsWriter* _parent);
-	  ~ThreadState();
+    ThreadState(DocumentsWriter* _parent);
+    virtual ~ThreadState();
 
     /** Initializes shared state for this new document */
     void init(CL_NS(document)::Document* doc, int32_t docID);
@@ -864,15 +865,15 @@ public:
    * flush is pending.  If delTerm is non-null then we
    * buffer this deleted term after the thread state has
    * been acquired. */
-  ThreadState* getThreadState(CL_NS(document)::Document* doc, Term* delTerm);
+  ThreadState* getThreadState(CL_NS(document)::Document* doc, boost::shared_ptr<Term> const& delTerm);
 
   /** Returns true if the caller (IndexWriter) should now
    * flush. */
   bool addDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
-  bool updateDocument(Term* t, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
+  bool updateDocument(boost::shared_ptr<Term> const& t, CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer);
 
-  bool updateDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer, Term* delTerm);
+  bool updateDocument(CL_NS(document)::Document* doc, CL_NS(analysis)::Analyzer* analyzer, boost::shared_ptr<Term> const& delTerm);
 
   int32_t getNumBufferedDeleteTerms();
 
@@ -883,9 +884,9 @@ public:
   // Reset buffered deletes.
   void clearBufferedDeletes();
 
-  bool bufferDeleteTerms(const CL_NS(util)::ArrayBase<Term*>* terms);
+  bool bufferDeleteTerms(const CL_NS(util)::ArrayBase<boost::shared_ptr<Term> >* terms);
 
-  bool bufferDeleteTerm(Term* term);
+  bool bufferDeleteTerm(boost::shared_ptr<Term> const& term);
 
   void setMaxBufferedDeleteTerms(int32_t maxBufferedDeleteTerms);
 

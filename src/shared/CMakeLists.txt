@@ -37,12 +37,14 @@ INCLUDE (CheckStdCallFunctionExists)
 
 find_package(Threads REQUIRED)
 INCLUDE (CheckPthread)
+INCLUDE (CheckAtomicFunctions)
 
 find_package(ZLIB)
 IF ( ZLIB_FOUND )
   SET ( EXTRA_LIBS ${EXTRA_LIBS} ${ZLIB_LIBRARY} )
   INCLUDE_DIRECTORIES( ${ZLIB_INCLUDE_DIR} )
 ELSE ( ZLIB_FOUND )
+  MESSAGE( "ZLIB not found, using local: ${clucene-ext_SOURCE_DIR}/zlib" )
   INCLUDE_DIRECTORIES( ${clucene-ext_SOURCE_DIR}/zlib )
 ENDIF ( ZLIB_FOUND )
 
@@ -95,7 +97,7 @@ CHECK_REQUIRED_FUNCTIONS(  printf strftime wcscpy wcsncpy wcscat wcschr wcsstr w
                            wcscmp wcsncmp wcscspn )
 
 #todo: wcstoq is bsd equiv of wcstoll, we can use that...
-CHECK_OPTIONAL_FUNCTIONS( wcsupr wcscasecmp wcsicmp wcstoll wprintf lltow 
+CHECK_OPTIONAL_FUNCTIONS( wcsupr wcscasecmp wcsicmp wcstoll wprintf lltow
     wcstod wcsdup strupr strlwr lltoa strtoll gettimeofday _vsnwprintf mmap "MapViewOfFile(0,0,0,0,0)"
 )
 
@@ -217,10 +219,11 @@ ENDIF (CMAKE_USE_PTHREADS_INIT)
 IF ( CMAKE_USE_SPROC_INIT OR CMAKE_HP_PTHREADS_INIT )
     MESSAGE(FATAL_ERROR "Threads library not implemented")
 ENDIF( CMAKE_USE_SPROC_INIT OR CMAKE_HP_PTHREADS_INIT )
-SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}" )
 
 #define if we have pthreads with recursive capabilities
 CHECK_PTHREAD_RECURSIVE(_CL_HAVE_PTHREAD _CL_HAVE_PTHREAD_MUTEX_RECURSIVE)
+
+CHECK_HAVE_GCC_ATOMIC_FUNCTIONS(_CL_HAVE_GCC_ATOMIC_FUNCTIONS)
 
 #see if we can hide all symbols by default...
 MACRO_CHECK_GCC_VISIBILITY(_CL_HAVE_GCCVISIBILITYPATCH)
@@ -258,7 +261,12 @@ ENDIF ( CMAKE_ANSI_FOR_SCOPE )
 #check that all these definitions are set, or fail...
 MUSTDEFINE_VAR("HAVE_TYPE_INT8_T;HAVE_TYPE_UINT8_T;HAVE_TYPE_INT16_T;HAVE_TYPE_UINT16_T;HAVE_TYPE_UINT16_T;" )
 MUSTDEFINE_VAR("HAVE_TYPE_INT32_T;HAVE_TYPE_UINT32_T;HAVE_TYPE_INT64_T;HAVE_TYPE_UINT64_T;HAVE_TYPE_SIZE_T;HAVE_TYPE_CL_STAT_T")
-MUSTDEFINE_VAR("_CL_HAVE_TRY_BLOCKS;HAVE_TYPE__TIMEB")
+MUSTDEFINE_VAR("_CL_HAVE_TRY_BLOCKS")
+
+#must have timeb OR GETTIMEOFDAY
+IF ( NOT HAVE_TYPE__TIMEB AND NOT _CL_HAVE_FUNCTION_GETTIMEOFDAY )
+        MESSAGE( FATAL_ERROR "timeb or gettimeofday must be available." )
+ENDIF ( NOT HAVE_TYPE__TIMEB AND NOT _CL_HAVE_FUNCTION_GETTIMEOFDAY )
 
 #now write out our configuration....
 CONFIGURE_FILE(${clucene-shared_SOURCE_DIR}/CLucene/clucene-config.h.cmake ${clucene-shared_BINARY_DIR}/CLucene/clucene-config.h)
@@ -325,6 +333,7 @@ SET_TARGET_PROPERTIES(clucene-shared PROPERTIES
     SOVERSION ${CLUCENE_SOVERSION}
     COMPILE_DEFINITIONS_DEBUG _DEBUG
 )
+TARGET_LINK_LIBRARIES(clucene-shared ${CMAKE_THREAD_LIBS_INIT})
 IF ( EXTRA_LIBS )
   TARGET_LINK_LIBRARIES(clucene-shared ${EXTRA_LIBS})
 ENDIF ( EXTRA_LIBS )
@@ -343,6 +352,7 @@ IF ( BUILD_STATIC_LIBRARIES )
 	    SOVERSION ${CLUCENE_SOVERSION}
 	    COMPILE_DEFINITIONS_DEBUG _DEBUG
 	)
+  TARGET_LINK_LIBRARIES(clucene-shared-static ${CMAKE_THREAD_LIBS_INIT})
 	install(TARGETS clucene-shared-static 
 	        DESTINATION ${LIB_DESTINATION} 
 	        COMPONENT runtime )

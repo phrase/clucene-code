@@ -16,6 +16,7 @@
 #include "_SegmentHeader.h"
 #include "_SegmentMergeInfo.h"
 #include "_SegmentMergeQueue.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_USE(store)
 CL_NS_USE(document)
@@ -255,15 +256,16 @@ void MultiReader::doSetNorm(int32_t n, const TCHAR* field, uint8_t value){
 
 TermEnum* MultiReader::terms() {
   ensureOpen();
-	return _CLNEW MultiTermEnum(subReaders, starts, NULL);
+	boost::shared_ptr<Term const> null;
+	return _CLNEW MultiTermEnum(subReaders, starts, null);
 }
 
-TermEnum* MultiReader::terms(const Term* term) {
+TermEnum* MultiReader::terms(boost::shared_ptr<const Term> const& term) {
     ensureOpen();
 	return _CLNEW MultiTermEnum(subReaders, starts, term);
 }
 
-int32_t MultiReader::docFreq(const Term* t) {
+int32_t MultiReader::docFreq(boost::shared_ptr<const Term> const& t) {
     ensureOpen();
 	int32_t total = 0;				  // sum freqs in Multi
 	for (size_t i = 0; i < subReaders->length; i++)

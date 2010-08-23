@@ -19,6 +19,7 @@ CL_CLASS_DEF(index,IndexReader)
 //#include "BooleanQuery.h"
 //#include "TermQuery.h"
 #include "Query.h"
+#include <boost/shared_ptr.hpp>
 
 CL_NS_DEF(search)
     /**
@@ -36,7 +37,7 @@ CL_NS_DEF(search)
      */
     class CLUCENE_EXPORT MultiTermQuery: public Query {
     private:
-        CL_NS(index)::Term* term;
+        boost::shared_ptr<CL_NS(index)::Term> term;
     protected:
         MultiTermQuery(const MultiTermQuery& clone);
 
@@ -44,12 +45,12 @@ CL_NS_DEF(search)
 		virtual FilteredTermEnum* getEnum(CL_NS(index)::IndexReader* reader) = 0;
     public:
       /** Constructs a query for terms matching <code>term</code>. */
-      MultiTermQuery(CL_NS(index)::Term* t);
+      MultiTermQuery(boost::shared_ptr<CL_NS(index)::Term> const& t);
 
       virtual ~MultiTermQuery();
 
 		  /** Returns the pattern term. */
-		  CL_NS(index)::Term* getTerm(bool pointer=true) const;
+		  boost::shared_ptr<CL_NS(index)::Term> const& getTerm() const;
 
 		  Query* combine(CL_NS(util)::ArrayBase<Query*>* queries);
 

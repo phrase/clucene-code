@@ -1,13 +1,15 @@
 /*------------------------------------------------------------------------------
- * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
- *
- * Distributable under the terms of either the Apache License (Version 2.0) or
- * the GNU Lesser General Public License, as specified in the COPYING file.
+* Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
+* the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "test.h"
 #include "CLucene/util/dirent.h"
 #include "CLucene/util/CLStreams.h"
 #include "CLucene/LuceneThreads.h"
+#include "CLucene/search/Explanation.h"
+CL_NS_USE(search)
 
 #ifdef _CL_HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -18,49 +20,60 @@ using namespace std;
 
 CL_NS_USE(util)
 
-//an extremelly simple analyser. this eliminates differences
-//caused by differences in character classifications functions
-class ReutersTokenizer:public CharTokenizer {
-public:
-  // Construct a new LetterTokenizer.
-  ReutersTokenizer(CL_NS(util)::Reader* in):
-    CharTokenizer(in) {}
+	//an extremelly simple analyser. this eliminates differences
+	//caused by differences in character classifications functions
+	class ReutersTokenizer:public CharTokenizer {
+	public:
+		// Construct a new LetterTokenizer.
+		ReutersTokenizer(CL_NS(util)::Reader* in):
+		  CharTokenizer(in) {}
 
-  ~ReutersTokenizer(){}
-protected:
-  bool isTokenChar(const TCHAR c) const{
-    if ( c == ' ' || c == '\t' ||
-        c == '-' || c == '.' ||
-        c == '\n' || c == '\r' ||
-        c == ',' || c == '<' ||
-        c == '>' || c<=9){
-      return false;
-    }else
+	    ~ReutersTokenizer(){}
+	protected:
+		bool isTokenChar(const TCHAR c) const{
+			if ( c == ' ' || c == '\t' ||
+    		 c == '-' || c == '.' ||
+    		 c == '\n' || c == '\r' ||
+    		 c == ',' || c == '<' ||
+    		 c == '>' || c<=9){
+    			return false;
+			}else
+    			return true;
+		}
+		TCHAR normalize(const TCHAR c) const{
+			return c;
+		}
+	};
+
+	class ReutersAnalyzer: public Analyzer {
+     public:
+		 TokenStream* tokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader){
+			return _CLNEW ReutersTokenizer(reader);
+		 }
+         TokenStream* reusableTokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader)
+         {
+             Tokenizer* tokenizer = static_cast<Tokenizer*>(getPreviousTokenStream());
+             if (tokenizer == NULL) {
+                 tokenizer = _CLNEW ReutersTokenizer(reader);
+                 setPreviousTokenStream(tokenizer);
+             } else
+                 tokenizer->reset(reader);
+             return tokenizer;
+         }
+         virtual ~ReutersAnalyzer(){}
+  };
+
+  bool stringLowercaseCompare( const string &left, const string &right ){
+   for( string::const_iterator lit = left.begin(), rit = right.begin(); lit != left.end() && rit != right.end(); ++lit, ++rit )
+      if( tolower( *lit ) < tolower( *rit ) )
+         return true;
+      else if( tolower( *lit ) > tolower( *rit ) )
+         return false;
+   if( left.size() < right.size() )
       return true;
+   return false;
   }
-  TCHAR normalize(const TCHAR c) const{
-    return c;
-  }
-};
 
-class ReutersAnalyzer: public Analyzer {
-public:
-  TokenStream* tokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader){
-    return _CLNEW ReutersTokenizer(reader);
-  }
-  ~ReutersAnalyzer(){}
-};
-
-bool stringLowercaseCompare( const string &left, const string &right ){
-  for( string::const_iterator lit = left.begin(), rit = right.begin(); lit != left.end() && rit != right.end(); ++lit, ++rit )
-    if( tolower( *lit ) < tolower( *rit ) )
-      return true;
-    else if( tolower( *lit ) > tolower( *rit ) )
-      return false;
-  if( left.size() < right.size() )
-    return true;
-  return false;
-}
 
 
 
@@ -80,7 +93,7 @@ void testReuters(CuTest *tc) {
   strcat(reuters_origdirectory, "/reuters-21578-index");
   CuAssert(tc,_T("Index does not exist"),Misc::dir_Exists(reuters_origdirectory));
 
-  FSDirectory* fsdir = FSDirectory::getDirectory(reuters_fsdirectory,true);
+  Directory* fsdir = FSDirectory::getDirectory(reuters_fsdirectory,true);
   ReutersAnalyzer a;
 
   IndexWriter writer(fsdir,&a,true);
@@ -141,23 +154,22 @@ void testBySection(CuTest* tc){
 
 #define threadsCount 10
 
-StandardAnalyzer threadAnalyzer;
-void threadSearch(IndexSearcher* searcher, const TCHAR* qry){
+void threadSearch(IndexSearcher* searcher, const TCHAR* qry, StandardAnalyzer* threadAnalyzer){
   Query* q = NULL;
   Hits* h = NULL;
   try{
-    q = QueryParser::parse(qry , _T("contents"), &threadAnalyzer);
+    q = QueryParser::parse(qry , _T("contents"), threadAnalyzer);
     if ( q != NULL ){
       h = searcher->search( q );
 
       if ( h->length() > 0 ){
         //check for explanation memory leaks...
-        Explanation expl1;
+        CL_NS(search)::Explanation expl1;
         searcher->explain(q, h->id(0), &expl1);
         TCHAR* tmp = expl1.toString();
         _CLDELETE_CARRAY(tmp);
         if ( h->length() > 1 ){ //do a second one just in case
-          Explanation expl2;
+          CL_NS(search)::Explanation expl2;
           searcher->explain(q, h->id(1), &expl2);
           tmp = expl2.toString();
           _CLDELETE_CARRAY(tmp);
@@ -170,12 +182,13 @@ void threadSearch(IndexSearcher* searcher, const TCHAR* qry){
   );
 }
 _LUCENE_THREAD_FUNC(threadedSearcherTest, arg){
-  IndexSearcher* searcher = (IndexSearcher*)arg;
+  IndexSearcher* searcher = (IndexSearcher*)(((void**)arg)[0]);
+  StandardAnalyzer* threadAnalyzer = (StandardAnalyzer*)(((void**)arg)[1]);
 
   for ( int i=0;i<100;i++ ){
-    threadSearch(searcher, _T("test") );
-    threadSearch(searcher, _T("reuters") );
-    threadSearch(searcher, _T("data") );
+    threadSearch(searcher, _T("test"), threadAnalyzer );
+    threadSearch(searcher, _T("reuters"), threadAnalyzer );
+    threadSearch(searcher, _T("data"), threadAnalyzer );
   }
   _LUCENE_THREAD_FUNC_RETURN(0);
 }
@@ -188,8 +201,14 @@ void testThreaded(CuTest* tc){
   _LUCENE_THREADID_TYPE threads[threadsCount];
 
   int i;
-  for ( i=0;i<threadsCount;i++ )
-    threads[i] = _LUCENE_THREAD_CREATE(&threadedSearcherTest, &searcher);
+  StandardAnalyzer threadAnalyzer;
+  void* args[2];
+  args[0] = &searcher;
+  args[1] = &threadAnalyzer;
+
+  for ( i=0;i<threadsCount;i++ ){
+    threads[i] = _LUCENE_THREAD_CREATE(&threadedSearcherTest, args);
+  }
 
   CL_NS(util)::Misc::sleep(3000);
 
@@ -209,8 +228,6 @@ CuSuite *testreuters(void)
 
   SUITE_ADD_TEST(suite, testReuters);
   SUITE_ADD_TEST(suite, testBySection);
-
-  //we still do this, but it'll be slow because the 'threads' will be run serially.
   SUITE_ADD_TEST(suite, testThreaded);
   return suite;
 }

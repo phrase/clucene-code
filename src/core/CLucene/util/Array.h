@@ -135,7 +135,15 @@ public:
   void deleteValues(){
       if ( this->values == NULL )
         return;
-		  for (size_t i=0;i<this->length;i++){
+		  for (size_t i=0;i<this->length;++i){
+			    _CLLDELETE(this->values[i]);
+		  }
+	    this->deleteArray();
+	}
+  void deleteUntilNULL(){
+      if ( this->values == NULL )
+        return;
+		  for (size_t i=0;i<this->length && this->values[i] != NULL;++i){
 			    _CLLDELETE(this->values[i]);
 		  }
 	    this->deleteArray();
@@ -189,10 +197,8 @@ public:
         return;
     this->deleteArray();
 	}
-  void deleteValue(T /*v*/){} //nothing to do...
-  virtual ~ValueArray(){
-    deleteValues();
-  }
+  void deleteValue(T v){} //nothing to do...
+  virtual ~ValueArray(){deleteValues();}
 };
 
 /** A value array for const values (never deleted) */
@@ -286,6 +292,27 @@ public:
 	virtual ~CharConstArray(){
 	    deleteValues();
 	}
+};
+
+/** An array that uses _CLDECDELETE for deletion */
+template<typename T>
+class CLUCENE_INLINE_EXPORT RefCountArray: public ArrayBase<T>{
+public:
+  RefCountArray():ArrayBase<T>(){}
+  RefCountArray(T* values, size_t length):ArrayBase<T>(values,length){}
+  RefCountArray(size_t length):ArrayBase<T>(length){}
+
+  void deleteValues(){
+    if ( this->values == NULL )
+        return;
+    this->deleteArray();
+    }
+  void deleteValue(T v){
+    v.reset();
+  } //nothing to do...
+  virtual ~RefCountArray(){
+    deleteValues();
+  }
 };
 
 
