@@ -902,12 +902,12 @@ void RunTests()
 	RUN_TEST(testTabNewlineCarriageReturn);
 	RUN_TEST(testSimpleDAO);
 	RUN_TEST(testBoost);
-    //RUN_TEST(testException);
-    //RUN_TEST(testCustomQueryParserFuzzy);
+	RUN_TEST(testException);
+	//RUN_TEST(testCustomQueryParserFuzzy);
 
 	RUN_TEST(testMatchAllDocs);
 
-    RUN_TEST(testDefaultField);
+	RUN_TEST(testDefaultField);
 
     timeTaken = Misc::currentTimeMillis() - start;
 }

@@ -827,14 +827,22 @@ Query* QueryParser::fClause(TCHAR* _field) {
     {
       jj_consume_token(LPAREN);
       q = fQuery( tmpField==NULL ? _field : tmpField );
-      jj_consume_token(RPAREN);
-      if (((jj_ntk==-1)?f_jj_ntk():jj_ntk) == CARAT)
+      
+      try {
+          jj_consume_token(RPAREN);
+          if (((jj_ntk==-1)?f_jj_ntk():jj_ntk) == CARAT)
+          {
+              jj_consume_token(CARAT);
+              boost = jj_consume_token(NUMBER);
+          }
+          else
+              jj_la1[6] = jj_gen;
+      } catch (CLuceneError& e)
       {
-        jj_consume_token(CARAT);
-        boost = jj_consume_token(NUMBER);
+          _CLLDELETE(q);
+          _CLDELETE_LCARRAY(tmpField);
+          throw e;
       }
-      else
-        jj_la1[6] = jj_gen;
       break;
     }
   default:
