@@ -127,7 +127,7 @@ protected:
         CuTest* testCase = CuTestNew(_T(#TEST)); \
         try{ \
             TEST(testCase); \
-        }catch(CLuceneError& err){ CuMessage(testCase,err.twhat()); } \
+        }catch(CLuceneError& err){ CuMessage(testCase,err.twhat()); testCase->failed=true; } \
         if (testCase->failed) ++failCount; \
         else if (testCase->notimpl) ++notImplCount; \
         CuReportProgress(testCase); \
