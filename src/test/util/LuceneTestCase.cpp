@@ -1,5 +1,4 @@
 #include "test.h"
-#include "cutest.h"
 
 LuceneTestCase::LuceneTestCase(const char* _testName) : failCount(0), notImplCount(0), timeTaken(0)
 {
