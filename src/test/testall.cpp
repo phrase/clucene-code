@@ -56,7 +56,10 @@ int main(int argc, char *argv[])
 	int i=0;
 	int exclude = 0;
 	int list_provided = 0;
-	CuSuiteList *alltests = NULL;
+
+	bool runningAllTests = true;
+	list<LuceneTestCase*> testsToRun;
+
 	CuString *output = CuStringNew();
 	bool silent = false;
 	bool verbose = false;
@@ -70,9 +73,9 @@ int main(int argc, char *argv[])
 	else if ( getenv("TMP") != NULL )
 		cl_tempDirS = getenv("TMP");
 
-  if ( Misc::dir_Exists( (cl_tempDirS + "/clucene").c_str() ) )
+	if ( Misc::dir_Exists( (cl_tempDirS + "/clucene").c_str() ) )
 		cl_tempDirS += "/clucene";
-  cl_tempDir = cl_tempDirS.c_str();
+	cl_tempDir = cl_tempDirS.c_str();
 
 	clucene_data_location[0]=0;
 	if ( CL_NS(util)::Misc::dir_Exists(CLUCENE_DATA_LOCATION1 "/reuters-21578-index/segments") )
@@ -130,9 +133,11 @@ int main(int argc, char *argv[])
             continue;
         }
         if (!strcmp(argv[i], "-l")) {
-            for (i = 0; tests[i].func != NULL; i++) {
-                printf("%s\n", tests[i].testname);
-            }
+
+            list<LuceneTestCase*>::iterator it;
+            for ( it=availableTests.begin() ; it != availableTests.end(); it++ )
+                printf("%s\n", (*it)->GetName());
+
             ret_result = 0;
 			goto exit_point;
         }
@@ -145,47 +150,53 @@ int main(int argc, char *argv[])
     }
 
     if (!list_provided) {
-        /* add everything */
-        alltests = CuSuiteListNew(_T("All CLucene Tests"));
-        for (i = 0; tests[i].func != NULL; i++) {
-            CuSuiteListAdd(alltests, tests[i].func());
-        }
+        /* add everything */        
+        list<LuceneTestCase*>::iterator it;
+        for ( it=availableTests.begin() ; it != availableTests.end(); it++ )
+            testsToRun.push_back(*it);
     }
     else if (exclude) {
         /* add everything but the tests listed */
-        alltests = CuSuiteListNew(_T("Partial CLucene Tests"));
-        for (i = 0; tests[i].func != NULL; i++) {
-            int this_test_excluded = 0;
+        runningAllTests = false;
+
+        list<LuceneTestCase*>::iterator it;
+        for ( it=availableTests.begin() ; it != availableTests.end(); it++ )
+        {
+            bool this_test_excluded = false;
             int j;
 
             for (j = 1; j < argc && !this_test_excluded; j++) {
-                if (!strcmp(argv[j], tests[i].testname)) {
-                    this_test_excluded = 1;
+                if (!strcmp(argv[j], (*it)->GetName())) {
+                    this_test_excluded = true;
                 }
             }
-            if (!this_test_excluded) {
-                CuSuiteListAdd(alltests, tests[i].func());
-            }
+            if (!this_test_excluded)
+                testsToRun.push_back(*it);
         }
     }
     else {
         /* add only the tests listed */
-        alltests = CuSuiteListNew(_T("Partial CLucene Tests"));
+        runningAllTests = false;
+
         for (i = 1; i < argc; i++) {
-            int j;
-            int found = 0;
+            //int j;
+            bool found = false;
 
             if (argv[i][0] == '-') {
                 continue;
             }
-            for (j = 0; tests[j].func != NULL; j++) {
-                if (!strcmp(argv[i], tests[j].testname)) {
-                    CuSuiteListAdd(alltests, tests[j].func());
-                    found = 1;
+
+            list<LuceneTestCase*>::iterator it;
+            for ( it=availableTests.begin() ; it != availableTests.end(); it++ )
+            {
+                if (!strcmp(argv[i], (*it)->GetName())) {
+                    testsToRun.push_back(*it);
+                    found = true;
                 }
             }
+
             if (!found) {
-                fprintf(stderr, "invalid test name: `%s'\n", argv[i]);
+                fprintf(stderr, "invalid test name: '%s'\n", argv[i]);
                 ret_result = 1;
 				goto exit_point;
             }
@@ -195,19 +206,22 @@ int main(int argc, char *argv[])
 	startTime = Misc::currentTimeMillis();
 
 	printf("Key: .= pass N=not implemented F=fail\n");
+    if (runningAllTests)
+        printf("All CLucene Tests\n");
+    else
+        printf("Some CLucene Tests\n");
+
 	if ( silent )
-		CuSuiteListRun(alltests);
+		CuSuiteListRun(testsToRun);
 	else
-		CuSuiteListRunWithSummary(alltests,verbose,times);
-    i = CuSuiteListDetails(alltests, output);
+		CuSuiteListRunWithSummary(testsToRun,verbose,times);
+    i = CuSuiteListDetails(testsToRun, output);
     _tprintf(_T("%s\n"), output->buffer);
 
 	if ( times )
 		printf("Tests run in %dms\n\n", (int32_t)(CL_NS(util)::Misc::currentTimeMillis()-startTime));
 
 exit_point:
-	if ( alltests != NULL )
-		CuSuiteListDelete(alltests);
 	CuStringFree(output);
 
 	_lucene_shutdown(); //clears all static memory
@@ -217,7 +231,7 @@ exit_point:
 	else
 		return i > 0 ? 1 : 0;
 
-	//Debuggin techniques:
+	//Debugging techniques:
 	//For msvc, use this for breaking on memory leaks:
 	//	_crtBreakAlloc
 	//for linux, use valgrind

@@ -18,37 +18,37 @@ SOURCE_GROUP("util" ./util/*)
 
 file(GLOB_RECURSE test_HEADERS ${CMAKE_SOURCE_DIR}/test/*.h)
 
-SET(test_files ./tests.cpp
-./CuTest.cpp
+SET(test_files ./CuTest.cpp
 ./testall.cpp
 ./queryParser/TestQueryParser.cpp
-./queryParser/TestMultiFieldQueryParser.cpp
-./analysis/TestAnalysis.cpp
-./analysis/TestAnalyzers.cpp
-./debug/TestError.cpp
-./document/TestDateTools.cpp
-./document/TestDocument.cpp
-./document/TestNumberTools.cpp
-./store/TestStore.cpp
-./search/TestBoolean.cpp
-./search/TestDateFilter.cpp
-./search/TestForDuplicates.cpp
-./search/TestQueries.cpp
-./search/TestRangeFilter.cpp
-./search/TestSearch.cpp
-./search/TestSort.cpp
-./search/TestWildcard.cpp
-./search/TestTermVector.cpp
-./index/TestIndexModifier.cpp
-./index/TestIndexWriter.cpp
-./index/TestIndexReader.cpp
-./index/TestThreading.cpp
-./index/TestUtf8.cpp
-./index/TestHighFreqTerms.cpp
-./index/TestReuters.cpp
-./util/TestPriorityQueue.cpp
-./util/TestBitSet.cpp
+#./queryParser/TestMultiFieldQueryParser.cpp
+#./analysis/TestAnalysis.cpp
+#./analysis/TestAnalyzers.cpp
+#./debug/TestError.cpp
+#./document/TestDateTools.cpp
+#./document/TestDocument.cpp
+#./document/TestNumberTools.cpp
+#./store/TestStore.cpp
+#./search/TestBoolean.cpp
+#./search/TestDateFilter.cpp
+#./search/TestForDuplicates.cpp
+#./search/TestQueries.cpp
+#./search/TestRangeFilter.cpp
+#./search/TestSearch.cpp
+#./search/TestSort.cpp
+#./search/TestWildcard.cpp
+#./search/TestTermVector.cpp
+#./index/TestIndexModifier.cpp
+#./index/TestIndexWriter.cpp
+#./index/TestIndexReader.cpp
+#./index/TestThreading.cpp
+#./index/TestUtf8.cpp
+#./index/TestHighFreqTerms.cpp
+#./index/TestReuters.cpp
 ./util/English.cpp
+./util/LuceneTestCase.cpp
+#./util/TestBitSet.cpp
+#./util/TestPriorityQueue.cpp
 ${test_HEADERS}
 )
 IF ( USE_SHARED_OBJECT_FILES )

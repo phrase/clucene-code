@@ -6,6 +6,7 @@
 ------------------------------------------------------------------------------*/
 #ifndef TEST_H
 #define TEST_H
+
 #include "CLucene.h"
 #include "CLucene/_clucene-config.h"
 #include "CLucene/config/repl_tchar.h"
@@ -37,42 +38,12 @@ CL_NS_USE2(analysis,standard)
 
 #include "CuTest.h"
 
-CuSuite *testatomicupdates(void);
-CuSuite *testindexwriter(void);
-CuSuite *testIndexModifier(void);
-CuSuite *testindexreader(void);
-CuSuite *teststore(void);
-CuSuite *testanalysis(void);
-CuSuite *testanalyzers(void);
-CuSuite *testhighfreq(void);
-CuSuite *testhighlight(void);
-CuSuite *testpriorityqueue(void);
-CuSuite *testQueryParser(void);
-CuSuite *testMultiFieldQueryParser(void);
-CuSuite *testqueries(void);
-CuSuite *testsearch(void);
-CuSuite *testtermvector(void);
-CuSuite *testsort(void);
-CuSuite *testduplicates(void);
-CuSuite *testRangeFilter(void);
-CuSuite *testdatefilter(void);
-CuSuite *testwildcard(void);
-CuSuite *testdebug(void);
-CuSuite *testutf8(void);
-CuSuite *testreuters(void);
-CuSuite *testdocument(void);
-CuSuite *testNumberTools(void);
-CuSuite *testDateTools(void);
-CuSuite *testBoolean(void);
-CuSuite *testBitSet(void);
-
 class English{
 public:
     static void IntToEnglish(int32_t i, CL_NS(util)::StringBuffer* result);
     static TCHAR* IntToEnglish(int32_t i);
     static void IntToEnglish(int32_t i, TCHAR* buf, int32_t buflen);
 };
-
 
 class TCharCompare{
 public:
@@ -127,9 +98,6 @@ public:
 };
 
 void TestAssertIndexReaderEquals(CuTest *tc,  IndexReader* reader1, IndexReader* reader2);
-
-
-extern unittest tests[];
 
 #define CLUCENE_DATA_LOCATION1 "../../src/test/data/"
 #define CLUCENE_DATA_LOCATION2 "../src/test/data/"

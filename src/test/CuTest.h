@@ -41,23 +41,18 @@ void CuStringResize(CuString* str, int newSize);
 
 typedef struct CuTest CuTest;
 
-typedef void (*TestFunction)(CuTest *);
-
 struct CuTest
 {
 	TCHAR* name;
-	TestFunction function;
-        int notimpl;
-	int failed;
-	int ran;
+    bool notimpl;
+	bool failed;
+	bool ran;
 	TCHAR* message;
-//	jmp_buf *jumpBuf;
 };
 
-
 void CuInit(int argc, char *argv[]);
-void CuTestInit(CuTest* t, const TCHAR* name, TestFunction function);
-CuTest* CuTestNew(const TCHAR* name, TestFunction function);
+void CuTestInit(CuTest* t, const TCHAR* name);
+CuTest* CuTestNew(const TCHAR* name);
 void CuTestDelete(CuTest* tst);
 void CuFail(CuTest* tc, const TCHAR* format, ...);
 void CuFail(CuTest* tc, CLuceneError& e);
@@ -74,8 +69,6 @@ void CuAssertIntEquals(CuTest* tc, const TCHAR* preMessage, int expected, int ac
 void CuAssertSizeEquals(CuTest* tc, const TCHAR* preMessage, int expected, int actual);
 void CuAssertPtrEquals(CuTest* tc, const TCHAR* preMessage, const void* expected, const void* actual);
 void CuAssertPtrNotNull(CuTest* tc, const TCHAR* preMessage, const void* pointer);
-
-void CuTestRun(CuTest* tc);
 
 /* CuSuite */
 
@@ -95,24 +88,12 @@ extern char clucene_data_location[1024];
 
 typedef struct
 {
-	TCHAR *name;
-	int count;
-	CuTest* list[MAX_TEST_CASES]; 
+	char *name;
+	list<CuTest*> testsList;
 	int failCount;
 	int notimplCount;
 	uint64_t timeTaken;
 } CuSuite;
-
-
-void CuSuiteInit(CuSuite* testSuite, const TCHAR* name);
-CuSuite* CuSuiteNew(const TCHAR* name);
-void CuSuiteDelete(CuSuite* suite);
-void CuSuiteAdd(CuSuite* testSuite, CuTest *testCase);
-void CuSuiteAddSuite(CuSuite* testSuite, CuSuite* testSuite2);
-void CuSuiteRun(CuSuite* testSuite);
-void CuSuiteSummary(CuSuite* testSuite, CuString* summary, bool times);
-void CuSuiteOverView(CuSuite* testSuite, CuString* details);
-void CuSuiteDetails(CuSuite* testSuite, CuString* details);
 
 typedef struct
 {
@@ -121,19 +102,48 @@ typedef struct
 	CuSuite* list[MAX_TEST_CASES]; 
 } CuSuiteList;
 
+class LuceneTestCase
+{
+public:
+    LuceneTestCase(const char* _testName);
+    virtual ~LuceneTestCase();
 
-struct unittest {
-    const char *testname;
-    CuSuite *(*func)(void);
+    const char* GetName() const;
+    virtual void RunTests() = 0;
+
+    unsigned int FailCount() const;
+    unsigned int NotImplCount() const;
+    unsigned int TotalCount() const;
+
+    uint64_t timeTaken;
+    list<CuTest*> testsRan;
+
+protected:
+    char* testName;
+    int failCount, notImplCount;
 };
 
-CuSuiteList* CuSuiteListNew(const TCHAR* name);
-void CuSuiteListDelete(CuSuiteList* lst);
-void CuSuiteListAdd(CuSuiteList* testSuite, CuSuite *testCase);
-void CuSuiteListRun(CuSuiteList* testSuite);
-void CuSuiteListRunWithSummary(CuSuiteList* testSuite, bool verbose, bool times);
-//void CuSuiteListSummary(CuSuiteList* testSuite, CuString* summary);
+#define RUN_TEST(TEST)     { \
+        CuTest* testCase = CuTestNew(_T(#TEST)); \
+        try{ \
+            TEST(testCase); \
+        }catch(CLuceneError& err){ CuMessage(testCase,err.twhat()); } \
+        if (testCase->failed) ++failCount; \
+        else if (testCase->notimpl) ++notImplCount; \
+        CuReportProgress(testCase); \
+        testsRan.push_back(testCase); \
+    }
+
+extern std::list<LuceneTestCase*> availableTests;
+
+void CuReportProgress(CuTest* test);
+//void CuSuiteSummary(CuSuite* testSuite, CuString* summary, bool times);
+//void CuSuiteOverView(CuSuite* testSuite, CuString* details);
+void CuSuiteDetails(LuceneTestCase* test, CuString* details);
+
+void CuSuiteListRun(list<LuceneTestCase*>& tests);
+void CuSuiteListRunWithSummary(list<LuceneTestCase*>& tests, bool verbose, bool times);
 /* Print details of test suite results; returns total number of
  * tests which failed. */
-int CuSuiteListDetails(CuSuiteList* testSuite, CuString* details);
+int CuSuiteListDetails(list<LuceneTestCase*>& tests, CuString* details);
 #endif /* CU_TEST_H */

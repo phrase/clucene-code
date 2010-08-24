@@ -6,6 +6,11 @@
 ------------------------------------------------------------------------------*/
 #include "test.h"
 
+class TestQueryParser : public LuceneTestCase
+{
+public:
+    TestQueryParser() : LuceneTestCase("TestQueryParser") {}
+
 /// Java QueryParser tests
 /// Helper functions and classes
 class QPTestFilter: public TokenFilter {
@@ -818,15 +823,15 @@ void testBoost(CuTest *tc){
 
 /// TODO: Port tests starting from assertParseException
 
-//void testException(CuTest* tc)
-//{
-//    assertParseException(tc, _T("\"some phrase"));
-//    assertParseException(tc, _T("(foo bar"));
-//    assertParseException(tc, _T("foo bar))"));
-//    assertParseException(tc, _T("field:term:with:colon some more terms"));
-//    assertParseException(tc, _T("(sub query)^5.0^2.0 plus more"));
-//    assertParseException(tc, _T("secret AND illegal) AND access:confidential"));
-//}
+void testException(CuTest* tc)
+{
+    assertParseException(tc, _T("\"some phrase"));
+    assertParseException(tc, _T("(foo bar"));
+    assertParseException(tc, _T("foo bar))"));
+    assertParseException(tc, _T("field:term:with:colon some more terms"));
+    assertParseException(tc, _T("(sub query)^5.0^2.0 plus more"));
+    assertParseException(tc, _T("secret AND illegal) AND access:confidential"));
+}
 
 void testCustomQueryParserFuzzy(CuTest* tc)
 {
@@ -879,31 +884,36 @@ void testDefaultField(CuTest* tc){
     _CLLDELETE(qp);
 }
 
-CuSuite *testQueryParser(void)
+void RunTests()
 {
-	CuSuite *suite = CuSuiteNew(_T("CLucene Query Parser Test"));
+    uint64_t start = Misc::currentTimeMillis();
+    
+    RUN_TEST(testSimple);
+    RUN_TEST(testPunct);
+	RUN_TEST(testSlop);
+	RUN_TEST(testNumber);
+	RUN_TEST(testWildcard);
+	RUN_TEST(testLeadingWildcardType);
+	RUN_TEST(testQPA);
+	RUN_TEST(testRange);
+    //RUN_TEST(testDateRange);
+	RUN_TEST(testEscaped);
+	RUN_TEST(testQueryStringEscaping);
+	RUN_TEST(testTabNewlineCarriageReturn);
+	RUN_TEST(testSimpleDAO);
+	RUN_TEST(testBoost);
+    //RUN_TEST(testException);
+    //RUN_TEST(testCustomQueryParserFuzzy);
 
-	SUITE_ADD_TEST(suite, testSimple);
-	SUITE_ADD_TEST(suite, testPunct);
-	SUITE_ADD_TEST(suite, testSlop);
-	SUITE_ADD_TEST(suite, testNumber);
-	SUITE_ADD_TEST(suite, testWildcard);
-	SUITE_ADD_TEST(suite, testLeadingWildcardType);
-	SUITE_ADD_TEST(suite, testQPA);
-	SUITE_ADD_TEST(suite, testRange);
-    //SUITE_ADD_TEST(suite, testDateRange);
-	SUITE_ADD_TEST(suite, testEscaped);
-	SUITE_ADD_TEST(suite, testQueryStringEscaping);
-	SUITE_ADD_TEST(suite, testTabNewlineCarriageReturn);
-	SUITE_ADD_TEST(suite, testSimpleDAO);
-	SUITE_ADD_TEST(suite, testBoost);
-    //SUITE_ADD_TEST(suite, testException);
-    SUITE_ADD_TEST(suite, testCustomQueryParserFuzzy);
+	RUN_TEST(testMatchAllDocs);
 
-	SUITE_ADD_TEST(suite, testMatchAllDocs);
+    RUN_TEST(testDefaultField);
 
-    SUITE_ADD_TEST(suite, testDefaultField);
-
-	return suite;
+    timeTaken = Misc::currentTimeMillis() - start;
 }
+
+};
+
+TestQueryParser testQueryParser_instance;
+
 // EOF

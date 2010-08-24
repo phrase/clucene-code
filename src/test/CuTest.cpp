@@ -13,6 +13,7 @@
 
 static int verbose = 0;
 static int messyPrinting = 0;
+std::list<LuceneTestCase*> availableTests;
 
 void CuInit(int argc, char *argv[])
 {
@@ -141,21 +142,19 @@ void CuStringRead(CuString *str, TCHAR *path)
  * CuTest
  *-------------------------------------------------------------------------*/
 
-void CuTestInit(CuTest* t, const TCHAR* name, TestFunction function)
+void CuTestInit(CuTest* t, const TCHAR* name)
 {
 	t->name = CuTcsCopy(name);
 	t->notimpl = 0;
 	t->failed = 0;
 	t->ran = 0;
 	t->message = NULL;
-	t->function = function;
-//	t->jumpBuf = NULL;
 }
 
-CuTest* CuTestNew(const TCHAR* name, TestFunction function)
+CuTest* CuTestNew(const TCHAR* name)
 {
 	CuTest* tc = CU_ALLOC(CuTest);
-	CuTestInit(tc, name, function);
+	CuTestInit(tc, name);
 	return tc;
 }
 
@@ -340,83 +339,19 @@ void CuAssertPtrNotNull(CuTest* tc, const TCHAR* preMessage, const void* pointer
 	CuFail(tc, buf);
 }
 
-void CuTestRun(CuTest* tc)
-{
-//	jmp_buf buf;
-//	tc->jumpBuf = &buf;
-//	if (setjmp(buf) == 0)
-//	{
-	tc->ran = 1;
-	(tc->function)(tc);
-//	}
-//	tc->jumpBuf = 0;
-}
 
 /*-------------------------------------------------------------------------*
  * CuSuite
  *-------------------------------------------------------------------------*/
 
-void CuSuiteInit(CuSuite* testSuite, const TCHAR *name)
+void CuReportProgress(CuTest* test)
 {
-	testSuite->name = NULL;
-	CU_TDUP(testSuite->name,name);
-	testSuite->count = 0;
-	testSuite->failCount = 0;
-	testSuite->notimplCount = 0;
-	testSuite->timeTaken = 0;
+	if (test->failed) printf("F");
+	else if (test->notimpl) printf("N");
+	else printf(".");
+	fflush(stdout);
 }
-
-CuSuite* CuSuiteNew(const TCHAR *name)
-{
-	CuSuite* testSuite = CU_ALLOC(CuSuite);
-	CuSuiteInit(testSuite, name);
-	return testSuite;
-}
-
-void CuSuiteDelete(CuSuite* suite){
-	free(suite->name);
-	for ( int i=0;i<suite->count;i++ ){
-		CuTestDelete(suite->list[i]);
-	}
-	free(suite);
-}
-
-void CuSuiteAdd(CuSuite* testSuite, CuTest *testCase)
-{
-	assert(testSuite->count < MAX_TEST_CASES);
-	testSuite->list[testSuite->count] = testCase;
-	testSuite->count++;
-}
-
-void CuSuiteAddSuite(CuSuite* testSuite, CuSuite* testSuite2)
-{
-	int i;
-	for (i = 0 ; i < testSuite2->count ; ++i)
-	{
-		CuTest* testCase = testSuite2->list[i];
-		CuSuiteAdd(testSuite, testCase);
-	}
-}
-
-void CuSuiteRun(CuSuite* testSuite)
-{
-	int i;
-	uint64_t start = Misc::currentTimeMillis();
-	for (i = 0 ; i < testSuite->count ; ++i)
-	{
-		CuTest* testCase = testSuite->list[i];
-		try{
-			CuTestRun(testCase);
-		}catch(CLuceneError& err){
-			testCase->failed=1;
-			CuMessage(testCase,err.twhat());
-		}
-		testSuite->timeTaken = Misc::currentTimeMillis() - start;
-		if (testCase->failed) { testSuite->failCount += 1; }
-		if (testCase->notimpl) { testSuite->notimplCount += 1; }
-	}
-}
-
+/*
 void CuSuiteSummary(CuSuite* testSuite, CuString* summary, bool times)
 {
 	int i;
@@ -444,116 +379,96 @@ void CuSuiteOverView(CuSuite* testSuite, CuString* details)
    			     testSuite->count - testSuite->failCount - 
 				testSuite->notimplCount,
 			     testSuite->failCount, testSuite->notimplCount);
-}
+}*/
 
-void CuSuiteDetails(CuSuite* testSuite, CuString* details)
+void CuSuiteDetails(LuceneTestCase* test, CuString* details)
 {
-	int i;
+	list<CuTest*>::iterator it;
 	int failCount = 0;
 
-	if (testSuite->failCount != 0 && verbose)
+	if (test->FailCount() > 0 && verbose)
 	{
-		CuStringAppendFormat(details, _T("\nFailed tests in %s:\n"), testSuite->name);
-		for (i = 0 ; i < testSuite->count ; ++i)
+		CuStringAppendFormat(details, _T("\nFailed tests in %s:\n"), test->GetName());
+        
+        for ( it=test->testsRan.begin() ; it != test->testsRan.end(); it++ )
 		{
-			CuTest* testCase = testSuite->list[i];
-			if (testCase->failed)
+			if ((*it)->failed)
 			{
 				failCount++;
 				CuStringAppendFormat(details, _T("%d) %s: %s\n"), 
-					failCount, testCase->name, testCase->message);
+					failCount, (*it)->name, (*it)->message);
 			}
 		}
 	}
-	if (testSuite->notimplCount != 0 && verbose)
+
+	if (test->NotImplCount() > 0 && verbose)
 	{
-		CuStringAppendFormat(details, _T("\nNot Implemented tests in %s:\n"), testSuite->name);
-		for (i = 0 ; i < testSuite->count ; ++i)
+		CuStringAppendFormat(details, _T("\nNot Implemented tests in %s:\n"), test->GetName());
+		for ( it=test->testsRan.begin() ; it != test->testsRan.end(); it++ )
 		{
-			CuTest* testCase = testSuite->list[i];
-			if (testCase->notimpl)
+			if ((*it)->notimpl)
 			{
 			        failCount++;
 			        CuStringAppendFormat(details, _T("%d) %s: %s\n"),
-			                failCount, testCase->name, testCase->message);
+			                failCount, (*it)->name, (*it)->message);
 			}
 		}
 	}
 }
 
-/*-------------------------------------------------------------------------*
- * CuSuiteList
- *-------------------------------------------------------------------------*/
-
-CuSuiteList* CuSuiteListNew(const TCHAR *name)
+void CuSuiteListRun(list<LuceneTestCase*>& tests)
 {
-	CuSuiteList* testSuite = CU_ALLOC(CuSuiteList);
-	testSuite->name = NULL;
-	CU_TDUP(testSuite->name,name);
-	testSuite->count = 0;
-	return testSuite;
-}
-void CuSuiteListDelete(CuSuiteList* lst){
-	free(lst->name);
-	for ( int i=0;i<lst->count;i++ ){
-		CuSuiteDelete(lst->list[i]);
-	}
-	free(lst);
-}
-
-void CuSuiteListAdd(CuSuiteList *suites, CuSuite *origsuite)
-{
-	assert(suites->count < MAX_TEST_CASES);
-	suites->list[suites->count] = origsuite;
-	suites->count++;
-}
-
-void CuSuiteListRun(CuSuiteList* testSuite)
-{
-	int i;
-	for (i = 0 ; i < testSuite->count ; ++i)
+	list<LuceneTestCase*>::iterator it;
+    for ( it=tests.begin() ; it != tests.end(); it++ )
 	{
-		CuSuite* testCase = testSuite->list[i];
-		CuSuiteRun(testCase);
+        (*it)->RunTests();
 	}
 }
 
-static const TCHAR *genspaces(int i)
+static const char *genspaces(int i)
 {
-    TCHAR *str = (TCHAR*)malloc((i + 1) * sizeof(TCHAR));
+    char *str = (char*)malloc((i + 1) * sizeof(char));
     for ( int j=0;j<i;j++ )
-		str[j]=_T(' ');
+		str[j]=' ';
     str[i] = '\0';
     return str;
 }
 
-void CuSuiteListRunWithSummary(CuSuiteList* testSuite, bool verbose, bool times)
+void CuSuiteListRunWithSummary(list<LuceneTestCase*>& tests, bool verbose, bool times)
 {
-	int i;
-
-	_tprintf(_T("%s:\n"), testSuite->name);
-	for (i = 0 ; i < testSuite->count ; ++i)
+	//_tprintf(_T("%s:\n"), testSuite->name);
+    
+    list<LuceneTestCase*>::iterator it;
+    for ( it=tests.begin() ; it != tests.end(); it++ )
 	{
 		bool hasprinted=false;
-		CuSuite* testCase = testSuite->list[i];
 		CuString *str = CuStringNew();
 
-		size_t len = _tcslen(testCase->name);
-		const TCHAR* spaces = len>31?NULL:genspaces(31 - len);
-		_tprintf(_T("    %s:%s"), testCase->name, len>31?_T(""):spaces);
+		size_t len = strlen((*it)->GetName());
+		const char* spaces = len>31?NULL:genspaces(31 - len);
+		printf("    %s:%s", (*it)->GetName(), len>31?"":spaces);
 		free((void*)spaces);
 		fflush(stdout);
 		
-		CuSuiteRun(testCase);
+		(*it)->RunTests();
+        if (times){
+            // TODO: Some spacing
+            //int bufferLen = 25-summary->length-10;
+            //for (int i=0;i<bufferLen;i++ ) CuStringAppend(summary,_T(" "));
+            printf(" - %dms\n", (int32_t)(*it)->timeTaken);
+        }
+
 		if ( verbose ){
-			for ( int i=0;i<testCase->count;i++ ){
-				if ( testCase->list[i]->ran ){
-					if ( testCase->list[i]->message != NULL ){
+            list<CuTest*>::iterator itSingleTest;
+            for ( itSingleTest=(*it)->testsRan.begin() ; itSingleTest != (*it)->testsRan.end(); itSingleTest++ )
+            {
+                if ( (*itSingleTest)->ran ){
+					if ( (*itSingleTest)->message != NULL ){
 						if ( !hasprinted )
 							printf("\n");
-						_tprintf(_T("      %s:\n"),testCase->list[i]->name);
+						_tprintf(_T("      %s:\n"),(*itSingleTest)->name);
 
-						TCHAR* msg = testCase->list[i]->message;
+						TCHAR* msg = (*itSingleTest)->message;
 						bool nl = true;
 						//write out message, indenting on new lines
 						while ( *msg != '\0' ){
@@ -568,14 +483,14 @@ void CuSuiteListRunWithSummary(CuSuiteList* testSuite, bool verbose, bool times)
 							msg++;
 						}
 
-						if ( testCase->list[i]->message[_tcslen(testCase->list[i]->message)-1] != '\n' )
+						if ( (*itSingleTest)->message[_tcslen((*itSingleTest)->message)-1] != '\n' )
 							printf("\n");
 						hasprinted=true;
 					}
 				}
 			}
-		}
-		CuSuiteSummary(testCase, str, times);
+        }
+		//CuSuiteSummary((*it), str, times);
 		if ( hasprinted )
 			_tprintf(_T("    Result: %s\n"), str->buffer);
 		else
@@ -583,22 +498,23 @@ void CuSuiteListRunWithSummary(CuSuiteList* testSuite, bool verbose, bool times)
 
 		CuStringFree(str);
 	}
-	_tprintf(_T("\n"));
+	printf("\n");
 }
 
-int CuSuiteListDetails(CuSuiteList* testSuite, CuString* details)
+int CuSuiteListDetails(list<LuceneTestCase*>& tests, CuString* details)
 {
-	int i;
-	int failCount = 0;
-	int notImplCount = 0;
-	int count = 0;
+	unsigned int failCount = 0;
+	unsigned int notImplCount = 0;
+	unsigned int count = 0;
 
-	for (i = 0 ; i < testSuite->count ; ++i)
+	list<LuceneTestCase*>::iterator it;
+    for ( it=tests.begin() ; it != tests.end(); it++ )
 	{
-		failCount += testSuite->list[i]->failCount;
-		notImplCount += testSuite->list[i]->notimplCount;
-                count += testSuite->list[i]->count;
+        failCount += (*it)->FailCount();
+        notImplCount += (*it)->NotImplCount();
+        count += (*it)->TotalCount();
 	}
+
 	CuStringAppendFormat(details, _T("%d %s run:  %d passed, %d failed, ")
 			     _T("%d not implemented.\n"),
 			     count, 
@@ -608,13 +524,12 @@ int CuSuiteListDetails(CuSuiteList* testSuite, CuString* details)
 
 	if (failCount != 0 && verbose)
 	{
-		for (i = 0 ; i < testSuite->count ; ++i)
-		{
+        for ( it=tests.begin() ; it != tests.end(); it++ )
+        {
 			CuString *str = CuStringNew();
-			CuSuite* testCase = testSuite->list[i];
-			if (testCase->failCount)
+            if ((*it)->FailCount())
 			{
-				CuSuiteDetails(testCase, str);
+				CuSuiteDetails((*it), str);
 				CuStringAppend(details, str->buffer);
 			}
 			CuStringFree(str);
@@ -622,13 +537,12 @@ int CuSuiteListDetails(CuSuiteList* testSuite, CuString* details)
 	}
 	if (notImplCount != 0 && verbose)
 	{
-		for (i = 0 ; i < testSuite->count ; ++i)
+		for ( it=tests.begin() ; it != tests.end(); it++ )
 		{
 			CuString *str = CuStringNew();
-			CuSuite* testCase = testSuite->list[i];
-			if (testCase->notimplCount)
+			if ((*it)->NotImplCount())
 			{
-				CuSuiteDetails(testCase, str);
+				CuSuiteDetails((*it), str);
 				CuStringAppend(details, str->buffer);
 			}
 			CuStringFree(str);
