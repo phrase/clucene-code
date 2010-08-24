@@ -6,6 +6,11 @@
 CL_NS_USE(util)
 CL_NS_USE(store)
 
+class TestBitSet : LuceneTestCase
+{
+public:
+    TestBitSet() : LuceneTestCase("TestBitSet") {}
+
 /**
  * Compare two BitVectors.
  * This should really be an equals method on the BitVector itself.
@@ -247,19 +252,21 @@ void testNextSetBit(CuTest* tc)
     doTestNextSetBit(tc, 100);
 }
 
-CuSuite *testBitSet(void)
+void RunTests()
 {
-    CuSuite *suite = CuSuiteNew(_T("CLucene BitSet Test"));
+    RUN_TEST(testConstructSize);
+    RUN_TEST(testGetSet);
+    RUN_TEST(testClear);
+    RUN_TEST(testCount);
+    RUN_TEST(testWriteRead);
+    RUN_TEST(testDgaps);
+    RUN_TEST(testBitAtEndOfBitSet);
 
-    SUITE_ADD_TEST(suite, testConstructSize);
-    SUITE_ADD_TEST(suite, testGetSet);
-    SUITE_ADD_TEST(suite, testClear);
-    SUITE_ADD_TEST(suite, testCount);
-    SUITE_ADD_TEST(suite, testWriteRead);
-    SUITE_ADD_TEST(suite, testDgaps);
-    SUITE_ADD_TEST(suite, testBitAtEndOfBitSet);
-
-    SUITE_ADD_TEST(suite, testNextSetBit);
-
-    return suite; 
+    RUN_TEST(testNextSetBit);
 }
+
+};
+
+TestBitSet testBitSet_instance;
+
+//EOF

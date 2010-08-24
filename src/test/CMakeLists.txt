@@ -47,7 +47,7 @@ SET(test_files ./CuTest.cpp
 #./index/TestReuters.cpp
 ./util/English.cpp
 ./util/LuceneTestCase.cpp
-#./util/TestBitSet.cpp
+./util/TestBitSet.cpp
 #./util/TestPriorityQueue.cpp
 ${test_HEADERS}
 )
