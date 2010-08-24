@@ -87,7 +87,7 @@ public:
 
   static TCHAR* getISOFormat(const int64_t time);
   static TCHAR* getISOFormat(unsigned short year, uint8_t month, uint8_t mday, uint8_t hours = 0,
-      uint8_t minutes = 0, uint8_t seconds = 0, unsigned short ms = 0);
+      uint8_t minutes = 0, uint8_t seconds = 0, unsigned short ms = 0, bool seperators = false);
 
   virtual ~DateTools();
 	

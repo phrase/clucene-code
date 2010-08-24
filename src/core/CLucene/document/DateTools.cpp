@@ -245,22 +245,22 @@ void DateTools::strCatDate(TCHAR* buf, int zeroes, int value){
   *p = _T('\0');
 }
 TCHAR* DateTools::getISOFormat(unsigned short year, uint8_t month, uint8_t mday, uint8_t hours,
-        uint8_t minutes, uint8_t seconds, unsigned short ms)
+        uint8_t minutes, uint8_t seconds, unsigned short ms, bool seperators)
 {
     TCHAR* ISOString = _CL_NEWARRAY(TCHAR, 24);
     TCHAR* p = ISOString;
     strCatDate(p, 4, year); p+=4;
-    _tcscat(p, _T("-")); p++;
+    if (seperators) { _tcscat(p, _T("-")); p++; }
     strCatDate(p, 2, month); p+=2;
-    _tcscat(p, _T("-")); p++;
+    if (seperators) { _tcscat(p, _T("-")); p++; }
     strCatDate(p, 2, mday); p+=2;
-    _tcscat(p, _T(" ")); p++;
+    if (seperators) { _tcscat(p, _T(" ")); p++; }
     strCatDate(p, 2, hours); p+=2;
-    _tcscat(p, _T(":")); p++;
+    if (seperators) { _tcscat(p, _T(":")); p++; }
     strCatDate(p, 2, minutes); p+=2;
-    _tcscat(p, _T(":")); p++;
+    if (seperators) { _tcscat(p, _T(":")); p++; }
     strCatDate(p, 2, seconds); p+=2;
-    _tcscat(p, _T(":")); p++;
+    if (seperators) { _tcscat(p, _T(":")); p++; }
     strCatDate(p, 3, ms); p+=3;
 
     return ISOString;

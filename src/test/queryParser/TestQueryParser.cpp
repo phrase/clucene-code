@@ -602,7 +602,7 @@ void testDateRange(CuTest* tc) {
 
     // Don't set any date resolution and verify if DateField is used
     assertDateRangeQueryEquals(tc, qp, defaultField, startDate, endDate, 
-        endDateExpected, DateTools::NO_RESOLUTION);
+        endDateExpected, DateTools::NO_RESOLUTION);    
 
     // set a field specific date resolution
     qp->setDateResolution(monthField, DateTools::MONTH_FORMAT);
@@ -628,6 +628,8 @@ void testDateRange(CuTest* tc) {
 
     assertDateRangeQueryEquals(tc, qp, hourField, startDate, endDate, 
         endDateExpected, DateTools::HOUR_FORMAT);
+
+    _CLLDELETE(qp);
 
     _CLDELETE_LCARRAY(startDate);
     _CLDELETE_LCARRAY(endDate);
@@ -896,7 +898,7 @@ void RunTests()
 	RUN_TEST(testLeadingWildcardType);
 	RUN_TEST(testQPA);
 	RUN_TEST(testRange);
-    //RUN_TEST(testDateRange);
+	RUN_TEST(testDateRange);
 	RUN_TEST(testEscaped);
 	RUN_TEST(testQueryStringEscaping);
 	RUN_TEST(testTabNewlineCarriageReturn);

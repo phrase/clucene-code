@@ -432,13 +432,9 @@ Query* QueryParser::getRangeQuery(const TCHAR* _field, TCHAR* part1, TCHAR* part
     _tcslwr(part2);
   }
 
-  TCHAR* _part1 = part1, *_part2 = part2; // just in case anything go wrong...
-  try {
-      /*DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, locale); // SHORT means completely numeric
-      df.setLenient(true);
-      Date d1 = df.parse(part1);
-      Date d2 = df.parse(part2);
-      */
+  TCHAR* _part1 = part1, *_part2 = part2; // just in case something goes wrong...
+  try
+  {
       const int64_t d1 = CL_NS(document)::DateTools::stringToTime(part1);
       int64_t d2 = CL_NS(document)::DateTools::stringToTime(part2);
       if (inclusive) {
@@ -464,13 +460,13 @@ Query* QueryParser::getRangeQuery(const TCHAR* _field, TCHAR* part1, TCHAR* part
 
   if(useOldRangeQuery)
   {
-      Term* t1 = _CLNEW Term(_field,part1);
-      Term* t2 = _CLNEW Term(_field,part2);
+      Term* t1 = _CLNEW Term(_field,_part1);
+      Term* t2 = _CLNEW Term(_field,_part2);
       Query* ret = _CLNEW RangeQuery(t1, t2, inclusive);
       _CLDECDELETE(t1);
       _CLDECDELETE(t2);
 
-      // Make sure to delete the date strings we allocated only if we indeed allocated them
+      // Make sure to delete the date strings we allocated only if we indeed allocated them (by comparing pointers)
       if (part1 != _part1) _CLDELETE_LCARRAY(_part1);
       if (part2 != _part2) _CLDELETE_LCARRAY(_part2);
       
@@ -478,9 +474,9 @@ Query* QueryParser::getRangeQuery(const TCHAR* _field, TCHAR* part1, TCHAR* part
   }
   else
   {
-      Query* q = _CLNEW ConstantScoreRangeQuery(_field,part1,part2,inclusive,inclusive);
+      Query* q = _CLNEW ConstantScoreRangeQuery(_field,_part1,_part2,inclusive,inclusive);
       
-      // Make sure to delete the date strings we allocated only if we indeed allocated them
+      // Make sure to delete the date strings we allocated only if we indeed allocated them (by comparing pointers)
       if (part1 != _part1) _CLDELETE_LCARRAY(_part1);
       if (part2 != _part2) _CLDELETE_LCARRAY(_part2);
       
