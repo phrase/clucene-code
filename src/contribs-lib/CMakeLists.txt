@@ -19,6 +19,7 @@ SOURCE_GROUP("snowball-impl" ./CLucene/snowball/include/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/libstemmer/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/runtime/*)
 SOURCE_GROUP("snowball-impl" ./CLucene/snowball/src_c/*)
+SOURCE_GROUP("spellchecker" ./CLucene/spellchecker/*)
 
 SET(clucene_contribs_Files
     ./CLucene/util/gzipcompressstream.cpp
@@ -75,6 +76,14 @@ SET(clucene_contribs_Files
     ./CLucene/snowball/src_c/stem_UTF_8_russian.c
     ./CLucene/snowball/src_c/stem_UTF_8_spanish.c
     ./CLucene/snowball/src_c/stem_UTF_8_swedish.c
+	
+	./CLucene/spellchecker/Dictionary.cpp
+	./CLucene/spellchecker/IndexDictionary.cpp
+	./CLucene/spellchecker/WordListDictionary.cpp
+	./CLucene/spellchecker/StringDistance.cpp
+	./CLucene/spellchecker/LevenshteinDistance.cpp
+	./CLucene/spellchecker/SuggestWord.cpp
+	./CLucene/spellchecker/SpellChecker.cpp
 )
 SET ( clucene_contrib_extra_libs clucene-core clucene-shared ${EXTRA_LIBS})
 
