@@ -7,7 +7,7 @@
 #include <string.h>
 
 SpellCheckerC::SpellCheckerC(CL_NS(store)::Directory *dir, StringDistanceC *sd, bool closeDir)
-:_fword(L"word"), _bStart(2.0F), _bGram(1.0F), _bEnd(1.0F), _minScore(0.5F), _stringDistance(NULL), _dir(NULL), _indexSearcher(NULL), _closeDir(closeDir)
+:_fword(_T("word")), _bStart(2.0F), _bGram(1.0F), _bEnd(1.0F), _minScore(0.5F), _stringDistance(NULL), _dir(NULL), _indexSearcher(NULL), _closeDir(closeDir)
 {
   if (dir != NULL)
   {
@@ -30,12 +30,12 @@ SpellCheckerC::~SpellCheckerC()
   if (this->_indexSearcher)
   {
     this->_indexSearcher->close();
-    delete this->_indexSearcher;
+    _CLDELETE(this->_indexSearcher)
   }
 
   if (this->_stringDistance)
   {
-    delete this->_stringDistance;
+    _CLDELETE(this->_stringDistance)
   }
 
   if (this->_closeDir)
@@ -43,7 +43,7 @@ SpellCheckerC::~SpellCheckerC()
     if (this->_dir)
     {
       this->_dir->close();
-      _CLDECDELETE(this->_dir);
+      _CLDECDELETE(this->_dir)
     }
   }
 }
@@ -58,6 +58,7 @@ void SpellCheckerC::setSpellIndex(CL_NS(store)::Directory *dir)
     writer.close();
   }
   this->_dir = dir;
+  swapSearcher(this->_dir);
 }
 
 
@@ -66,8 +67,7 @@ void SpellCheckerC::setStringDistance(StringDistanceC *sd)
   //SCOPED_LOCK_MUTEX(_thisLock);
   if (this->_stringDistance)
   {
-    delete this->_stringDistance;
-    this->_stringDistance = NULL;
+    _CLDELETE(this->_stringDistance)
   }
   this->_stringDistance = sd;
 }
@@ -110,7 +110,7 @@ bool SpellCheckerC::createFromDictionary(DictionaryC &dict, bool create)
   // This could take some time...
   iw.optimize();
   iw.close();
-  swapSearcher();
+  swapSearcher(_dir);
   return true;
 }
 
@@ -138,13 +138,13 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
     std::wstring wsnum = ss.str();
     
     // Fields.    
-    std::wstring wsfstart = L"start";
+    std::wstring wsfstart(_T("start"));
     wsfstart += wsnum;
 
-    std::wstring wsfgram = L"gram";
+    std::wstring wsfgram(_T("gram"));
     wsfgram += wsnum;
 
-    std::wstring wsfend = L"end";
+    std::wstring wsfend(_T("end"));
     wsfend += wsnum;
 
     // Create ngram parts of the search word.
@@ -287,24 +287,26 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
 CL_NS(search)::IndexSearcher* SpellCheckerC::obtainSearcher()
 {
   //SCOPED_LOCK_MUTEX(_searchLock);
-  if (!_indexSearcher)
-  {
-    _indexSearcher = new CL_NS(search)::IndexSearcher(_dir);
-  }
   return _indexSearcher;
 }
 
 
-void SpellCheckerC::swapSearcher()
+void SpellCheckerC::swapSearcher(CL_NS(store)::Directory *dir)
 {
   //SCOPED_LOCK_MUTEX(_searchLock);
+  CL_NS(search)::IndexSearcher *searcher = createSearcher(dir);
   if (_indexSearcher)
   {
-    //_indexSearcher->close();
-    //_CLDELETE(_indexSearcher);
-    _indexSearcher->getReader()->reopen();
+    _indexSearcher->close();
+    _CLDELETE(_indexSearcher);
   }
-  //_indexSearcher = obtainSearcher();
+  _indexSearcher = searcher;
+}
+
+
+CL_NS(search)::IndexSearcher* SpellCheckerC::createSearcher(CL_NS(store)::Directory *dir)
+{
+  return new CL_NS(search)::IndexSearcher(dir);
 }
 
 
@@ -396,13 +398,13 @@ bool SpellCheckerC::fillDocument( CL_NS(document)::Document *doc, const TCHAR *w
     std::wstring wsnum = ss.str();
     
     // Fields.    
-    std::wstring wsfstart = L"start";
+    std::wstring wsfstart(_T("start"));
     wsfstart += wsnum;
 
-    std::wstring wsfgram = L"gram";
+    std::wstring wsfgram(_T("gram"));
     wsfgram += wsnum;
 
-    std::wstring wsfend = L"end";
+    std::wstring wsfend(_T("end"));
     wsfend += wsnum;
 
     // Create ngram parts of the search word.

@@ -71,10 +71,12 @@ private:
   TCHAR** createNGram( const TCHAR *word, int n, int &size ) const;
   bool fillDocument( CL_NS(document)::Document *doc, const TCHAR *word ) const;
   bool exists(const TCHAR *word);
-  CL_NS(search)::IndexSearcher* obtainSearcher();
-  void swapSearcher();
 
-public:
+  CL_NS(search)::IndexSearcher* obtainSearcher();
+  void swapSearcher(CL_NS(store)::Directory *dir);
+  CL_NS(search)::IndexSearcher* createSearcher(CL_NS(store)::Directory *dir);
+
+private:
   //DEFINE_MUTEX(_thisLock)
 
   // The fieldname of the word itselfs.

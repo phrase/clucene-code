@@ -5,7 +5,13 @@ IndexDictionaryC::IndexDictionaryC( CL_NS(store)::Directory *dir, const TCHAR *f
 {
   // Create the IndexReader.
   this->_indexReader = CL_NS(index)::IndexReader::open(this->_dir);
-  // TODO: Copy fieldName parameter.
+
+  if (fieldName != NULL)
+  {
+    TCHAR *t = new TCHAR[_tcslen(fieldName)+1];
+    _tcscpy(t, fieldName);
+    this->_fieldName = t;
+  }
 }
 
 IndexDictionaryC::~IndexDictionaryC()

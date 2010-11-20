@@ -43,6 +43,8 @@ unittest tests[] = {
     {"stringbuffer", testStringBuffer},
 #ifdef TEST_CONTRIB_LIBS
     {"germananalyzer", testGermanAnalyzer},
+    {"spellcheckcreation", testspellcheckcreation},
+    {"spellchecksearch", testspellchecksearch},
 #endif
     {"LastTest", NULL}
 };

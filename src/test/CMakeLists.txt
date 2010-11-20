@@ -16,6 +16,7 @@ SOURCE_GROUP("search" ./search/*)
 SOURCE_GROUP("search-spans" ./search/spans/*)
 SOURCE_GROUP("store" ./store/*)
 SOURCE_GROUP("util" ./util/*)
+SOURCE_GROUP("spellchecker" ./spellchecker/*)
 
 IF ( BUILD_CONTRIBS_LIB )
     SET(test_contribs_lib_files ./contribs-lib/analysis/de/TestGermanStemFilter.cpp)
@@ -93,6 +94,8 @@ SET(test_files ./tests.cpp
 ./util/TestBitSet.cpp
 ./util/TestStringBuffer.cpp
 ./util/English.cpp
+./spellchecker/TestCreateSpellIndex.cpp
+./spellchecker/TestSearchSpellIndex.cpp
 ${test_HEADERS}
 )
 IF ( USE_SHARED_OBJECT_FILES )
