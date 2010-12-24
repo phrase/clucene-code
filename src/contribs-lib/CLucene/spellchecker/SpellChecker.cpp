@@ -187,8 +187,10 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
     // Due to the operator overrides from SuggestWordC the lowest scored word will be at the top.
     std::priority_queue<SuggestWordC*, std::vector<SuggestWordC*>, SuggestWordC > queue;
     float min = this->_minScore;
+    size_t maxHits = numSug * 10;
+    int stop = minimum(maxHits, hitsCount);
 
-    for (size_t i=0; i<hitsCount; i++)
+    for (size_t i=0; i<stop; i++)
     {
       CL_NS(document)::Document &doc = hits->doc(i);
       const TCHAR *doc_word = doc.get(this->_fword);
