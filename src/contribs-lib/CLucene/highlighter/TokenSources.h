@@ -11,6 +11,7 @@
 #include "CLucene/analysis/AnalysisHeader.h"
 CL_CLASS_DEF(index, IndexReader)
 CL_CLASS_DEF(index, TermPositionVector)
+CL_CLASS_DEF(document, Document)
 //#include "CLucene/index/IndexReader.h"
 //#include "CLucene/index/TermVector.h"
 
@@ -33,6 +34,20 @@ public:
 	TokenSources(void);
 	~TokenSources(void);
 
+	/**
+	 * A convenience method that tries to first get a TermPositionVector for the specified docId, then, falls back to
+	 * using the passed in {@link org.apache.lucene.document.Document} to retrieve the TokenStream.  This is useful when
+	 * you already have the document, but would prefer to use the vector first.
+	 * @param reader The {@link org.apache.lucene.index.IndexReader} to use to try and get the vector from
+	 * @param docId The docId to retrieve.
+	 * @param field The field to retrieve on the document
+	 * @param doc The document to fall back on
+	 * @param analyzer The analyzer to use for creating the TokenStream if the vector doesn't exist
+	 * @return The {@link org.apache.lucene.analysis.TokenStream} for the {@link org.apache.lucene.document.Fieldable} on the {@link org.apache.lucene.document.Document}
+	 * @throws IOException if there was an error loading
+	 */
+	static CL_NS(analysis)::TokenStream* getAnyTokenStream(CL_NS(index)::IndexReader* reader, int32_t docId, TCHAR* field, CL_NS(document)::Document& doc, CL_NS(analysis)::Analyzer* analyzer);
+  
 	/**
      * A convenience method that tries a number of approaches to getting a token stream.
      * The cost of finding there are no termVectors in the index is minimal (1000 invocations still 
@@ -79,7 +94,11 @@ public:
 	static CL_NS(analysis)::TokenStream* getTokenStream(CL_NS(index)::IndexReader* reader,int32_t docId, TCHAR* field);
 
     //convenience method
-	static CL_NS(analysis)::TokenStream* getTokenStream(CL_NS(index)::IndexReader* reader,int32_t docId, TCHAR* field,CL_NS(analysis)::Analyzer* analyzer);
+	static CL_NS(analysis)::TokenStream* getTokenStream(CL_NS(index)::IndexReader* reader,int32_t docId, TCHAR* field, CL_NS(analysis)::Analyzer* analyzer);
+	
+	static CL_NS(analysis)::TokenStream* getTokenStream(CL_NS(document)::Document& doc, TCHAR* field, CL_NS(analysis)::Analyzer* analyzer);
+
+	static CL_NS(analysis)::TokenStream* getTokenStream(TCHAR* field, const TCHAR* contents, CL_NS(analysis)::Analyzer* analyzer);
 };
 
 CL_NS_END2

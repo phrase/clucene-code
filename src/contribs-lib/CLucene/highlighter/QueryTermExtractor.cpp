@@ -87,6 +87,10 @@ CL_NS_USE(index)
   				int32_t docFreq=reader->docFreq(term);
 				_CLDECDELETE(term);
 
+				// docFreq counts deletes
+                if( totalNumDocs < docFreq )
+                  docFreq = totalNumDocs;
+
   				//IDF algorithm taken from DefaultSimilarity class
   				float_t idf=(float_t)(log(totalNumDocs/(float_t)(docFreq+1)) + 1.0);
   				(*itr)->setWeight((*itr)->getWeight() * idf);

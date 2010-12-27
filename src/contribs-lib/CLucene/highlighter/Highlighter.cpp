@@ -18,7 +18,6 @@
 #include "Highlighter.h"
 #include "TokenGroup.h"
 #include "Encoder.h"
-#include "Scorer.h"
 #include "Formatter.h"
 #include "HighlightScorer.h"
 #include "Fragmenter.h"
@@ -59,7 +58,7 @@ CL_NS_USE(util)
 		delete_formatter(true),
 		delete_encoder(true)
 	{
-		maxDocBytesToAnalyze = DEFAULT_MAX_DOC_BYTES_TO_ANALYZE;
+		maxDocCharsToAnalyze = DEFAULT_MAX_DOC_CHARS_TO_ANALYZE;
 		
 		_textFragmenter = _CLNEW SimpleFragmenter();
 		_fragmentScorer = fragmentScorer;
@@ -73,7 +72,7 @@ CL_NS_USE(util)
 		delete_formatter(false),
 		delete_encoder(true)
 	{
-		maxDocBytesToAnalyze = DEFAULT_MAX_DOC_BYTES_TO_ANALYZE;
+		maxDocCharsToAnalyze = DEFAULT_MAX_DOC_CHARS_TO_ANALYZE;
 		
 		_textFragmenter = _CLNEW SimpleFragmenter();
 		_fragmentScorer = fragmentScorer;
@@ -87,7 +86,7 @@ CL_NS_USE(util)
 		delete_formatter(false),
 		delete_encoder(false)
 	{
-		maxDocBytesToAnalyze = DEFAULT_MAX_DOC_BYTES_TO_ANALYZE;
+		maxDocCharsToAnalyze = DEFAULT_MAX_DOC_CHARS_TO_ANALYZE;
 		_textFragmenter = _CLNEW SimpleFragmenter();
 		_fragmentScorer = fragmentScorer;
 		_formatter = formatter;
@@ -136,8 +135,11 @@ CL_NS_USE(util)
   	*/
   	TCHAR* Highlighter::getBestFragment(Analyzer* analyzer, const TCHAR* fieldName, const TCHAR* text)
   	{
-  	    TokenStream* tokenStream = analyzer->tokenStream(fieldName, _CLNEW StringReader(text));
-  	    return getBestFragment(tokenStream, text);
+        StringReader reader(text);
+  	    TokenStream* tokenStream = analyzer->tokenStream(fieldName,&reader);
+  	    TCHAR* tszBestFragment = getBestFragment(tokenStream, text);
+        _CLLDELETE( tokenStream );
+        return tszBestFragment;
   	}
 
 	TCHAR** Highlighter::getBestFragments(
@@ -272,9 +274,9 @@ CL_NS_USE(util)
 				//_CLDELETE_CARRAY(highlightedTerm);
 				//_CLDELETE(token);
 
-				tokenGroup->addToken(&token,_fragmentScorer->getTokenScore(&token));
+				tokenGroup->addToken(&token, score);
 
-				if(lastEndOffset>maxDocBytesToAnalyze)
+				if(lastEndOffset>maxDocCharsToAnalyze)
 				{
 					break;
 				}
@@ -469,12 +471,22 @@ CL_NS_USE(util)
 
 	int32_t Highlighter::getMaxDocBytesToAnalyze()
 	{
-		return maxDocBytesToAnalyze;
+		return maxDocCharsToAnalyze;
 	}
 
 	void Highlighter::setMaxDocBytesToAnalyze(int32_t byteCount)
 	{
-		maxDocBytesToAnalyze = byteCount;
+		maxDocCharsToAnalyze = byteCount;
+	}
+
+	int32_t Highlighter::getMaxDocCharsToAnalyze()
+	{
+		return maxDocCharsToAnalyze;
+	}
+
+	void Highlighter::setMaxDocCharsToAnalyze(int32_t charCount)
+	{
+		maxDocCharsToAnalyze = charCount;
 	}
 
 	Fragmenter * Highlighter::getTextFragmenter()

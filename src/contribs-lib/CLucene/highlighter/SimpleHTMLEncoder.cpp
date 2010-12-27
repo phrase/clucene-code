@@ -44,7 +44,7 @@ TCHAR* SimpleHTMLEncoder::htmlEncode(TCHAR* plainText)
 
 	CL_NS(util)::StringBuffer result(plainTextLen);
 
-	for (int32_t index=0; index<plainTextLen; index++) 
+	for (size_t index=0; index<plainTextLen; index++) 
 	{
 		TCHAR ch = plainText[index];
 

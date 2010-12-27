@@ -44,7 +44,11 @@ SET(clucene_contribs_Files
     ./CLucene/highlighter/TokenGroup.cpp
     ./CLucene/highlighter/TokenSources.cpp
     ./CLucene/highlighter/WeightedTerm.cpp
-    
+    ./CLucene/highlighter/SimpleSpanFragmenter.cpp
+    ./CLucene/highlighter/SpanHighlightScorer.cpp
+    ./CLucene/highlighter/WeightedSpanTerm.cpp
+    ./CLucene/highlighter/WeightedSpanTermExtractor.cpp
+	
     ./CLucene/snowball/Snowball.cpp
     ./CLucene/snowball/libstemmer/libstemmer.c
     ./CLucene/snowball/runtime/api.c

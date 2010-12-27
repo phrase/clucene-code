@@ -37,7 +37,7 @@ private:
 public:
 	/**
 	 * 
-	 * @param fragmentSize size in bytes of each fragment
+	 * @param fragmentSize in number of characters of each fragment
 	 */
 	SimpleFragmenter(int32_t fragmentSize = DEFAULT_FRAGMENT_SIZE);
 
@@ -54,12 +54,12 @@ public:
 	bool isNewFragment(const CL_NS(analysis)::Token * token);
 
 	/**
-	 * @return size in bytes of each fragment
+	 * @return size in number of characters of each fragment
 	 */
 	int32_t getFragmentSize() const;
 
 	/**
-	 * @param size size in bytes of each fragment
+	 * @param size size in number of characters of each fragment
 	 */
 	void setFragmentSize(int32_t size);
 

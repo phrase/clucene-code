@@ -25,6 +25,7 @@
 
 CL_NS_DEF2(search,highlight)
 CL_NS_USE(analysis)
+CL_NS_USE(document)
 CL_NS_USE(index)
 CL_NS_USE(util)
 
@@ -49,6 +50,26 @@ TokenSources::TokenSources(void)
 TokenSources::~TokenSources(void)
 {
 }
+
+TokenStream* TokenSources::getAnyTokenStream(IndexReader* reader, int32_t docId, TCHAR* field, Document& doc, Analyzer* analyzer)
+{
+	TokenStream* ts=NULL;
+
+	TermFreqVector* tfv=reader->getTermFreqVector(docId,field);
+	if(tfv!=NULL)
+	{
+		TermPositionVector* tmp = tfv->__asTermPositionVector();
+		if ( tmp != NULL )
+		    ts=getTokenStream(tmp);
+	}
+	//No token info stored so fall back to analyzing raw content
+	if(ts==NULL)
+	{
+		ts=getTokenStream(doc,field,analyzer);
+	}
+	return ts;
+}
+
 
 TokenStream* TokenSources::getAnyTokenStream(IndexReader* reader,int32_t docId, TCHAR* field, Analyzer* analyzer)
 {
@@ -101,12 +122,12 @@ TokenStream* TokenSources::getTokenStream(TermPositionVector* tpv, bool tokenPos
     const ArrayBase<int32_t>* freq=tpv->getTermFrequencies();
 
     size_t totalTokens=0;
-	for (int32_t i = 0; i < freq->length; i++)
+	for (size_t i = 0; i < freq->length; i++)
 		totalTokens+=freq->values[i];
 
     Token** tokensInOriginalOrder=NULL;
 	CLSetList<Token*,TokenOrderCompare>* unsortedTokens = NULL;
-    for (int32_t t = 0; t < freq->length; t++)
+    for (size_t t = 0; t < freq->length; t++)
     {
         const ArrayBase<TermVectorOffsetInfo*>* offsets=tpv->getOffsets(t);
         if(offsets==NULL)
@@ -127,7 +148,7 @@ TokenStream* TokenSources::getTokenStream(TermPositionVector* tpv, bool tokenPos
             //tokens NOT stored with positions or not guaranteed contiguous - must add to list and sort later
             if(unsortedTokens==NULL)
                 unsortedTokens=_CLNEW CLSetList<Token*,TokenOrderCompare>(false);
-            for (int32_t tp=0; tp < offsets->length; tp++)
+            for (size_t tp=0; tp < offsets->length; tp++)
             {
                 unsortedTokens->insert(_CLNEW Token(terms->values[t],
                     (*offsets)[tp]->getStartOffset(),
@@ -142,7 +163,7 @@ TokenStream* TokenSources::getTokenStream(TermPositionVector* tpv, bool tokenPos
             // creates jumps in position numbers - this code would fail under those circumstances
             
             //tokens stored with positions - can use this to index straight into sorted array
-            for (int32_t tp = 0; tp < pos->length; tp++)
+            for (size_t tp = 0; tp < pos->length; tp++)
             {
                 tokensInOriginalOrder[(*pos)[tp]]=_CLNEW Token(terms->values[t],
                         (*offsets)[tp]->getStartOffset(),
@@ -194,15 +215,25 @@ TokenStream* TokenSources::getTokenStream(IndexReader* reader,int32_t docId, TCH
 {
 	CL_NS(document)::Document doc;
 	reader->document(docId, doc);
+	return getTokenStream(doc, field, analyzer);
+}
+
+TokenStream* TokenSources::getTokenStream(Document& doc, TCHAR* field, Analyzer* analyzer)
+{
 	const TCHAR* contents=doc.get(field);
 	if(contents==NULL)
 	{
 		TCHAR buf[250];
-		_sntprintf(buf,250,_T("Field %s in document #%d is not stored and cannot be analyzed"),field,docId);
+		_sntprintf(buf,250,_T("Field %s in document is not stored and cannot be analyzed"),field);
 		_CLTHROWT(CL_ERR_IllegalArgument,buf);
 		return NULL;
 	}
-    return analyzer->tokenStream(field,_CLNEW StringReader(contents));
+    return getTokenStream(field, contents, analyzer);
+}
+
+TokenStream* TokenSources::getTokenStream(TCHAR* field, const TCHAR* contents, Analyzer* analyzer)
+{
+	return analyzer->tokenStream(field,_CLNEW StringReader(contents));
 }
 
 TokenSources::StoredTokenStream::StoredTokenStream(CL_NS(analysis)::Token** tokens, size_t len)
@@ -213,7 +244,7 @@ TokenSources::StoredTokenStream::StoredTokenStream(CL_NS(analysis)::Token** toke
 }
 CL_NS(analysis)::Token* TokenSources::StoredTokenStream::next(CL_NS(analysis)::Token* token)
 {
-    if(currentToken>=length)
+    if((size_t)currentToken>=length)
     {
         return NULL;
     }

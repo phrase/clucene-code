@@ -44,7 +44,7 @@ CL_NS_DEF2(search,highlight)
 class CLUCENE_CONTRIBS_EXPORT Highlighter :LUCENE_BASE
 {
 private:
-	int32_t maxDocBytesToAnalyze;
+	int32_t maxDocCharsToAnalyze;
 
 	Formatter * _formatter;
 	bool delete_formatter;
@@ -67,7 +67,7 @@ private:
 	void _mergeContiguousFragments(TextFragment** frag, int32_t fragsLen);
 	
 public:
-	LUCENE_STATIC_CONSTANT(int32_t, DEFAULT_MAX_DOC_BYTES_TO_ANALYZE=50*1024);
+	LUCENE_STATIC_CONSTANT(int32_t, DEFAULT_MAX_DOC_CHARS_TO_ANALYZE=50*1024);
 
 	/**
 	 * Constructs a Highlighter object with the provided scorer. The HighlightScorer object is owned
@@ -187,14 +187,27 @@ public:
 
 	/**
 	 * @return the maximum number of bytes to be tokenized per doc 
+     * @deprecated See {@link #getMaxDocCharsToAnalyze()}, since this value has always counted on chars.  They both set the same internal value, however
 	 */
 	int32_t getMaxDocBytesToAnalyze();
 
 	/**
 	 * @param byteCount the maximum number of bytes to be tokenized per doc
 	 * (This can improve performance with large documents)
+     * @deprecated See {@link #setMaxDocCharsToAnalyze()}, since this value has always counted on chars.  They both set the same internal value, however
 	 */
 	void setMaxDocBytesToAnalyze(int32_t byteCount);
+
+	/**
+	 * @return the maximum number of bytes to be tokenized per doc 
+	 */
+	int32_t getMaxDocCharsToAnalyze();
+
+	/**
+	 * @param byteCount the maximum number of bytes to be tokenized per doc
+	 * (This can improve performance with large documents)
+	 */
+	void setMaxDocCharsToAnalyze(int32_t charCount);
 
 	/**
 	 */

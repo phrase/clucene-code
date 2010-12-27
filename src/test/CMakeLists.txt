@@ -18,14 +18,13 @@ SOURCE_GROUP("store" ./store/*)
 SOURCE_GROUP("util" ./util/*)
 
 IF ( BUILD_CONTRIBS_LIB )
-    SET(test_contribs_lib_files ./contribs-lib/analysis/de/TestGermanStemFilter.cpp)
+    SET(test_contribs_lib_files ./contribs-lib/analysis/de/TestGermanStemFilter.cpp
+	./contribs-lib/highlighter/HighlighterTest.cpp)
     SET(EXTRA_LIBS ${EXTRA_LIBS} clucene-contribs-lib)
     ADD_DEFINITIONS(-DTEST_CONTRIB_LIBS)
     INCLUDE_DIRECTORIES(${clucene-test_SOURCE_DIR} ${clucene-contribs-lib_SOURCE_DIR})
 	
-    SOURCE_GROUP("contribs-lib" REGULAR_EXPRESSION ./contribs-lib/*)
-    SOURCE_GROUP("contribs-lib\\analysis" REGULAR_EXPRESSION ./contribs-lib/analysis/*)
-    SOURCE_GROUP("contribs-lib\\analysis\\de" FILES ${test_contribs_lib_files})
+    SOURCE_GROUP("contribs-lib" FILES ${test_contribs_lib_files})
 ENDIF ( BUILD_CONTRIBS_LIB )
 
 file(GLOB_RECURSE test_HEADERS ${CMAKE_SOURCE_DIR}/test/*.h)

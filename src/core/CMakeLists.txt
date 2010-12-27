@@ -49,6 +49,7 @@ SET(clucene_core_Files
 	./CLucene/analysis/standard/StandardTokenizer.cpp
 	./CLucene/analysis/Analyzers.cpp
 	./CLucene/analysis/AnalysisHeader.cpp
+    ./CLucene/analysis/CachingTokenFilter.cpp
 	./CLucene/store/MMapInput.cpp
 	./CLucene/store/IndexInput.cpp
 	./CLucene/store/Lock.cpp
