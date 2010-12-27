@@ -31,6 +31,7 @@ private:
 	TCHAR* _term; //stemmed form
 	size_t cachedHashCode;
 	WeightedTerm(const WeightedTerm& other);
+
 public:
 	WeightedTerm (float_t weight,const TCHAR* term);
 	~WeightedTerm();
