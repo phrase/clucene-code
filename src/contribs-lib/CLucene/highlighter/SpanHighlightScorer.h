@@ -41,6 +41,13 @@ typedef CL_NS(util)::CLHashMap<const TCHAR*, WeightedSpanTerm *,
 
 /**
  * Adds to the score for a fragment based on its tokens
+ * 
+ * Notes: - to be able to highlight based on the ConstantScoreRangeQuery you must supply this 
+ *        query not rewritten (it rewrites to ConstantScoreQuery which in turn provides no
+ *        terms) and use the autoRewriteQuery feature.
+ *        - to highlight texts based on unrewriten queries (FuzzyQuery, WildcardQuery, etc)
+ *        set autoRewriteQueries=true. Those queries will be rewritten in place according to
+ *        data supplied using the tokenStream.
  */
 class CLUCENE_CONTRIBS_EXPORT SpanHighlightScorer : public HighlightScorer
 {
@@ -62,7 +69,7 @@ public:
      * @param query                     Query to use for highlighting
      * @param field                     Field to highlight - pass null to ignore fields
      * @param cachingTokenFilter        of source text to be highlighted
-     * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
+     * @param autoRewriteQuery          try to rewrite a not rewritten queries and highlight ConstantScoreRangeQueries
      * @throws IOException
      */
     SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool autoRewriteQueries = false );
