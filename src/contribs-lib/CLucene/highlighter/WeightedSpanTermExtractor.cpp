@@ -24,7 +24,7 @@
 #include "CLucene/document/Document.h"
 
 #include "CLucene/analysis/Analyzers.h"
-#include "CLucene/analysis/CachingTokenFilter.h"
+// #include "CLucene/analysis/CachingTokenFilter.h"
 
 #include "CLucene/search/Query.h"
 #include "CLucene/search/BooleanQuery.h"
@@ -106,7 +106,7 @@ WeightedSpanTermExtractor::WeightedSpanTermExtractor( bool autoRewriteQueries )
 {
     this->autoRewriteQueries    = autoRewriteQueries;
     this->fieldName             = NULL;
-    this->cachingTokenFilter    = NULL;
+    this->tokenStream           = NULL;
     this->reader                = NULL;
 }
 
@@ -115,9 +115,9 @@ WeightedSpanTermExtractor::~WeightedSpanTermExtractor()
     closeFieldReader();
 }
 
-void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName, IndexReader * reader )
+void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, Query * query, TokenStream * tokenStream, const TCHAR * fieldName, IndexReader * reader )
 {
-    getWeightedSpanTerms( weightedSpanTerms, query, cachingTokenFilter, fieldName );
+    getWeightedSpanTerms( weightedSpanTerms, query, tokenStream, fieldName );
 
     int32_t totalNumDocs = reader->numDocs();
     Term *  term = _CLNEW Term();
@@ -135,17 +135,17 @@ void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( WeightedSpanTerm
     }
 }
 
-void WeightedSpanTermExtractor::getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName )
+void WeightedSpanTermExtractor::getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, Query * query, TokenStream * tokenStream, const TCHAR * fieldName )
 {
-    this->fieldName          = fieldName;
-    this->cachingTokenFilter = cachingTokenFilter;
+    this->fieldName     = fieldName;
+    this->tokenStream   = tokenStream;
 
     WeightedSpanTermExtractor::PositionCheckingMap terms( weightedSpanTerms );
     extract( query, terms );
     closeFieldReader();
     
-    this->cachingTokenFilter = NULL;
-    this->fieldName          = NULL;
+    this->tokenStream   = NULL;
+    this->fieldName     = NULL;
 }
 
 bool WeightedSpanTermExtractor::isAutoRewritingQueries()
@@ -433,7 +433,7 @@ IndexReader * WeightedSpanTermExtractor::getFieldReader()
         Document doc;
         
         Field * f = _CLNEW Field( fieldName, Field::STORE_NO | Field::INDEX_TOKENIZED );
-        f->setValue( cachingTokenFilter );
+        f->setValue( tokenStream );
         doc.add( *f );
 
         writer.addDocument( &doc );

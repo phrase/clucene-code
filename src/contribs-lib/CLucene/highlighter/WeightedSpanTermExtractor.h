@@ -20,7 +20,6 @@
 #include "CLucene/search/Query.h"
 #include "CLucene/highlighter/SpanHighlightScorer.h"
 
-CL_CLASS_DEF(analysis,CachingTokenFilter);
 CL_CLASS_DEF(analysis,TokenStream);
 CL_CLASS_DEF(index,IndexReader);
 
@@ -58,7 +57,7 @@ public:
 
 private:
     const TCHAR *                               fieldName;
-    CL_NS(analysis)::CachingTokenFilter *       cachingTokenFilter;
+    CL_NS(analysis)::TokenStream *              tokenStream;
     CL_NS(index)::IndexReader *                 reader;
     bool                                        autoRewriteQueries;
 
@@ -78,7 +77,7 @@ public:
      * @param reader                    used for scoring
      * @throws IOException
      */
-    void getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName, CL_NS(index)::IndexReader * reader );
+    void getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::TokenStream * tokenStream, const TCHAR * fieldName, CL_NS(index)::IndexReader * reader );
 
     /**
      * Creates a Map of <code>WeightedSpanTerms</code> from the given <code>Query</code> and <code>TokenStream</code>.
@@ -90,7 +89,7 @@ public:
      * @return
      * @throws IOException
      */
-    void getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName );
+    void getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::TokenStream * tokenStream, const TCHAR * fieldName );
 
     /**
      * Const score range query highlight support
@@ -116,7 +115,11 @@ protected:
     void extractFromPhraseQuery( PhraseQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
     void extractFromMultiPhraseQuery( MultiPhraseQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
     void extractFromConstantScoreRangeQuery( ConstantScoreRangeQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
-    void extractFromCustomQuery(CL_NS(search)::Query * query, PositionCheckingMap& terms );
+    
+    /**
+     * Overwrite this method to handle custom queries
+     */
+    virtual void extractFromCustomQuery(CL_NS(search)::Query * query, PositionCheckingMap& terms );
 
     /**
      * Fills a <code>Map</code> with <@link WeightedSpanTerm>s using the terms from the supplied <code>SpanQuery</code>.

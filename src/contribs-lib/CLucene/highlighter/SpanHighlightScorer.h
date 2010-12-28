@@ -22,7 +22,7 @@
 CL_CLASS_DEF(index, Term)
 CL_CLASS_DEF(index, IndexReader)
 CL_CLASS_DEF(analysis, Token)
-CL_CLASS_DEF(analysis, CachingTokenFilter)
+CL_CLASS_DEF(analysis, TokenStream)
 CL_CLASS_DEF(search, Query)
 
 CL_NS_DEF2(search,highlight)
@@ -72,7 +72,7 @@ public:
      * @param autoRewriteQuery          try to rewrite a not rewritten queries and highlight ConstantScoreRangeQueries
      * @throws IOException
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool autoRewriteQueries = false );
+    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, bool autoRewriteQueries = false );
 
     /**
      * @param query                     Query to use for highlighting
@@ -82,7 +82,7 @@ public:
      * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
      * @throws IOException
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries = false );
+    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries = false );
 
     /**
      * @param weightedTerms
@@ -142,7 +142,7 @@ private:
      * @param reader
      * @throws IOException
      */
-    void init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader );
+    void init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader );
 };
 
 CL_NS_END2

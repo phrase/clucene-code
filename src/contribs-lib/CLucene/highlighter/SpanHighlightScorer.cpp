@@ -25,7 +25,7 @@
 
 CL_NS_DEF2(search,highlight)
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool autoRewriteQueries )
+SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, bool autoRewriteQueries )
 {
     this->autoRewriteQueries        = autoRewriteQueries;
     this->totalScore                = 0;
@@ -33,10 +33,10 @@ SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TC
     this->position                  = -1;
     this->deleteWeightedSpanTerms   = true;
 
-    init( query, field, cachingTokenFilter, NULL );
+    init( query, field, tokenStream, NULL );
 }
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries )
+SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries )
 {
     this->autoRewriteQueries        = autoRewriteQueries;
     this->totalScore                = 0;
@@ -44,7 +44,7 @@ SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TC
     this->position                  = -1;
     this->deleteWeightedSpanTerms   = true;
 
-    init( query, field, cachingTokenFilter, reader );
+    init( query, field, tokenStream, reader );
 }
 
 SpanHighlightScorer::SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool autoRewriteQueries )
@@ -145,14 +145,14 @@ bool SpanHighlightScorer::isAutoRewritingQueries()
     return autoRewriteQueries;
 }
 
-void SpanHighlightScorer::init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader )
+void SpanHighlightScorer::init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader )
 {
     WeightedSpanTermExtractor qse( autoRewriteQueries );
     
     if( ! reader ) 
-         qse.getWeightedSpanTerms( fieldWeightedSpanTerms, query, cachingTokenFilter, field );
+         qse.getWeightedSpanTerms( fieldWeightedSpanTerms, query, tokenStream, field );
     else 
-         qse.getWeightedSpanTermsWithScores( fieldWeightedSpanTerms, query, cachingTokenFilter, field, reader );
+         qse.getWeightedSpanTermsWithScores( fieldWeightedSpanTerms, query, tokenStream, field, reader );
 }
 
 CL_NS_END2
