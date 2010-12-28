@@ -54,62 +54,51 @@ private:
     float_t                                     totalScore;
     float_t                                     maxTermWeight;
     int32_t                                     position;
-    TCHAR *                                     defaultField;
-    bool                                        highlightCnstScrRngQuery;
-    bool                                        deleteWeightedSpanTerms;
+    bool                                        autoRewriteQueries;         // If this flag is true, than unrewritten queries will be rewritten and constantRangeQueries will be highlighted
+    bool                                        deleteWeightedSpanTerms;    // Flag to delete the content of the fieldWeightedSpanTerms
 
 public:
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool hilitCnstScrRngQuery = false );
-
     /**
-     * @param query
-     *            Query to use for highlighting
-     * @param field
-     *            Field to highlight - pass null to ignore fields
-     * @param tokenStream
-     *            of source text to be highlighted
-     * @param reader
+     * @param query                     Query to use for highlighting
+     * @param field                     Field to highlight - pass null to ignore fields
+     * @param cachingTokenFilter        of source text to be highlighted
+     * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
      * @throws IOException
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, bool hilitCnstScrRngQuery = false );
+    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool autoRewriteQueries = false );
 
     /**
-     * As above, but with ability to pass in an <tt>IndexReader</tt>
+     * @param query                     Query to use for highlighting
+     * @param field                     Field to highlight - pass null to ignore fields
+     * @param cachingTokenFilter        of source text to be highlighted
+     * @param reader                    used to score each term
+     * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
+     * @throws IOException
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, const TCHAR * _defaultField, bool hilitCnstScrRngQuery = false );
-
-    /**
-     * @param defaultField - The default field for queries with the field name unspecified
-     */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * _defaultField, bool hilitCnstScrRngQuery = false );
+    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries = false );
 
     /**
      * @param weightedTerms
+     * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
      */
-    SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool hilitCnstScrRngQuery = false );
+    SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool autoRewriteQueries = false );
 
     /// Destructor
     virtual ~SpanHighlightScorer();
 
-    /*
-     * (non-Javadoc)
-     *
+    /**
      * @see org.apache.lucene.search.highlight.Scorer#getFragmentScore()
      */
     virtual float_t getFragmentScore();
 
     /**
-     *
      * @return The highest weighted term (useful for passing to
      *         GradientFormatter to set top end of coloring scale.
      */
     float_t getMaxTermWeight();
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.apache.lucene.search.highlight.Scorer#getTokenScore(org.apache.lucene.analysis.Token,
-     *      int)
+    /**
+     * @see org.apache.lucene.search.highlight.Scorer#getTokenScore(org.apache.lucene.analysis.Token,int)
      */
     virtual float_t getTokenScore( CL_NS(analysis)::Token * pToken );
 
@@ -128,25 +117,15 @@ public:
      */
     void reset();
 
-    /*
-     * (non-Javadoc)
-     *
+    /**
      * @see org.apache.lucene.search.highlight.Scorer#startFragment(org.apache.lucene.search.highlight.TextFragment)
      */
 	virtual void startFragment( TextFragment * newFragment );
 
     /**
-     * @return whether ConstantScoreRangeQuerys are set to be highlighted
+     * @return whether ConstantScoreRangeQueries are set to be highlighted and other queries rewritten
      */
-    bool isHighlightCnstScrRngQuery();
-
-    /**
-     * Turns highlighting of ConstantScoreRangeQuery on/off. ConstantScoreRangeQuerys cannot be
-     * highlighted if you rewrite the query first. Must be called before SpanScorer construction.
-     * 
-     * @param highlightCnstScrRngQuery
-     */
-    void setHighlightCnstScrRngQuery( bool highlight );
+    bool isAutoRewritingQueries();
 
 private:
     /**

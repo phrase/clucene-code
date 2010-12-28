@@ -204,40 +204,7 @@ SpanTermQuery * HighlighterTest::createSpanTermQuery( const TCHAR * fieldName, c
 }
 
 /////////////////////////////////////////////////////////////////////////////
-void HighlighterTest::testHighlightingWithDefaultField()
-{
-    const TCHAR * s1 = _T( "I call our world Flatland, not because we call it so, world" );
-    QueryParser parser( FIELD_NAME, &analyzer );
-
-    // Verify that a query against the default field results in text being  highlighted regardless of the field name - with simple query
-    Query * q = parser.parse( _T( "world" ));
-    const TCHAR * expected = _T( "I call our <B>world</B> Flatland, not because we call it so, <B>world</B>" );
-    TCHAR * observed = highlightField( q, _T( "SOME_FIELD_NAME" ), s1 );
-    assertTrueMsg( _T( "Query in the default field results in text for *ANY* field being highlighted" ), 0 == _tcscmp( expected, observed ));
-    _CLDELETE_ARRAY( observed );
-    _CLDELETE( q );
-
-    // Verify that a query against the default field results in text being highlighted regardless of the field name.
-    q = parser.parse( _T( "\"world Flatland\"~3" ));
-    expected = _T( "I call our <B>world</B> <B>Flatland</B>, not because we call it so, world" );
-    observed = highlightField( q, _T( "SOME_FIELD_NAME" ), s1 );
-    assertTrueMsg( _T( "Query in the default field results in text for *ANY* field being highlighted" ), 0 == _tcscmp( expected, observed ));
-    _CLDELETE_ARRAY( observed );
-    _CLDELETE( q );
-
-    // Verify that a query against a named field does not result in any highlighting
-    // when the query field name differs from the name of the field being highlighted,
-    // which in this example happens to be the default field name.
-    q = parser.parse( _T( "text:\"world Flatland\"~3" ));
-    expected = s1;
-    observed = highlightField( q, FIELD_NAME, s1 );
-    assertTrueMsg( _T( "Query in a named field does not result in highlighting when that field isn't in the query" ), 0 == _tcscmp( expected, observed ));
-    _CLDELETE_ARRAY( observed );
-    _CLDELETE( q );
-}
-
-/////////////////////////////////////////////////////////////////////////////
-void HighlighterTest::assertHighlightAllHits( int32_t maxFragments, int32_t fragmentSize, int32_t expectedHighlights, bool hilitCnstScrRngQuery )
+void HighlighterTest::assertHighlightAllHits( int32_t maxFragments, int32_t fragmentSize, int32_t expectedHighlights, bool autoRewriteQuery )
 {
     formatter.reset();
     for( size_t i = 0; i < hits->length(); i++ )
@@ -245,7 +212,7 @@ void HighlighterTest::assertHighlightAllHits( int32_t maxFragments, int32_t frag
         const TCHAR * text = hits->doc( i ).get( FIELD_NAME );
         StringReader reader( text );
         CachingTokenFilter tokenStream( analyzer.tokenStream( FIELD_NAME, &reader ), true );
-        SpanHighlightScorer spanScorer( query, FIELD_NAME, &tokenStream, hilitCnstScrRngQuery );
+        SpanHighlightScorer spanScorer( query, FIELD_NAME, &tokenStream, autoRewriteQuery );
         Highlighter highlighter( &formatter, &spanScorer );
         SimpleFragmenter fragmenter( fragmentSize );
         highlighter.setTextFragmenter( &fragmenter );
@@ -425,8 +392,12 @@ void HighlighterTest::testGetRangeFragments()
 {
     QueryParser parser( FIELD_NAME, &analyzer );
     parser.setUseOldRangeQuery( true );
+
     doSearching( parser.parse( FIELD_NAME _T( ":[kannedy TO kznnedy]" ) ));
     assertHighlightAllHits( 2, 40, 5 );
+
+    doSearching( parser.parse( FIELD_NAME _T( ":[kannedy TO kznnedy]" )), false );
+    assertHighlightAllHits( 2, 40, 5, true );
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -641,7 +612,6 @@ void testHighlighter( CuTest* tc )
 {
     HighlighterTest * pTest = _CLNEW HighlighterTest( tc );
 
-    pTest->testHighlightingWithDefaultField();
     pTest->testSimpleSpanHighlighter();
     pTest->testSimpleSpanPhraseHighlighting();
     pTest->testSimpleSpanPhraseHighlighting2();

@@ -60,7 +60,6 @@ public:
     HighlighterTest( CuTest* tc );
     virtual ~HighlighterTest();
 
-    void testHighlightingWithDefaultField();
     void testSimpleSpanHighlighter();
     void testSimpleSpanPhraseHighlighting();
     void testSimpleSpanPhraseHighlighting2();
@@ -109,7 +108,7 @@ public:
 
 protected:
     TCHAR * highlightField( Query * query, const TCHAR * fieldName, const TCHAR * text );
-    void assertHighlightAllHits( int32_t maxFragments, int32_t fragmentSize, int32_t expectedHighlights, bool hilitCnstScrRngQuery = false );
+    void assertHighlightAllHits( int32_t maxFragments, int32_t fragmentSize, int32_t expectedHighlights, bool autoRewriteQuery = false );
     Token * createToken( const TCHAR * term, int32_t start, int32_t offset );
 
     SpanTermQuery * createSpanTermQuery( const TCHAR * fieldName, const TCHAR * text );

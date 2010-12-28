@@ -25,54 +25,35 @@
 
 CL_NS_DEF2(search,highlight)
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool hilitCnstScrRngQuery )
+SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, bool autoRewriteQueries )
 {
-    highlightCnstScrRngQuery = hilitCnstScrRngQuery;
-    maxTermWeight = 0;
-    position = -1;
-    defaultField = NULL;
-    deleteWeightedSpanTerms = true;
+    this->autoRewriteQueries        = autoRewriteQueries;
+    this->totalScore                = 0;
+    this->maxTermWeight             = 0;
+    this->position                  = -1;
+    this->deleteWeightedSpanTerms   = true;
+
     init( query, field, cachingTokenFilter, NULL );
 }
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, bool hilitCnstScrRngQuery )
+SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries )
 {
-    highlightCnstScrRngQuery = hilitCnstScrRngQuery;
-    maxTermWeight = 0;
-    position = -1;
-    defaultField = NULL;
-    deleteWeightedSpanTerms = true;
+    this->autoRewriteQueries        = autoRewriteQueries;
+    this->totalScore                = 0;
+    this->maxTermWeight             = 0;
+    this->position                  = -1;
+    this->deleteWeightedSpanTerms   = true;
+
     init( query, field, cachingTokenFilter, reader );
 }
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader, const TCHAR * _defaultField, bool hilitCnstScrRngQuery )
+SpanHighlightScorer::SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool autoRewriteQueries )
 {
-    highlightCnstScrRngQuery = hilitCnstScrRngQuery;
-    maxTermWeight = 0;
-    position = -1;
-    defaultField = _defaultField ? STRDUP_TtoT( _defaultField ) : NULL;
-    deleteWeightedSpanTerms = true;
-    init( query, field, cachingTokenFilter, reader );
-}
-
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * _defaultField, bool hilitCnstScrRngQuery )
-{
-    highlightCnstScrRngQuery = hilitCnstScrRngQuery;
-    maxTermWeight = 0;
-    position = -1;
-    defaultField = _defaultField ? STRDUP_TtoT( _defaultField ) : NULL;
-    deleteWeightedSpanTerms = true;
-    init( query, field, cachingTokenFilter, NULL );
-}
-
-SpanHighlightScorer::SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool hilitCnstScrRngQuery )
-{
-    highlightCnstScrRngQuery = hilitCnstScrRngQuery;
-    maxTermWeight = 0;
-    position = -1;
-    defaultField = NULL;
-    fieldWeightedSpanTerms.clear();
-    deleteWeightedSpanTerms = deleteTerms;
+    this->autoRewriteQueries        = autoRewriteQueries;
+    this->totalScore                = 0;
+    this->maxTermWeight             = 0;
+    this->position                  = -1;
+    this->deleteWeightedSpanTerms   = deleteTerms;
 
     for( size_t i = 0; i < nCount; i++ )
     {
@@ -102,8 +83,6 @@ SpanHighlightScorer::~SpanHighlightScorer()
             _CLDELETE( iST->second );
     }
     fieldWeightedSpanTerms.clear();
-
-    _CLDELETE_ARRAY( defaultField );
 }
 
 float_t SpanHighlightScorer::getFragmentScore()
@@ -161,26 +140,19 @@ void SpanHighlightScorer::startFragment( TextFragment * newFragment )
     totalScore = 0;
 }
 
-bool SpanHighlightScorer::isHighlightCnstScrRngQuery()
+bool SpanHighlightScorer::isAutoRewritingQueries()
 {
-    return highlightCnstScrRngQuery;
-}
-
-void SpanHighlightScorer::setHighlightCnstScrRngQuery( bool highlight )
-{
-    highlightCnstScrRngQuery = highlight;
+    return autoRewriteQueries;
 }
 
 void SpanHighlightScorer::init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, CL_NS(index)::IndexReader * reader )
 {
-    WeightedSpanTermExtractor * qse = ( defaultField ) ? _CLNEW WeightedSpanTermExtractor( defaultField ) : _CLNEW WeightedSpanTermExtractor();
+    WeightedSpanTermExtractor qse( autoRewriteQueries );
     
-    qse->setHighlightCnstScrRngQuery(highlightCnstScrRngQuery);
     if( ! reader ) 
-         qse->getWeightedSpanTerms( fieldWeightedSpanTerms, query, cachingTokenFilter, field );
+         qse.getWeightedSpanTerms( fieldWeightedSpanTerms, query, cachingTokenFilter, field );
     else 
-         qse->getWeightedSpanTermsWithScores( fieldWeightedSpanTerms, query, cachingTokenFilter, field, reader );
-    _CLDELETE( qse );    
+         qse.getWeightedSpanTermsWithScores( fieldWeightedSpanTerms, query, cachingTokenFilter, field, reader );
 }
 
 CL_NS_END2
