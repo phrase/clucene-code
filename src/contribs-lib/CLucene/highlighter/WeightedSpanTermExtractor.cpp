@@ -61,7 +61,7 @@ CL_NS_USE(util);
 CL_NS_DEF2(search,highlight)
 
 
-WeightedSpanTermExtractor::PositionCheckingMap::PositionCheckingMap( map<tstring, WeightedSpanTerm *>& weightedSpanTerms )
+WeightedSpanTermExtractor::PositionCheckingMap::PositionCheckingMap( WeightedSpanTermMap& weightedSpanTerms )
 : mapSpanTerms( weightedSpanTerms )
 {
 }
@@ -72,13 +72,14 @@ WeightedSpanTermExtractor::PositionCheckingMap::~PositionCheckingMap()
 
 void WeightedSpanTermExtractor::PositionCheckingMap::putAll( WeightedSpanTermExtractor::PositionCheckingMap * m )
 {
-    for( map<tstring, WeightedSpanTerm *>::iterator iST = m->mapSpanTerms.begin(); iST != m->mapSpanTerms.end(); iST++ )
-        put( iST->first.c_str(), iST->second );
+    for( WeightedSpanTermMap::iterator iST = m->mapSpanTerms.begin(); iST != m->mapSpanTerms.end(); iST++ )
+        put( iST->second );
 }
 
-void WeightedSpanTermExtractor::PositionCheckingMap::put( const TCHAR * term, WeightedSpanTerm * spanTerm )
+void WeightedSpanTermExtractor::PositionCheckingMap::put( WeightedSpanTerm * spanTerm )
 {
-    map<tstring, WeightedSpanTerm *>::iterator iST = mapSpanTerms.find( term );
+    const TCHAR * term = spanTerm->getTerm();
+    WeightedSpanTermMap::iterator iST = mapSpanTerms.find( term );
     if( iST != mapSpanTerms.end() && ! iST->second->isPositionSensitive() )
         spanTerm->setPositionSensitive( false );
     mapSpanTerms[ term ] = spanTerm;
@@ -86,7 +87,7 @@ void WeightedSpanTermExtractor::PositionCheckingMap::put( const TCHAR * term, We
 
 WeightedSpanTerm * WeightedSpanTermExtractor::PositionCheckingMap::get( const TCHAR * term )
 {
-    map<tstring, WeightedSpanTerm *>::iterator iST = mapSpanTerms.find( term );
+    WeightedSpanTermMap::iterator iST = mapSpanTerms.find( term );
     if( iST != mapSpanTerms.end() )
         return iST->second;
     else
@@ -128,7 +129,7 @@ void WeightedSpanTermExtractor::closeReaders()
     readers.clear();
 }
 
-void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( map<tstring, WeightedSpanTerm *>& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter, const TCHAR * _fieldName, IndexReader * reader )
+void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter, const TCHAR * _fieldName, IndexReader * reader )
 {
     fieldName = _fieldName;
     cachedTokenFilter = cachingTokenFilter;
@@ -139,9 +140,9 @@ void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( map<tstring, Wei
     int32_t totalNumDocs = reader->numDocs();
     Term * term = _CLNEW Term();
     
-    for( map<tstring, WeightedSpanTerm *>::iterator iSpanTerm = terms.mapSpanTerms.begin(); iSpanTerm != terms.mapSpanTerms.end(); iSpanTerm++ )
+    for( WeightedSpanTermMap::iterator iSpanTerm = terms.mapSpanTerms.begin(); iSpanTerm != terms.mapSpanTerms.end(); iSpanTerm++ )
     {
-        term->set( fieldName, iSpanTerm->first.c_str() );
+        term->set( fieldName, iSpanTerm->first );
         int32_t docFreq = reader->docFreq( term );
 
         if( totalNumDocs < docFreq )
@@ -158,12 +159,12 @@ void WeightedSpanTermExtractor::getWeightedSpanTermsWithScores( map<tstring, Wei
     fieldName = NULL;
 }
 
-void WeightedSpanTermExtractor::getWeightedSpanTerms( map<tstring, WeightedSpanTerm *>& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter )
+void WeightedSpanTermExtractor::getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter )
 {
     getWeightedSpanTerms( weightedSpanTerms, query, cachingTokenFilter, NULL );
 }
 
-void WeightedSpanTermExtractor::getWeightedSpanTerms( map<tstring, WeightedSpanTerm *>& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter, const TCHAR * _fieldName )
+void WeightedSpanTermExtractor::getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, Query * query, CachingTokenFilter * cachingTokenFilter, const TCHAR * _fieldName )
 {
     fieldName = _fieldName;
     cachedTokenFilter = cachingTokenFilter;
@@ -332,38 +333,40 @@ void WeightedSpanTermExtractor::extract( Query * query, WeightedSpanTermExtracto
     else if( highlightCnstScrRngQuery && query->instanceOf( ConstantScoreRangeQuery::getClassName() ))
     {
         ConstantScoreRangeQuery * q = (ConstantScoreRangeQuery *) query;
-        Term * lower = _CLNEW Term( fieldName, q->getLowerVal() );
-        Term * upper = _CLNEW Term( fieldName, q->getUpperVal() );
-
-        IndexReader * reader = getReaderForField( fieldName );
-        try 
+        if( fieldNameComparator( q->getField() ))
         {
-            TermEnum * te = reader->terms( lower );
-            BooleanQuery * bq = _CLNEW BooleanQuery();
-            do 
+            Term * lower = _CLNEW Term( q->getField(), q->getLowerVal() );
+            Term * upper = _CLNEW Term( q->getField(), q->getUpperVal() );
+
+            IndexReader * reader = getReaderForField( fieldName );
+            try 
             {
-                Term * term = te->term( false );
-                if( term && upper->compareTo( term ) >= 0 )
-                    bq->add( _CLNEW BooleanClause( _CLNEW TermQuery( term ), true, BooleanClause::SHOULD ));
-                else 
-                    break;
-            }
-            while( te->next() );
-            extract( bq, terms );
+                TermEnum * te = reader->terms( lower );
+                TermSet setTerms;
+                do 
+                {
+                    Term * term = te->term( false );
+                    if( term && upper->compareTo( term ) >= 0 )
+                        setTerms.insert( term );
+                    else 
+                        break;
+                }
+                while( te->next() );
 
-            _CLLDELETE( bq );
-            _CLLDELETE( te );
-        }
-        catch( ... )
-        {
+                processNonWeightedTerms( terms, setTerms, query->getBoost() );
+                _CLLDELETE( te );
+            }
+            catch( ... )
+            {
+                reader->close();
+                _CLLDECDELETE( upper );
+                _CLLDECDELETE( lower );
+                throw;
+            }
             reader->close();
             _CLLDECDELETE( upper );
             _CLLDECDELETE( lower );
-            throw;
         }
-        reader->close();
-        _CLLDECDELETE( upper );
-        _CLLDECDELETE( lower );
     }
     else
     {
@@ -377,11 +380,10 @@ void WeightedSpanTermExtractor::extractFromCustomQuery(CL_NS(search)::Query * qu
 
 void WeightedSpanTermExtractor::extractWeightedSpanTerms( PositionCheckingMap& terms, CL_NS2(search,spans)::SpanQuery * spanQuery )
 {
-    TermSet nonWeightedTerms;
+    set<tstring>    fieldNames;
+    TermSet         nonWeightedTerms;
+
     spanQuery->extractTerms( &nonWeightedTerms );
-
-    set<tstring> fieldNames;
-
     if( ! fieldName ) 
     {
         for( TermSet::iterator iter = nonWeightedTerms.begin(); iter != nonWeightedTerms.end(); iter++ )
@@ -425,7 +427,7 @@ void WeightedSpanTermExtractor::extractWeightedSpanTerms( PositionCheckingMap& t
                     weightedSpanTerm = _CLNEW WeightedSpanTerm( spanQuery->getBoost(), queryTerm->text() );
                     weightedSpanTerm->addPositionSpans( spanPositions );
                     weightedSpanTerm->setPositionSensitive( true );
-                    terms.put( queryTerm->text(), weightedSpanTerm );
+                    terms.put( weightedSpanTerm );
                 } 
                 else 
                 {
@@ -446,18 +448,21 @@ void WeightedSpanTermExtractor::extractWeightedTerms( PositionCheckingMap& terms
 {
     TermSet nonWeightedTerms;
     query->extractTerms( &nonWeightedTerms );
+    processNonWeightedTerms( terms, nonWeightedTerms, query->getBoost() );
+    clearTermSet( nonWeightedTerms );
+}
 
+void WeightedSpanTermExtractor::processNonWeightedTerms( PositionCheckingMap& terms, TermSet& nonWeightedTerms, float_t fBoost )
+{
     for( TermSet::iterator iter = nonWeightedTerms.begin(); iter != nonWeightedTerms.end(); iter++ )
     {
         Term * queryTerm = *iter;
         if( fieldNameComparator( queryTerm->field() )) 
         {
-            WeightedSpanTerm * weightedSpanTerm = _CLNEW WeightedSpanTerm( query->getBoost(), queryTerm->text() );
-            terms.put( queryTerm->text(), weightedSpanTerm );
+            WeightedSpanTerm * weightedSpanTerm = _CLNEW WeightedSpanTerm( fBoost, queryTerm->text() );
+            terms.put( weightedSpanTerm );
         }
     }
-
-    clearTermSet( nonWeightedTerms );
 }
 
 void WeightedSpanTermExtractor::clearTermSet( TermSet& termSet )

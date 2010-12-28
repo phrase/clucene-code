@@ -18,6 +18,7 @@
 #define _lucene_search_highlight_weightedspantermextractor_
 
 #include "CLucene/search/Query.h"
+#include "CLucene/highlighter/SpanHighlightScorer.h"
 
 CL_CLASS_DEF(analysis,CachingTokenFilter);
 CL_CLASS_DEF(analysis,TokenStream);
@@ -37,14 +38,14 @@ public:
     class PositionCheckingMap
     {
     public:
-        map<tstring, WeightedSpanTerm *>&    mapSpanTerms;
+        WeightedSpanTermMap&    mapSpanTerms;
 
     public:
-        PositionCheckingMap( map<tstring, WeightedSpanTerm *>& weightedSpanTerms );
+        PositionCheckingMap( WeightedSpanTermMap& weightedSpanTerms );
         virtual ~PositionCheckingMap();
 
         void putAll( PositionCheckingMap * m );
-        void put( const TCHAR * term, WeightedSpanTerm * spanTerm );
+        void put( WeightedSpanTerm * spanTerm );
         WeightedSpanTerm * get( const TCHAR * term );
     };
 
@@ -78,7 +79,7 @@ public:
      * @return
      * @throws IOException
      */
-    void getWeightedSpanTermsWithScores( map<tstring, WeightedSpanTerm *>& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName, CL_NS(index)::IndexReader * reader );
+    void getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName, CL_NS(index)::IndexReader * reader );
 
     /**
      * Creates a Map of <code>WeightedSpanTerms</code> from the given <code>Query</code> and <code>TokenStream</code>.
@@ -92,7 +93,7 @@ public:
      * @return
      * @throws IOException
      */
-    void getWeightedSpanTerms( map<tstring, WeightedSpanTerm *>& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter );
+    void getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter );
 
     /**
      * Creates a Map of <code>WeightedSpanTerms</code> from the given <code>Query</code> and <code>TokenStream</code>.
@@ -108,7 +109,7 @@ public:
      * @return
      * @throws IOException
      */
-    void getWeightedSpanTerms( map<tstring, WeightedSpanTerm *>& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName );
+    void getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::CachingTokenFilter * cachingTokenFilter, const TCHAR * fieldName );
 
     /**
      * Const score range query highlight support
@@ -157,6 +158,7 @@ protected:
      * @throws IOException
      */
     void extractWeightedTerms( PositionCheckingMap& terms, CL_NS(search)::Query * query );
+    void processNonWeightedTerms( PositionCheckingMap& terms, TermSet& nonWeightedTerms, float_t fBoost );
 
     /**
      * Necessary to implement matches for queries against <code>defaultField</code>

@@ -79,7 +79,7 @@ SpanHighlightScorer::SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, siz
         if( maxTermWeight < weightedTerms[ i ]->getWeight())
             maxTermWeight = weightedTerms[ i ]->getWeight();
 
-        map<tstring, WeightedSpanTerm *>::iterator iTerm = fieldWeightedSpanTerms.find( weightedTerms[ i ]->getTerm() );
+        WeightedSpanTermMap::iterator iTerm = fieldWeightedSpanTerms.find( weightedTerms[ i ]->getTerm() );
         if( iTerm == fieldWeightedSpanTerms.end() )
         {
             fieldWeightedSpanTerms[ weightedTerms[ i ]->getTerm() ] = weightedTerms[ i ];
@@ -98,7 +98,7 @@ SpanHighlightScorer::~SpanHighlightScorer()
 {
     if( deleteWeightedSpanTerms )
     {
-        for( map<tstring, WeightedSpanTerm *>::iterator iST = fieldWeightedSpanTerms.begin(); iST != fieldWeightedSpanTerms.end(); iST++ )
+        for( WeightedSpanTermMap::iterator iST = fieldWeightedSpanTerms.begin(); iST != fieldWeightedSpanTerms.end(); iST++ )
             _CLDELETE( iST->second );
     }
     fieldWeightedSpanTerms.clear();
@@ -121,7 +121,7 @@ float_t SpanHighlightScorer::getTokenScore( CL_NS(analysis)::Token * pToken )
     position += pToken->getPositionIncrement();
     const TCHAR * termText = pToken->termText();
 
-    map<tstring, WeightedSpanTerm *>::iterator iTerm = fieldWeightedSpanTerms.find( termText );
+    WeightedSpanTermMap::iterator iTerm = fieldWeightedSpanTerms.find( termText );
     if( iTerm == fieldWeightedSpanTerms.end() )
         return 0;
 
@@ -143,7 +143,7 @@ float_t SpanHighlightScorer::getTokenScore( CL_NS(analysis)::Token * pToken )
 
 WeightedSpanTerm * SpanHighlightScorer::getWeightedSpanTerm( const TCHAR * tszToken )
 {
-    map<tstring, WeightedSpanTerm *>::iterator iTerm = fieldWeightedSpanTerms.find( tszToken );
+    WeightedSpanTermMap::iterator iTerm = fieldWeightedSpanTerms.find( tszToken );
     if( iTerm == fieldWeightedSpanTerms.end() )
         return NULL;
     else 

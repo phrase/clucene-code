@@ -29,15 +29,29 @@ CL_NS_DEF2(search,highlight)
 class TextFragment;
 class WeightedSpanTerm;
 
+
+/////////////////////////////////////////////////////////////////////////////
+typedef CL_NS(util)::CLHashMap<const TCHAR*, WeightedSpanTerm *,
+		CL_NS(util)::Compare::TChar,
+		CL_NS(util)::Equals::TChar,
+		CL_NS(util)::Deletor::Dummy,
+		CL_NS(util)::Deletor::Dummy>
+    WeightedSpanTermMap;
+
+
 /**
  * Adds to the score for a fragment based on its tokens
  */
 class CLUCENE_CONTRIBS_EXPORT SpanHighlightScorer : public HighlightScorer
 {
 private:
+	CL_NS(util)::CLHashSet<const TCHAR*,
+		CL_NS(util)::Compare::TChar,
+		CL_NS(util)::Deletor::Dummy>            foundTerms;
+
+    WeightedSpanTermMap                         fieldWeightedSpanTerms;
+
     float_t                                     totalScore;
-    set<tstring>                                foundTerms;
-    map<tstring, WeightedSpanTerm *>            fieldWeightedSpanTerms;
     float_t                                     maxTermWeight;
     int32_t                                     position;
     TCHAR *                                     defaultField;
