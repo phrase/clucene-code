@@ -96,6 +96,10 @@ public:
      */
     bool isAutoRewritingQueries();
 
+    /**
+     * sets the auto rewrite query flag
+     */
+    void setAutoRewriteQueries( bool bRewrite );
 
 protected:
     /**

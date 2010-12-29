@@ -28,6 +28,7 @@ CL_CLASS_DEF(search, Query)
 CL_NS_DEF2(search,highlight)
 class TextFragment;
 class WeightedSpanTerm;
+class WeightedSpanTermExtractor;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -57,7 +58,7 @@ private:
 		CL_NS(util)::Deletor::Dummy>            foundTerms;
 
     WeightedSpanTermMap                         fieldWeightedSpanTerms;
-
+    
     float_t                                     totalScore;
     float_t                                     maxTermWeight;
     int32_t                                     position;
@@ -72,7 +73,7 @@ public:
      * @param autoRewriteQuery          try to rewrite a not rewritten queries and highlight ConstantScoreRangeQueries
      * @throws IOException
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, bool autoRewriteQueries = false );
+    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, bool autoRewriteQueries = false, WeightedSpanTermExtractor * customExtractor = NULL );
 
     /**
      * @param query                     Query to use for highlighting
@@ -82,7 +83,7 @@ public:
      * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
      * @throws IOException
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries = false );
+    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries = false, WeightedSpanTermExtractor * customExtractor = NULL );
 
     /**
      * @param weightedTerms
@@ -142,7 +143,7 @@ private:
      * @param reader
      * @throws IOException
      */
-    void init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader );
+    void init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, WeightedSpanTermExtractor * customExtractor );
 };
 
 CL_NS_END2

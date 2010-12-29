@@ -153,6 +153,11 @@ bool WeightedSpanTermExtractor::isAutoRewritingQueries()
     return autoRewriteQueries;
 }
 
+void WeightedSpanTermExtractor::setAutoRewriteQueries( bool bRewrite )
+{
+    autoRewriteQueries = bRewrite;
+}
+
 bool WeightedSpanTermExtractor::matchesField( const TCHAR * fieldNameToCheck )
 {
     return ( fieldNameToCheck == fieldName || 0 == _tcscmp( fieldNameToCheck, fieldName ));
