@@ -55,7 +55,7 @@ public:
         WeightedSpanTerm * get( const TCHAR * term );
     };
 
-private:
+protected:
     const TCHAR *                               fieldName;
     CL_NS(analysis)::TokenStream *              tokenStream;
     CL_NS(index)::IndexReader *                 reader;
@@ -123,7 +123,7 @@ protected:
     /**
      * Overwrite this method to handle custom queries
      */
-    virtual void extractFromCustomQuery(CL_NS(search)::Query * query, PositionCheckingMap& terms );
+    virtual void extractFromCustomQuery(CL_NS(search)::Query * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
 
     /**
      * Fills a <code>Map</code> with <@link WeightedSpanTerm>s using the terms from the supplied <code>SpanQuery</code>.
