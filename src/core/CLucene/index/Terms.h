@@ -92,11 +92,11 @@ public:
 	/** Increments the enumeration to the next element.  True if one exists.*/ 
 	virtual bool next()=0;
 
-	// Returns a pointer to the current Term in the enumeration.
-	virtual Term::Pointer term()=0;
+	// Returns a reference to the current Term in the enumeration.
+	virtual Term* term()=0;
 
-	/** Returns the current Term in the enumeration.*/
-	virtual Term::Pointer term(bool pointer);
+	/** Returns a pointer to the current Term in the enumeration.*/
+	virtual Term::Pointer termPointer()=0;
 
 	/** Returns the docFreq of the current Term in the enumeration.*/
 	virtual int32_t docFreq() const=0;

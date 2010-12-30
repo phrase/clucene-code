@@ -40,8 +40,12 @@ CL_NS_DEF(search)
 	  return _CLNEW PrefixQuery(*this);
   }
 
-  Term::Pointer PrefixQuery::getPrefix(bool pointer){
-	return prefix;
+  Term* PrefixQuery::getPrefix(){
+    return prefix.get();
+  }
+
+  Term::Pointer PrefixQuery::getPrefixPointer(){
+    return prefix;
   }
 
   PrefixQuery::~PrefixQuery(){
@@ -94,7 +98,7 @@ CL_NS_DEF(search)
       size_t i;
       size_t prefixLen = prefix->textLength();
       do {
-        lastTerm = enumerator->term();
+        lastTerm = enumerator->termPointer();
         if (lastTerm && lastTerm->field() == prefixField ) // interned comparison
         {
 
@@ -200,11 +204,11 @@ public:
     const TCHAR* tmp;
     size_t i;
     size_t prefixLen = prefix->textLength();
-    Term::Pointer term;
+    Term* term;
 
     try{
       do{
-          term = enumerator->term(false);
+          term = enumerator->term();
           if (term && term->field() == prefixField) // interned comparison
           {
               //now see if term->text() starts with prefixText

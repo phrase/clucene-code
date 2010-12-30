@@ -98,7 +98,7 @@ CL_NS_DEF(search)
     tfExplanation->setValue(getSimilarity()->tf(tf));
 
     TCHAR buf[LUCENE_SEARCH_EXPLANATION_DESC_LEN+1];
-	TCHAR* termToString = query->getTerm(false)->toString();
+    TCHAR* termToString = query->getTerm()->toString();
 	_sntprintf(buf,LUCENE_SEARCH_EXPLANATION_DESC_LEN,_T("tf(termFreq(%s)=%d)"), termToString, tf);
     _CLDELETE_LCARRAY(termToString);
     tfExplanation->setDescription(buf);

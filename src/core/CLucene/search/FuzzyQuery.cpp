@@ -374,7 +374,7 @@ CL_NS_DEF(search)
 	  return (this->getBoost() == fq->getBoost())
 		  && this->minimumSimilarity == fq->getMinSimilarity()
 		  && this->prefixLength == fq->getPrefixLength()
-		  && getTerm()->equals(fq->getTerm());
+		  && getTerm()->equals(fq->getTermPointer());
   }
 
   FilteredTermEnum* FuzzyQuery::getEnum(IndexReader* reader){

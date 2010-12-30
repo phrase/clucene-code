@@ -30,10 +30,12 @@ CL_NS_DEF(search)
 
 		static const char* getClassName();
 		const char* getObjectName() const;
-	    
-		/** Returns the term of this query. */
-		CL_NS(index)::Term::Pointer getTerm(bool pointer=true) const;
-	    
+
+		/** Returns a pointer to the term of this query. */
+		CL_NS(index)::Term::Pointer getTermPointer() const;
+		/** Returns a reference to the term of this query. */
+		CL_NS(index)::Term* getTerm() const;
+
 		/** Prints a user-readable version of this query. */
 		TCHAR* toString(const TCHAR* field) const;
 

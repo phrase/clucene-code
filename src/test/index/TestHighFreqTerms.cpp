@@ -40,8 +40,8 @@
         int32_t minFreq = 0;
         while (terms->next()) {
           if (terms->docFreq() > minFreq) {
-            Term::Pointer term = terms->term(false);
-			tiq->put(_CLNEW TestTermInfo(term, terms->docFreq()));
+            Term::Pointer term = terms->termPointer();
+            tiq->put(_CLNEW TestTermInfo(term, terms->docFreq()));
             c++;
             if (tiq->size() >= numTerms) {		  // if tiq overfull
                TestTermInfo* tti=tiq->pop();

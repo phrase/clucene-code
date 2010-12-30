@@ -65,13 +65,13 @@ public:
 	bool next();
 
 	/**
-	 * Returns a pointer to the current term. 
+	 * Returns a reference to the current term. 
 	 */
-	Term::Pointer term();
+	Term* term();
 	/**
-	 * Returns the current term. 
+	 * Returns the pointer to the current term. 
 	 */
-	Term::Pointer term(bool pointer);
+	Term::Pointer termPointer();
 
     /**
 	 * Scan for Term term without allocating new Terms

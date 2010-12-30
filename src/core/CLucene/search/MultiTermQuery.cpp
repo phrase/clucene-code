@@ -31,7 +31,7 @@ CL_NS_DEF(search)
   MultiTermQuery::MultiTermQuery(const MultiTermQuery& clone):
   	Query(clone)	
   {
-	term.reset(new Term(clone.getTerm(false), clone.getTerm(false)->text()));
+	term.reset(new Term(clone.getTermPointer(), clone.getTerm()->text()));
   }
 
   MultiTermQuery::~MultiTermQuery(){
@@ -40,8 +40,12 @@ CL_NS_DEF(search)
   //Post - The instance has been destroyed
   }
 
-  Term::Pointer MultiTermQuery::getTerm(bool pointer) const {
-	return term;
+  Term::Pointer MultiTermQuery::getTermPointer() const {
+    return term;
+  }
+
+  Term* MultiTermQuery::getTerm() const {
+    return term.get();
   }
 
 	Query* MultiTermQuery::rewrite(IndexReader* reader) {
@@ -49,7 +53,7 @@ CL_NS_DEF(search)
 		BooleanQuery* query = _CLNEW BooleanQuery( true );
 		try {
             do {
-                Term::Pointer t = enumerator->term(false);
+                Term::Pointer t = enumerator->termPointer();
                 if (t) {
                     TermQuery* tq = _CLNEW TermQuery(t);	// found a match
                     tq->setBoost(getBoost() * enumerator->difference()); // set the boost

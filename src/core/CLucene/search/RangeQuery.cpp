@@ -119,7 +119,7 @@ CL_NS_DEF(search)
 
             const TCHAR* testField = getField();
             do {
-                lastTerm = enumerator->term();
+                lastTerm = enumerator->termPointer();
                 if (lastTerm && lastTerm->field() == testField ) {
                     if (!checkLower || _tcscmp(lastTerm->text(),lowerTerm->text()) > 0) {
                         checkLower = false;
@@ -179,15 +179,24 @@ CL_NS_DEF(search)
 		return (lowerTerm ? lowerTerm->field() : upperTerm->field());
 	}
 
-	/** Returns the lower term of this range query */
-    Term::Pointer RangeQuery::getLowerTerm(bool pointer) const { 
-		return lowerTerm;
-	}
+    /** Returns the lower term of this range query */
+    Term* RangeQuery::getLowerTerm() const {
+        return lowerTerm.get();
+    }
+
+    /** Returns the lower term of this range query */
+    Term::Pointer RangeQuery::getLowerTermPointer() const {
+        return lowerTerm;
+    }
 
     /** Returns the upper term of this range query */
-    Term::Pointer RangeQuery::getUpperTerm(bool pointer) const { 
-		return upperTerm;
-	}
+    Term* RangeQuery::getUpperTerm() const {
+        return upperTerm.get();
+    }
+
+    Term::Pointer RangeQuery::getUpperTermPointer() const {
+        return upperTerm;
+    }
 
     /** Returns <code>true</code> if the range query is inclusive */
     bool RangeQuery::isInclusive() const { return inclusive; }

@@ -45,10 +45,10 @@ CL_NS_DEF(index)
     if ( termEnum->getObjectName() == SegmentTermEnum::getClassName() &&
         ((SegmentTermEnum*)termEnum)->fieldInfos == parent->_fieldInfos ){
       SegmentTermEnum* segmentTermEnum = (SegmentTermEnum*) termEnum;
-      term = segmentTermEnum->term();
+      term = segmentTermEnum->termPointer();
       ti = segmentTermEnum->getTermInfo();
     }else{
-      term = termEnum->term();
+      term = termEnum->termPointer();
       ti = parent->tis->get(term);
     }
     

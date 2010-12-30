@@ -166,7 +166,7 @@ void testKnownSetOfDocuments(CuTest *tc) {
       Similarity* sim = knownSearcher.getSimilarity();
       while (termEnum->next() == true)
       {
-        Term::Pointer term = termEnum->term(true);
+        Term::Pointer term = termEnum->termPointer();
         //System.out.println("Term: " + term);
         termDocs->seek(term);
 

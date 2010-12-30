@@ -173,7 +173,7 @@ CL_NS_DEF(index)
 
 	  if (
 	      enumerator != NULL //an enumeration exists
-	      && enumerator->term(false) != NULL // term is at or past current
+	      && enumerator->term() != NULL // term is at or past current
 	      && position >= enumerator->position
 		  && position < (enumerator->position + totalIndexInterval)
 	     )
@@ -214,12 +214,12 @@ CL_NS_DEF(index)
     // optimize sequential access: first try scanning cached enumerator w/o seeking
     if (
 	      //the current term of the enumeration enumerator is not at the end AND
-      	enumerator->term(false) != NULL	 &&
+      	enumerator->term() != NULL &&
       	(
             //there exists a previous current called prev and term is positioned after this prev OR
             ( enumerator->prev != NULL && term->compareTo(enumerator->prev) > 0) ||
             //term is positioned at the same position as the current of enumerator or at a higher position
-            term->compareTo(enumerator->term(false)) >= 0 )
+            term->compareTo(enumerator->termPointer()) >= 0 )
       	)
      {
 
@@ -264,9 +264,9 @@ CL_NS_DEF(index)
 
 	  SegmentTermEnum* enumerator = getEnum();
 
-      while(term->compareTo(enumerator->term(false)) > 0 && enumerator->next()) {}
+      while(term->compareTo(enumerator->termPointer()) > 0 && enumerator->next()) {}
 
-	  if ( term->equals(enumerator->term(false)) ){
+	  if ( term->equals(enumerator->termPointer()) ){
           return enumerator->position;
 	  }else
           return -1;
@@ -334,7 +334,7 @@ CL_NS_DEF(index)
 
 		  //Iterate through the terms of indexEnum
           for (int32_t i = 0; indexEnum->next(); ++i){
-              (*indexTerms)[i]->set(indexEnum->term(false),indexEnum->term(false)->text());
+              (*indexTerms)[i]->set(indexEnum->termPointer(),indexEnum->termPointer()->text());
               indexEnum->getTermInfo(&indexInfos[i]);
               indexPointers[i] = indexEnum->indexPointer;
 
@@ -425,7 +425,7 @@ CL_NS_DEF(index)
 	  enumerator->scanTo(term);
 
       //Check if the at the position the Term term can be found
-	  if (enumerator->term(false) != NULL && term->equals(enumerator->term(false)) ){
+	  if (enumerator->term() != NULL && term->equals(enumerator->termPointer()) ){
 		  //Return the TermInfo instance about term
           return enumerator->getTermInfo();
      }else{
@@ -453,7 +453,7 @@ CL_NS_DEF(index)
 	  }
 
 	  //Return the Term a the requested position
-	  return enumerator->term();
+	  return enumerator->termPointer();
   }
 
 CL_NS_END

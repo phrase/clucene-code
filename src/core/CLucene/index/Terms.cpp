@@ -11,10 +11,6 @@
 
 CL_NS_DEF(index)
 
-Term::Pointer TermEnum::term(bool pointer){
-	return term();
-}
-
 TermEnum::~TermEnum(){
 }
 
@@ -22,7 +18,7 @@ bool TermEnum::skipTo(const Term::Pointer& target){
 	do {
 		if (!next())
 			return false;
-	} while (target->compareTo(term(false)) > 0);
+	} while (target->compareTo(termPointer()) > 0);
 	return true;
 }
 

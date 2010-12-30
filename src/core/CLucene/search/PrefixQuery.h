@@ -39,7 +39,9 @@ CL_NS_DEF(search)
 		static const char* getClassName();
 
 		/** Returns the prefix of this query. */
-		CL_NS(index)::Term::Pointer getPrefix(bool pointer=true);
+		CL_NS(index)::Term* getPrefix();
+		/** Returns a pointer to the prefix of this query. */
+		CL_NS(index)::Term::Pointer getPrefixPointer();
 
     Query* combine(CL_NS(util)::ArrayBase<Query*>* queries);
 		Query* rewrite(CL_NS(index)::IndexReader* reader);

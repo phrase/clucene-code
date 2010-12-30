@@ -247,11 +247,11 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
 	    Term::Pointer term(new Term (field, LUCENE_BLANK_STRING, false));
       TermEnum* termEnum = reader->terms (term);
       try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term() == NULL) {
 			      _CLTHROWA(CL_ERR_Runtime,"no terms in field"); //todo: add detailed error:  + field);
           }
           do {
-            Term::Pointer term = termEnum->term(false);
+            Term* term = termEnum->term();
             if (term->field() != field)
 				      break;
 
@@ -295,11 +295,11 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
         TermEnum* termEnum = reader->terms (term);
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field "); //todo: make richer error + field);
           }
           do {
-            Term::Pointer term = termEnum->term(false);
+            Term* term = termEnum->term();
             if (term->field() != field)
 				break;
 
@@ -345,11 +345,11 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
         TermEnum* termEnum = reader->terms (term);
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field "); //todo: extend to + field);
           }
           do {
-            Term::Pointer term = termEnum->term(false);
+            Term* term = termEnum->term();
             if (term->field() != field)
 				break;
             const TCHAR* termval = term->text();
@@ -405,11 +405,11 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
         mterms[t++] = NULL;
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field"); //todo: make rich message " + field);
           }
           do {
-            Term::Pointer term = termEnum->term(false);
+            Term* term = termEnum->term();
             if (term->field() != field)
 			        break;
 
@@ -474,8 +474,8 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
       TermEnum* enumerator = reader->terms (term);
 
       try {
-        Term::Pointer term = enumerator->term(false);
-        if (term.get() == NULL) {
+        Term* term = enumerator->term();
+        if (term == NULL) {
           _CLTHROWA(CL_ERR_Runtime,"no terms in field - cannot determine sort type"); //todo: make rich error: " + field + "
         }
         if (term->field() == field) {
@@ -538,13 +538,13 @@ FieldCacheImpl::FileEntry::FileEntry (const TCHAR* field, int32_t type) {
         TermEnum* termEnum = reader->terms ();
 
         try {
-          if (termEnum->term(false) == NULL) {
+          if (termEnum->term() == NULL) {
             _CLTHROWA(CL_ERR_Runtime,"no terms in field "); //todo: make rich error + field);
           }
           do {
-            Term::Pointer term = termEnum->term(false);
+            Term* term = termEnum->term();
             if (term->field() != field)
-				    break;
+              break;
             Comparable* termval = comparator->getComparable (term->text());
             termDocs->seek (termEnum);
             while (termDocs->next()) {

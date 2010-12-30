@@ -82,8 +82,12 @@ CL_NS_DEF(search)
 	}
 
 	//added by search highlighter
-	Term::Pointer TermQuery::getTerm(bool pointer) const {
+	Term::Pointer TermQuery::getTermPointer() const {
 		return term;
+	}
+
+	Term* TermQuery::getTerm() const {
+		return term.get();
 	}
 
 	TCHAR* TermQuery::toString(const TCHAR* field) const{

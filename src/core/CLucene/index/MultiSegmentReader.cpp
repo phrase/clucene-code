@@ -546,7 +546,7 @@ int32_t MultiTermDocs::freq() const {
 }
 
 void MultiTermDocs::seek(TermEnum* termEnum){
-	seek(termEnum->term(false));
+	seek(termEnum->termPointer());
 }
 
 void MultiTermDocs::seek(const Term::Pointer& tterm) {
@@ -719,7 +719,7 @@ MultiTermEnum::MultiTermEnum(ArrayBase<IndexReader*>* subReaders, const int32_t 
 		// Note that in the call termEnum->getTerm(false) below false is required because
 		// otherwise a reference is leaked. By passing false getTerm is
 		// ordered to return an unowned reference instead. (Credits for DSR)
-		if (!t ? smi->next() : termEnum->term(false) != NULL){
+		if (!t ? smi->next() : termEnum->term() != NULL){
 			// initialize queue
 			queue->put(smi);
 		} else{
@@ -790,7 +790,7 @@ bool MultiTermEnum::next(){
 }
 
 
-Term::Pointer MultiTermEnum::term() {
+Term* MultiTermEnum::term() {
 //Func - Returns the current term of the set of enumerations
 //Pre  - pointer is true or false and indicates if the reference counter
 //       of term must be increased or not
@@ -798,11 +798,11 @@ Term::Pointer MultiTermEnum::term() {
 //Post - pointer = true -> term has been returned with an increased reference counter
 //       pointer = false -> term has been returned
 
-	return _term;
+	return _term.get();
 }
 
-Term::Pointer MultiTermEnum::term(bool pointer) {
-   	return _term;
+Term::Pointer MultiTermEnum::termPointer() {
+	return _term;
 }
 
 int32_t MultiTermEnum::docFreq() const {

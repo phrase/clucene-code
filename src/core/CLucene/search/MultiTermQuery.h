@@ -48,7 +48,9 @@ CL_NS_DEF(search)
       virtual ~MultiTermQuery();
 
 		  /** Returns the pattern term. */
-		  CL_NS(index)::Term::Pointer getTerm(bool pointer=true) const;
+		  CL_NS(index)::Term* getTerm() const;
+		  /** Returns the pattern term. */
+		  CL_NS(index)::Term::Pointer getTermPointer() const;
 
 		  Query* combine(CL_NS(util)::ArrayBase<Query*>* queries);
 

@@ -48,7 +48,7 @@ const char* WildcardQuery::getClassName(){
 
 
 FilteredTermEnum* WildcardQuery::getEnum(IndexReader* reader) {
-	return _CLNEW WildcardTermEnum(reader, getTerm(false));
+	return _CLNEW WildcardTermEnum(reader, getTermPointer());
 }
 
 WildcardQuery::WildcardQuery(const WildcardQuery& clone):
@@ -70,7 +70,7 @@ bool WildcardQuery::equals(Query* other) const{
 
 	WildcardQuery* tq = (WildcardQuery*)other;
 	return (this->getBoost() == tq->getBoost())
-		&& getTerm()->equals(tq->getTerm());
+		&& getTerm()->equals(tq->getTermPointer());
 }
 
 
@@ -78,12 +78,12 @@ Query* WildcardQuery::rewrite(CL_NS(index)::IndexReader* reader) {
 	if (termContainsWildcard)
 		return MultiTermQuery::rewrite(reader);
 
-	return _CLNEW TermQuery( getTerm(false) );
+	return _CLNEW TermQuery( getTermPointer() );
 }
 
 
 WildcardFilter::WildcardFilter(Term::Pointer term) {
-	this->term = term;
+	this->term.swap(term);
 }
 
 WildcardFilter::~WildcardFilter() {
@@ -124,7 +124,7 @@ BitSet* WildcardFilter::bits( IndexReader* reader )
 	BitSet* bts = _CLNEW BitSet( reader->maxDoc() );
 
 	WildcardTermEnum termEnum (reader, term);
-	if (termEnum.term(false) == NULL)
+	if (termEnum.term() == NULL)
 		return bts;
 
 	TermDocs* termDocs = reader->termDocs();

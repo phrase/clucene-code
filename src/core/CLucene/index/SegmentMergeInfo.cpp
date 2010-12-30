@@ -29,7 +29,7 @@ SegmentMergeInfo::SegmentMergeInfo(const int32_t b, TermEnum* te, IndexReader* r
     CND_PRECONDITION(b >= 0, "b is a negative number");
 
     postings = NULL;
-	term = te->term();
+	term = te->termPointer();
 }
 
 SegmentMergeInfo::~SegmentMergeInfo(){
@@ -78,7 +78,7 @@ bool SegmentMergeInfo::next() {
 //Pre  - true
 //Post - Returns true if the term has been moved to the next otherwise false
 	if (termEnum->next()) {
-		term = termEnum->term();
+		term = termEnum->termPointer();
 		return true;
 	} else {
 		term.reset();

@@ -59,15 +59,15 @@ CL_NS_DEF(search)
     BitSet* bts = _CLNEW BitSet(reader->maxDoc());
 
     TermEnum* enumerator = reader->terms(start);
-    if (enumerator->term(false) == NULL){
+    if (enumerator->term() == NULL){
       _CLDELETE(enumerator);
       return bts;
     }
     TermDocs* termDocs = reader->termDocs();
 
     try {
-      while (enumerator->term(false)->compareTo(end) <= 0) {
-        termDocs->seek(enumerator->term(false));
+      while (enumerator->term()->compareTo(end) <= 0) {
+        termDocs->seek(enumerator->termPointer());
         while (termDocs->next()) {
           bts->set(termDocs->doc());
         }

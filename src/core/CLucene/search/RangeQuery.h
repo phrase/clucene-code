@@ -70,8 +70,10 @@ public:
 
   bool equals(Query * other) const;
 
-  CL_NS(index)::Term::Pointer getLowerTerm(bool pointer=true) const;
-  CL_NS(index)::Term::Pointer getUpperTerm(bool pointer=true) const;
+  CL_NS(index)::Term* getLowerTerm() const;
+  CL_NS(index)::Term::Pointer getLowerTermPointer() const;
+  CL_NS(index)::Term* getUpperTerm() const;
+  CL_NS(index)::Term::Pointer getUpperTermPointer() const;
   bool isInclusive() const;
   const TCHAR* getField() const;
 

@@ -34,8 +34,8 @@ public:
 
 	/** Returns the current Term in the enumeration.
 	* Returns null if no Term matches or all terms have been enumerated. */
-	CL_NS(index)::Term::Pointer term(bool pointer);
-	CL_NS(index)::Term::Pointer term();
+	CL_NS(index)::Term::Pointer termPointer();
+	CL_NS(index)::Term* term();
 
 	/** Closes the enumeration to further activity, freeing resources.  */
 	void close();

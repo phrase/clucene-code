@@ -215,7 +215,7 @@ CL_NS_DEF(index)
 		return true;
 	}
 
-	Term::Pointer SegmentTermEnum::term() {
+	Term* SegmentTermEnum::term() {
 	//Func - Returns the current term.
 	//Pre  - pointer is true or false and indicates if the reference counter
 	//       of term must be increased or not
@@ -223,9 +223,9 @@ CL_NS_DEF(index)
 	//Post - pointer = true -> term has been returned with an increased reference counter
 	//       pointer = false -> term has been returned
 
-		return _term;
+		return _term.get();
 	}
-	Term::Pointer SegmentTermEnum::term(bool pointer) {
+	Term::Pointer SegmentTermEnum::termPointer() {
 		return _term;
 	}
 
