@@ -436,6 +436,8 @@ IndexReader * WeightedSpanTermExtractor::getFieldReader()
         RAMDirectory * directory = _CLNEW RAMDirectory();
      	IndexWriter writer( directory, NULL, true );
         Document doc;
+
+        writer.setMaxFieldLength( LUCENE_INT32_MAX_SHOULDBE );
         
         Field * f = _CLNEW Field( fieldName, Field::STORE_NO | Field::INDEX_TOKENIZED );
         f->setValue( tokenStream );
