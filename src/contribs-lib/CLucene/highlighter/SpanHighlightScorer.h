@@ -46,53 +46,83 @@ typedef CL_NS(util)::CLHashMap<const TCHAR*, WeightedSpanTerm *,
  * Notes: - to be able to highlight based on the ConstantScoreRangeQuery you must supply this 
  *        query not rewritten (it rewrites to ConstantScoreQuery which in turn provides no
  *        terms) and use the autoRewriteQuery feature.
- *        - to highlight texts based on unrewriten queries (FuzzyQuery, WildcardQuery, etc)
+ *        - to highlight texts based on not rewritten queries (FuzzyQuery, WildcardQuery, etc)
  *        set autoRewriteQueries=true. Those queries will be rewritten in place according to
  *        data supplied using the tokenStream.
  */
 class CLUCENE_CONTRIBS_EXPORT SpanHighlightScorer : public HighlightScorer
 {
-private:
+protected:
 	CL_NS(util)::CLHashSet<const TCHAR*,
 		CL_NS(util)::Compare::TChar,
-		CL_NS(util)::Deletor::Dummy>            foundTerms;
+		CL_NS(util)::Deletor::Dummy>            m_foundTerms;                   // Extracted terms
 
-    WeightedSpanTermMap                         fieldWeightedSpanTerms;
+    WeightedSpanTermMap                         m_fieldWeightedSpanTerms;       // Extracted span terms
+    bool                                        m_bDeleteWeightedSpanTerms;     // Flag to delete the content of the fieldWeightedSpanTerms
     
-    float_t                                     totalScore;
-    float_t                                     maxTermWeight;
-    int32_t                                     position;
-    bool                                        autoRewriteQueries;         // If this flag is true, than unrewritten queries will be rewritten and constantRangeQueries will be highlighted
-    bool                                        deleteWeightedSpanTerms;    // Flag to delete the content of the fieldWeightedSpanTerms
+    float_t                                     m_fTotalScore;                  // The sum of scores of all extracted span terms
+    float_t                                     m_fMaxTermWeight;               // Maximal span term score
+    int32_t                                     m_nPosition;                    // Current position
+
+    bool                                        m_bAutoRewriteQueries;          // If this flag is true, than not rewritten queries will be rewritten and constantRangeQueries will be highlighted
+    bool                                        m_bScoreTerms;                  // Score each term based on the given reader?
+
+    CL_NS(index)::IndexReader *                 m_pReader;                      // Index reader - can be used to evaluate span queries, rewrite not rewritten queries and score terms
+    int32_t                                     m_nDocId;                       // Document id withing the index associated with the m_pReader. If specified (!= -1) then the reader is used to eval queries
+    
+    WeightedSpanTermExtractor *                 m_pSpanExtractor;               // Custom span term extractor can be specified.
+    bool                                        m_bDeleteExtractor;             // delete flag for the extractor
+
 
 public:
     /**
-     * @param query                     Query to use for highlighting
-     * @param field                     Field to highlight - pass null to ignore fields
-     * @param cachingTokenFilter        of source text to be highlighted
      * @param autoRewriteQuery          try to rewrite a not rewritten queries and highlight ConstantScoreRangeQueries
-     * @throws IOException
+     * @param customExtractor           use this extractor to extract span terms
+     * @param bDeleteExtractor          delete the custom extractor flag
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, bool autoRewriteQueries = false, WeightedSpanTermExtractor * customExtractor = NULL );
+    SpanHighlightScorer( bool bAutoRewriteQueries = false, WeightedSpanTermExtractor * pCustomExtractor = NULL, bool bDeleteExtractor = false );
 
     /**
-     * @param query                     Query to use for highlighting
-     * @param field                     Field to highlight - pass null to ignore fields
-     * @param cachingTokenFilter        of source text to be highlighted
-     * @param reader                    used to score each term
-     * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
-     * @throws IOException
+     * @param weightedTerms             already extracted weighted terms
+     * @param nCount                    count of terms in weightedTerms
+     * @param deleteTerms               should all the given terms be deleted on shutdown
      */
-    SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries = false, WeightedSpanTermExtractor * customExtractor = NULL );
-
-    /**
-     * @param weightedTerms
-     * @param autoRewriteQuery          try to rewrite unrewritten queries and highlight ConstantScoreRangeQueries
-     */
-    SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool autoRewriteQueries = false );
+    SpanHighlightScorer( WeightedSpanTerm ** rgWeightedTerms, size_t nCount, bool bDeleteTerms );
 
     /// Destructor
     virtual ~SpanHighlightScorer();
+
+    /**
+     * Sets index reader used to score terms, and if docId is specified in init() then also to rewrite queries and evaluate span queries
+     * @param reader                    used to score each term and evaluate the queries
+     */
+    void setIndexReader( CL_NS(index)::IndexReader * pReader );
+    CL_NS(index)::IndexReader * getIndexReader();
+
+    /**
+     * Should the index reader be used to score each terms based on its idf?
+     */
+    void setScoreTerms( bool bScoreTerms );
+    bool scoreTerms();
+
+    /**
+     * @return whether ConstantScoreRangeQueries are set to be highlighted and other queries rewritten
+     */
+    void setAutoRewriteQueries( bool bAutoRewriteQueries );
+    bool autoRewriteQueries();
+
+    /**
+     * @param query         - initialize the span term scores based on this query
+     * @param field         - score terms of this field
+     * @param tokenStream   - this token stream defines the document content 
+     */
+    void init( CL_NS(search)::Query * pQuery, const TCHAR * tszField, CL_NS(analysis)::TokenStream * pTokenStream, int32_t nDocId = -1 );
+
+    /**
+     * If you call Highlighter#getBestFragment() more than once you must reset
+     * the SpanScorer between each call.
+     */
+    void reset();
 
     /**
      * @see org.apache.lucene.search.highlight.Scorer#getFragmentScore()
@@ -120,30 +150,13 @@ public:
     WeightedSpanTerm * getWeightedSpanTerm( const TCHAR * tszToken );
 
     /**
-     * If you call Highlighter#getBestFragment() more than once you must reset
-     * the SpanScorer between each call.
-     */
-    void reset();
-
-    /**
      * @see org.apache.lucene.search.highlight.Scorer#startFragment(org.apache.lucene.search.highlight.TextFragment)
      */
-	virtual void startFragment( TextFragment * newFragment );
+	virtual void startFragment( TextFragment * pNewFragment );
 
-    /**
-     * @return whether ConstantScoreRangeQueries are set to be highlighted and other queries rewritten
-     */
-    bool isAutoRewritingQueries();
+protected:
+    void freeWeightedSpanTerms();
 
-private:
-    /**
-     * @param query
-     * @param field
-     * @param tokenStream
-     * @param reader
-     * @throws IOException
-     */
-    void init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, WeightedSpanTermExtractor * customExtractor );
 };
 
 CL_NS_END2

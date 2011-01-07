@@ -25,105 +25,162 @@
 
 CL_NS_DEF2(search,highlight)
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, bool autoRewriteQueries, WeightedSpanTermExtractor * customExtractor )
+SpanHighlightScorer::SpanHighlightScorer( bool bAutoRewriteQueries, WeightedSpanTermExtractor * pCustomExtractor, bool bDeleteExtractor )
 {
-    this->autoRewriteQueries        = autoRewriteQueries;
-    this->totalScore                = 0;
-    this->maxTermWeight             = 0;
-    this->position                  = -1;
-    this->deleteWeightedSpanTerms   = true;
+    m_bAutoRewriteQueries       = bAutoRewriteQueries;
+    m_pSpanExtractor            = pCustomExtractor;
+    m_bDeleteExtractor          = bDeleteExtractor;
 
-    init( query, field, tokenStream, NULL, customExtractor );
+    m_bScoreTerms               = false;
+    m_pReader                   = NULL;
+    m_nDocId                    = -1;
+
+    m_fTotalScore               = 0;
+    m_fMaxTermWeight            = 0;
+    m_nPosition                 = -1;
+    m_bDeleteWeightedSpanTerms  = true;
 }
 
-SpanHighlightScorer::SpanHighlightScorer( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, bool autoRewriteQueries, WeightedSpanTermExtractor * customExtractor )
+SpanHighlightScorer::SpanHighlightScorer( WeightedSpanTerm ** rgWeightedTerms, size_t nCount, bool bDeleteTerms )
 {
-    this->autoRewriteQueries        = autoRewriteQueries;
-    this->totalScore                = 0;
-    this->maxTermWeight             = 0;
-    this->position                  = -1;
-    this->deleteWeightedSpanTerms   = true;
+    m_bAutoRewriteQueries       = false;
+    m_pSpanExtractor            = NULL;
+    m_bDeleteExtractor          = false;
 
-    init( query, field, tokenStream, reader, customExtractor );
-}
+    m_bScoreTerms               = false;
+    m_pReader                   = NULL;
+    m_nDocId                    = -1;
 
-SpanHighlightScorer::SpanHighlightScorer( WeightedSpanTerm ** weightedTerms, size_t nCount, bool deleteTerms, bool autoRewriteQueries )
-{
-    this->autoRewriteQueries        = autoRewriteQueries;
-    this->totalScore                = 0;
-    this->maxTermWeight             = 0;
-    this->position                  = -1;
-    this->deleteWeightedSpanTerms   = deleteTerms;
+    m_fTotalScore               = 0;
+    m_fMaxTermWeight            = 0;
+    m_nPosition                 = -1;
+    m_bDeleteWeightedSpanTerms  = bDeleteTerms;
 
     for( size_t i = 0; i < nCount; i++ )
     {
-        if( maxTermWeight < weightedTerms[ i ]->getWeight())
-            maxTermWeight = weightedTerms[ i ]->getWeight();
+        if( m_fMaxTermWeight < rgWeightedTerms[ i ]->getWeight())
+            m_fMaxTermWeight = rgWeightedTerms[ i ]->getWeight();
 
-        WeightedSpanTermMap::iterator iTerm = fieldWeightedSpanTerms.find( weightedTerms[ i ]->getTerm() );
-        if( iTerm == fieldWeightedSpanTerms.end() )
+        WeightedSpanTermMap::iterator iTerm = m_fieldWeightedSpanTerms.find( rgWeightedTerms[ i ]->getTerm() );
+        if( iTerm == m_fieldWeightedSpanTerms.end() )
         {
-            fieldWeightedSpanTerms[ weightedTerms[ i ]->getTerm() ] = weightedTerms[ i ];
+            m_fieldWeightedSpanTerms[ rgWeightedTerms[ i ]->getTerm() ] = rgWeightedTerms[ i ];
         } 
-        else if( iTerm->second->getWeight() < weightedTerms[ i ]->getWeight() ) 
+        else if( iTerm->second->getWeight() < rgWeightedTerms[ i ]->getWeight() ) 
         {
             // if a term is defined more than once, always use the highest scoring weight
-            iTerm->second->setWeight( weightedTerms[ i ]->getWeight() );
-            if( deleteTerms )
-                _CLLDELETE( weightedTerms[ i ] );
+            iTerm->second->setWeight( rgWeightedTerms[ i ]->getWeight() );
+            if( bDeleteTerms )
+                _CLLDELETE( rgWeightedTerms[ i ] );
         }
     }
 }
 
 SpanHighlightScorer::~SpanHighlightScorer()
 {
-    if( deleteWeightedSpanTerms )
+    freeWeightedSpanTerms();
+
+    if( m_bDeleteExtractor )
+        delete m_pSpanExtractor;
+    m_pSpanExtractor = NULL;
+}
+
+void SpanHighlightScorer::freeWeightedSpanTerms()
+{
+    if( m_bDeleteWeightedSpanTerms )
     {
-        for( WeightedSpanTermMap::iterator iST = fieldWeightedSpanTerms.begin(); iST != fieldWeightedSpanTerms.end(); iST++ )
+        for( WeightedSpanTermMap::iterator iST = m_fieldWeightedSpanTerms.begin(); iST != m_fieldWeightedSpanTerms.end(); iST++ )
             _CLDELETE( iST->second );
     }
-    fieldWeightedSpanTerms.clear();
+    m_fieldWeightedSpanTerms.clear();
+}
+
+void SpanHighlightScorer::setIndexReader( CL_NS(index)::IndexReader * pReader )
+{
+    m_pReader = pReader;
+}
+
+CL_NS(index)::IndexReader * SpanHighlightScorer::getIndexReader()
+{
+    return m_pReader;
+}
+
+void SpanHighlightScorer::setScoreTerms( bool bScoreTerms )
+{
+    m_bScoreTerms = bScoreTerms;
+}
+
+bool SpanHighlightScorer::scoreTerms()
+{
+    return m_bScoreTerms;
+}
+
+void SpanHighlightScorer::setAutoRewriteQueries( bool bAutoRewriteQueries )
+{
+    m_bAutoRewriteQueries = bAutoRewriteQueries;
+}
+
+bool SpanHighlightScorer::autoRewriteQueries()
+{
+    return m_bAutoRewriteQueries;
+}
+
+void SpanHighlightScorer::init( CL_NS(search)::Query * pQuery, const TCHAR * tszField, CL_NS(analysis)::TokenStream * pTokenStream, int32_t nDocId )
+{
+    if( ! m_pSpanExtractor )
+    {
+        m_pSpanExtractor   = _CLNEW WeightedSpanTermExtractor();
+        m_bDeleteExtractor = true;
+    }
+             
+    m_pSpanExtractor->setAutoRewriteQueries( m_bAutoRewriteQueries );
+    m_pSpanExtractor->setScoreTerms( m_bScoreTerms );
+    m_pSpanExtractor->setIndexReader( m_pReader );
+
+    freeWeightedSpanTerms();
+    m_bDeleteWeightedSpanTerms = true;
+    m_pSpanExtractor->extractWeightedSpanTerms( m_fieldWeightedSpanTerms, pQuery, tszField, pTokenStream, nDocId );
 }
 
 float_t SpanHighlightScorer::getFragmentScore()
 {
-    return totalScore;
+    return m_fTotalScore;
 }
 
 float_t SpanHighlightScorer::getMaxTermWeight()
 {
-    return maxTermWeight;
+    return m_fMaxTermWeight;
 }
 
 float_t SpanHighlightScorer::getTokenScore( CL_NS(analysis)::Token * pToken )
 {
-    position += pToken->getPositionIncrement();
-    const TCHAR * termText = pToken->termText();
+    m_nPosition += pToken->getPositionIncrement();
+    const TCHAR * tszTermText = pToken->termText();
 
-    WeightedSpanTermMap::iterator iTerm = fieldWeightedSpanTerms.find( termText );
-    if( iTerm == fieldWeightedSpanTerms.end() )
+    WeightedSpanTermMap::iterator iTerm = m_fieldWeightedSpanTerms.find( tszTermText );
+    if( iTerm == m_fieldWeightedSpanTerms.end() )
         return 0;
 
-    WeightedSpanTerm * weightedSpanTerm = iTerm->second;
-    if( weightedSpanTerm->isPositionSensitive() && ! weightedSpanTerm->checkPosition( position ))
+    WeightedSpanTerm * pWeightedSpanTerm = iTerm->second;
+    if( pWeightedSpanTerm->isPositionSensitive() && ! pWeightedSpanTerm->checkPosition( m_nPosition ))
         return 0;
 
-    float_t score = weightedSpanTerm->getWeight();
+    float_t fScore = pWeightedSpanTerm->getWeight();
 
     // found a query term - is it unique in this doc?
-    if( foundTerms.find( termText ) == foundTerms.end() )
+    if( m_foundTerms.find( tszTermText ) == m_foundTerms.end() )
     {
-        totalScore += score;
-        foundTerms.insert( termText );
+        m_fTotalScore += fScore;
+        m_foundTerms.insert( tszTermText );
     }
 
-    return score;
+    return fScore;
 }
 
 WeightedSpanTerm * SpanHighlightScorer::getWeightedSpanTerm( const TCHAR * tszToken )
 {
-    WeightedSpanTermMap::iterator iTerm = fieldWeightedSpanTerms.find( tszToken );
-    if( iTerm == fieldWeightedSpanTerms.end() )
+    WeightedSpanTermMap::iterator iTerm = m_fieldWeightedSpanTerms.find( tszToken );
+    if( iTerm == m_fieldWeightedSpanTerms.end() )
         return NULL;
     else 
         return iTerm->second;
@@ -131,32 +188,13 @@ WeightedSpanTerm * SpanHighlightScorer::getWeightedSpanTerm( const TCHAR * tszTo
 
 void SpanHighlightScorer::reset()
 {
-    position = -1;
+    m_nPosition = -1;
 }
 
 void SpanHighlightScorer::startFragment( TextFragment * newFragment )
 {
-    foundTerms.clear();
-    totalScore = 0;
-}
-
-bool SpanHighlightScorer::isAutoRewritingQueries()
-{
-    return autoRewriteQueries;
-}
-
-void SpanHighlightScorer::init( CL_NS(search)::Query * query, const TCHAR * field, CL_NS(analysis)::TokenStream * tokenStream, CL_NS(index)::IndexReader * reader, WeightedSpanTermExtractor * customExtractor )
-{
-    WeightedSpanTermExtractor * extractor = customExtractor ? customExtractor : _CLNEW WeightedSpanTermExtractor( autoRewriteQueries );
-    extractor->setAutoRewriteQueries( autoRewriteQueries );
-
-    if( ! reader ) 
-         extractor->getWeightedSpanTerms( fieldWeightedSpanTerms, query, tokenStream, field );
-    else 
-         extractor->getWeightedSpanTermsWithScores( fieldWeightedSpanTerms, query, tokenStream, field, reader );
-
-    if( ! customExtractor )
-        _CLLDELETE( extractor );
+    m_foundTerms.clear();
+    m_fTotalScore = 0;
 }
 
 CL_NS_END2

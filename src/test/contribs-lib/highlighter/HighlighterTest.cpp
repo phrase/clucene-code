@@ -142,7 +142,8 @@ TCHAR * HighlighterTest::highlightField( Query * query, const TCHAR * fieldName,
 {
     StringReader reader( text );
     CachingTokenFilter tokenStream( analyzer.tokenStream( fieldName, &reader ), true );
-    SpanHighlightScorer spanScorer( query, fieldName, &tokenStream, FIELD_NAME );
+    SpanHighlightScorer spanScorer;
+    spanScorer.init( query, fieldName, &tokenStream );
     Highlighter highlighter( &formatter, &spanScorer );
     tokenStream.reset();
     TCHAR * rv = highlighter.getBestFragments( &tokenStream, text, 1, _T( "(FIELD TEXT TRUNCATED)" ));
@@ -212,7 +213,8 @@ void HighlighterTest::assertHighlightAllHits( int32_t maxFragments, int32_t frag
         const TCHAR * text = hits->doc( i ).get( FIELD_NAME );
         StringReader reader( text );
         CachingTokenFilter tokenStream( analyzer.tokenStream( FIELD_NAME, &reader ), true );
-        SpanHighlightScorer spanScorer( query, FIELD_NAME, &tokenStream, autoRewriteQuery );
+        SpanHighlightScorer spanScorer( autoRewriteQuery );
+        spanScorer.init( query, FIELD_NAME, &tokenStream );
         Highlighter highlighter( &formatter, &spanScorer );
         SimpleFragmenter fragmenter( fragmentSize );
         highlighter.setTextFragmenter( &fragmenter );
@@ -485,7 +487,8 @@ void HighlighterTest::testGetBestSingleFragment()
         const TCHAR * text = hits->doc( i ).get( FIELD_NAME );
         StringReader reader( text );
         CachingTokenFilter tokenStream( analyzer.tokenStream( FIELD_NAME, &reader ), true );
-        SpanHighlightScorer spanScorer( query, FIELD_NAME, &tokenStream );
+        SpanHighlightScorer spanScorer;
+        spanScorer.init( query, FIELD_NAME, &tokenStream );
         Highlighter highlighter( &formatter, &spanScorer );
         SimpleFragmenter fragmenter( 40 );
         highlighter.setTextFragmenter( &fragmenter );
@@ -501,7 +504,8 @@ void HighlighterTest::testGetBestSingleFragment()
         const TCHAR * text = hits->doc( i ).get( FIELD_NAME );
         StringReader reader( text );
         CachingTokenFilter tokenStream( analyzer.tokenStream( FIELD_NAME, &reader ), true );
-        SpanHighlightScorer spanScorer( query, FIELD_NAME, &tokenStream );
+        SpanHighlightScorer spanScorer;
+        spanScorer.init( query, FIELD_NAME, &tokenStream );
         Highlighter highlighter( &formatter, &spanScorer );
         SimpleFragmenter fragmenter( 40 );
         highlighter.setTextFragmenter( &fragmenter );
@@ -593,7 +597,8 @@ void HighlighterTest::testNoFragments()
     {
         StringReader reader( texts[ i ] );
         CachingTokenFilter tokenStream( analyzer.tokenStream( FIELD_NAME, &reader ), true );
-        SpanHighlightScorer spanScorer( query, FIELD_NAME, &tokenStream );
+        SpanHighlightScorer spanScorer;
+        spanScorer.init( query, FIELD_NAME, &tokenStream );
         Highlighter highlighter( &formatter, &spanScorer );
         SimpleFragmenter fragmenter( 40 );
         highlighter.setTextFragmenter( &fragmenter );
