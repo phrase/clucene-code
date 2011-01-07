@@ -16,17 +16,20 @@ SOURCE_GROUP("search" ./search/*)
 SOURCE_GROUP("search-spans" ./search/spans/*)
 SOURCE_GROUP("store" ./store/*)
 SOURCE_GROUP("util" ./util/*)
-SOURCE_GROUP("spellchecker" ./spellchecker/*)
 
 IF ( BUILD_CONTRIBS_LIB )
-    SET(test_contribs_lib_files ./contribs-lib/analysis/de/TestGermanStemFilter.cpp)
+    SET(test_contribs_lib_files
+        ./contribs-lib/analysis/de/TestGermanStemFilter.cpp
+        ./contribs-lib/spellchecker/TestCreateSpellIndex.cpp
+        ./contribs-lib/spellchecker/TestSearchSpellIndex.cpp
+    )
     SET(EXTRA_LIBS ${EXTRA_LIBS} clucene-contribs-lib)
     ADD_DEFINITIONS(-DTEST_CONTRIB_LIBS)
     INCLUDE_DIRECTORIES(${clucene-test_SOURCE_DIR} ${clucene-contribs-lib_SOURCE_DIR})
 	
     SOURCE_GROUP("contribs-lib" REGULAR_EXPRESSION ./contribs-lib/*)
-    SOURCE_GROUP("contribs-lib\\analysis" REGULAR_EXPRESSION ./contribs-lib/analysis/*)
-    SOURCE_GROUP("contribs-lib\\analysis\\de" FILES ${test_contribs_lib_files})
+    SOURCE_GROUP("contribs-lib\\analysis-de" REGULAR_EXPRESSION ./contribs-lib/analysis/de/*)
+    SOURCE_GROUP("contribs-lib\\spellchecker" ./spellchecker/*)
 ENDIF ( BUILD_CONTRIBS_LIB )
 
 file(GLOB_RECURSE test_HEADERS ${CMAKE_SOURCE_DIR}/test/*.h)
@@ -94,8 +97,6 @@ SET(test_files ./tests.cpp
 ./util/TestBitSet.cpp
 ./util/TestStringBuffer.cpp
 ./util/English.cpp
-./spellchecker/TestCreateSpellIndex.cpp
-./spellchecker/TestSearchSpellIndex.cpp
 ${test_HEADERS}
 )
 IF ( USE_SHARED_OBJECT_FILES )
