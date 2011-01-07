@@ -56,50 +56,55 @@ public:
     };
 
 protected:
-    const TCHAR *                               fieldName;
-    CL_NS(analysis)::TokenStream *              tokenStream;
-    CL_NS(index)::IndexReader *                 reader;
-    bool                                        autoRewriteQueries;
+    const TCHAR *                               m_tszFieldName;
+    CL_NS(analysis)::TokenStream *              m_pTokenStream;
+    
+    CL_NS(index)::IndexReader *                 m_pReader;
+    CL_NS(index)::IndexReader *                 m_pFieldReader;
+    int32_t                                     m_nDocId;
+
+    bool                                        m_bAutoRewriteQueries;
+    bool                                        m_bScoreTerms;
 
 public:
-    WeightedSpanTermExtractor( bool autoRewriteQueries );
+    /**
+     * Creates the extractor
+     * @param autoRewriteQueries        - should we try to rewrite not rewritten queries and evaluate ConstantScoreRangeQueries
+     */
+    WeightedSpanTermExtractor( bool autoRewriteQueries = false );
     
+    /// Destructor
     virtual ~WeightedSpanTermExtractor();
 
     /**
-     * Creates a Map of <code>WeightedSpanTerms</code> from the given <code>Query</code> and <code>TokenStream</code>. Uses a supplied
-     * <code>IndexReader</code> to properly weight terms (for gradient highlighting).
+     * Sets index reader used to score terms, and if docId is specified in init() then also to rewrite queries and evaluate span queries
+     * @param reader                    used to score each term and evaluate the queries
+     */
+    void setIndexReader( CL_NS(index)::IndexReader * pReader );
+
+    /**
+     * Should the index reader be used to score each terms based on its idf?
+     */
+    void setScoreTerms( bool bScoreTerms );
+    bool scoreTerms();
+
+    /**
+     * @return whether ConstantScoreRangeQueries are set to be highlighted and other queries rewritten
+     */
+    void setAutoRewriteQueries( bool bAutoRewriteQueries );
+    bool autoRewriteQueries();
+
+    /**
+     * Creates a Map of <code>WeightedSpanTerms</code> from the given <code>Query</code> and <code>TokenStream</code>. 
      * 
      * @param weightedSpanTerms         result, this map will be filled with terms
-     * @param query                     that caused hit
-     * @param cachingTokenFilter        text to be highlighted
-     * @param fieldName                 restricts Term's used based on field name
-     * @param reader                    used for scoring
+     * @param pQuery                    query that caused hit
+     * @param tszFieldName              restricts Term's used based on field name
+     * @param pTokenFilter              text to be scored
+     * @param nDocId                    id of document to be scored
      * @throws IOException
      */
-    void getWeightedSpanTermsWithScores( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::TokenStream * tokenStream, const TCHAR * fieldName, CL_NS(index)::IndexReader * reader );
-
-    /**
-     * Creates a Map of <code>WeightedSpanTerms</code> from the given <code>Query</code> and <code>TokenStream</code>.
-     * 
-     * @param weightedSpanTerms         result, this map will be filled with terms
-     * @param query                     that caused hit
-     * @param cachingTokenFilter        text to be highlighted
-     * @param fieldName                 field being highlighted
-     * @return
-     * @throws IOException
-     */
-    void getWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * query, CL_NS(analysis)::TokenStream * tokenStream, const TCHAR * fieldName );
-
-    /**
-     * Const score range query highlight support
-     */
-    bool isAutoRewritingQueries();
-
-    /**
-     * sets the auto rewrite query flag
-     */
-    void setAutoRewriteQueries( bool bRewrite );
+    void extractWeightedSpanTerms( WeightedSpanTermMap& weightedSpanTerms, CL_NS(search)::Query * pQuery, const TCHAR * tszFieldName, CL_NS(analysis)::TokenStream * pTokenStream, int32_t nDocId = -1 );
 
 protected:
     /**
@@ -109,21 +114,21 @@ protected:
      * @param terms         Map to place created WeightedSpanTerms in
      * @throws IOException
      */
-    void extract( CL_NS(search)::Query * query, PositionCheckingMap& terms );
+    void extract( CL_NS(search)::Query * pQuery, PositionCheckingMap& terms );
 
     /**
      * Methods for extracting info from different types of queries
      */
-    void rewriteAndExtract( Query * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
-    void extractFromBooleanQuery( BooleanQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
-    void extractFromPhraseQuery( PhraseQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
-    void extractFromMultiPhraseQuery( MultiPhraseQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
-    void extractFromConstantScoreRangeQuery( ConstantScoreRangeQuery * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
+    void rewriteAndExtract( Query * pQuery, WeightedSpanTermExtractor::PositionCheckingMap& terms );
+    void extractFromBooleanQuery( BooleanQuery * pQuery, WeightedSpanTermExtractor::PositionCheckingMap& terms );
+    void extractFromPhraseQuery( PhraseQuery * pQuery, WeightedSpanTermExtractor::PositionCheckingMap& terms );
+    void extractFromMultiPhraseQuery( MultiPhraseQuery * pQuery, WeightedSpanTermExtractor::PositionCheckingMap& terms );
+    void extractFromConstantScoreRangeQuery( ConstantScoreRangeQuery * pQuery, WeightedSpanTermExtractor::PositionCheckingMap& terms );
     
     /**
      * Overwrite this method to handle custom queries
      */
-    virtual void extractFromCustomQuery(CL_NS(search)::Query * query, WeightedSpanTermExtractor::PositionCheckingMap& terms );
+    virtual void extractFromCustomQuery( CL_NS(search)::Query * pQuery, WeightedSpanTermExtractor::PositionCheckingMap& terms );
 
     /**
      * Fills a <code>Map</code> with <@link WeightedSpanTerm>s using the terms from the supplied <code>SpanQuery</code>.
@@ -132,7 +137,7 @@ protected:
      * @param spanQuery     SpanQuery to extract Terms from
      * @throws IOException
      */
-    void extractWeightedSpanTerms( PositionCheckingMap& terms, CL_NS2(search,spans)::SpanQuery * spanQuery );
+    void extractWeightedSpanTerms( CL_NS2(search,spans)::SpanQuery * pSpanQuery, PositionCheckingMap& terms );
 
     /**
      * Fills a <code>Map</code> with <@link WeightedSpanTerm>s using the terms from the supplied <code>Query</code>.
@@ -141,16 +146,16 @@ protected:
      * @param query         Query to extract Terms from
      * @throws IOException
      */
-    void extractWeightedTerms( PositionCheckingMap& terms, CL_NS(search)::Query * query );
+    void extractWeightedTerms( CL_NS(search)::Query * pQuery, PositionCheckingMap& terms );
     void processNonWeightedTerms( PositionCheckingMap& terms, TermSet& nonWeightedTerms, float_t fBoost );
 
     /**
      * Checks the field to match the current field
      */
-    bool matchesField( const TCHAR * fieldNameToCheck );
+    bool matchesField( const TCHAR * tszFieldNameToCheck );
 
     /**
-     * Returns reader for the current field
+     * Returns reader for the current field - it returns the supplied reader if the docid is specified, otherwise it creates a new on
      */
     CL_NS(index)::IndexReader * getFieldReader();
 
@@ -159,7 +164,9 @@ protected:
      */
     void closeFieldReader();
 
-
+    /**
+     * Clears given term set
+     */
     void clearTermSet( TermSet& termSet );
 };
 
