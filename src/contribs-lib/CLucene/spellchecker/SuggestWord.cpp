@@ -1,3 +1,4 @@
+#include "CLucene/_ApiHeader.h"
 #include "SuggestWord.h"
 
 SuggestWordC::SuggestWordC()

@@ -1,3 +1,4 @@
+#include "CLucene/_ApiHeader.h"
 #include "IndexDictionary.h"
 
 IndexDictionaryC::IndexDictionaryC( CL_NS(store)::Directory *dir, const TCHAR *fieldName, bool closeDir )

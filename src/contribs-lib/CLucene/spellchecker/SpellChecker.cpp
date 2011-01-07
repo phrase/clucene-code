@@ -1,3 +1,4 @@
+#include "CLucene/_ApiHeader.h"
 #include "SpellChecker.h"
 #include "SuggestWord.h"
 #include "LevenshteinDistance.h"
