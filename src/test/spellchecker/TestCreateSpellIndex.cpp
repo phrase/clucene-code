@@ -31,7 +31,7 @@ void testSpellIndexCreation(CuTest *tc)
   SpellCheckerC sc(fsDir, 0, true);
   bool created = sc.createFromDictionary(dict, true);
 
-  CLUCENE_ASSERT(created);
+  CuAssert(tc, _T("Spellchecker not created"), created);
 }
 
 void testSpellIndexCreationFromIndex(CuTest *tc)
@@ -62,13 +62,14 @@ void testSpellIndexCreationFromIndex(CuTest *tc)
   IndexDictionaryC dict(fsDir, _T("data"), true);
   SpellCheckerC spellChecker(scDir, 0, true);
   bool created = spellChecker.createFromDictionary(dict, true);
-  CLUCENE_ASSERT(created);
+  CuAssert(tc, _T("Spellchecker not created"), created);
 }
 
 CuSuite *testspellcheckcreation(void)
 {
-	CuSuite *suite = CuSuiteNew(_T("CLucene SpellCheck Creation Test"));
-	SUITE_ADD_TEST(suite, testSpellIndexCreation);
+  CuSuite *suite = CuSuiteNew(_T("CLucene SpellCheck Creation Test"));
+
+  SUITE_ADD_TEST(suite, testSpellIndexCreation);
   SUITE_ADD_TEST(suite, testSpellIndexCreationFromIndex);
 
   return suite;
