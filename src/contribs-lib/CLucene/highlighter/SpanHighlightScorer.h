@@ -73,6 +73,13 @@ protected:
     WeightedSpanTermExtractor *                 m_pSpanExtractor;               // Custom span term extractor can be specified.
     bool                                        m_bDeleteExtractor;             // delete flag for the extractor
 
+    std::vector<int32_t>                             m_vPositions;                   // Vectors of positions that have score greater than 0, sorted
+    int32_t                                     m_nNextPositionIdx;             // Next position index withing the m_vPositions vector
+    int32_t                                     m_nNextPosition;                // Next position with score > 0
+    std::map<int32_t, float_t>                       m_mapPosition2Score;            // Maps position to score
+    bool                                        m_bPositionBased;               // Use positions to score tokens
+    bool                                        m_bScorePositions;              // Compute score for each position
+
 
 public:
     /**
@@ -110,6 +117,15 @@ public:
      */
     void setAutoRewriteQueries( bool bAutoRewriteQueries );
     bool autoRewriteQueries();
+
+    /**
+     * Defines the way of computing score for each token.
+     * @param bPositionBased            if set to true then only positions data is used to compute score of a token, otherwise token text will be used to.
+     * @param bScorePositions           if set to true then score for each position is computed separately, if false each position has constant score 1.0f
+     */
+    void setPositionBased( bool bPositionBased, bool bScorePositions );
+    bool isPositionBased();
+    bool scoredPositions();
 
     /**
      * @param query         - initialize the span term scores based on this query
@@ -155,6 +171,15 @@ public:
 	virtual void startFragment( TextFragment * pNewFragment );
 
 protected:
+
+    /**
+     * Extracts positions in order to use term positions to score tokens instead of their texts
+     */
+    void extractTermPositions( const TCHAR * tszField, int32_t nDocId );
+
+    /**
+     * Helper method for freeing weighted span terms and their positions
+     */
     void freeWeightedSpanTerms();
 
 };
