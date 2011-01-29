@@ -515,7 +515,10 @@ void DocumentsWriter::ThreadState::trimFields() {
   for(size_t i=0;i<_parent->norms.length;i++) {
     BufferedNorms* n = _parent->norms[i];
     if (n != NULL && n->upto == 0)
+    {
+      _CLLDELETE(n);
       _parent->norms.values[i] = NULL;
+    }
   }
 
   numAllFieldData = upto;
@@ -528,7 +531,7 @@ void DocumentsWriter::ThreadState::trimFields() {
       newSize = 1;
     else
       newSize = (int32_t) (1.5*maxPostingsVectors);
-    postingsVectors.resize(newSize);
+    postingsVectors.resize(newSize, true);
   }
 }
 
@@ -954,7 +957,7 @@ DocumentsWriter::PostingVector* DocumentsWriter::ThreadState::FieldData::addNewV
       newSize = 2;
     else
       newSize = (int32_t) (1.5*threadState->postingsVectors.length);
-    threadState->postingsVectors.resize(newSize);
+    threadState->postingsVectors.resize(newSize, true);
   }
 
   threadState->p->vector = threadState->postingsVectors[postingsVectorsUpto];

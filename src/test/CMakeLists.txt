@@ -45,6 +45,7 @@ SET(test_files ./tests.cpp
 ./document/TestDateTools.cpp
 ./document/TestDocument.cpp
 ./document/TestNumberTools.cpp
+./document/TestField.cpp
 ./store/TestStore.cpp
 ./store/MockRAMDirectory.cpp
 ./search/TestBoolean.cpp
@@ -92,6 +93,7 @@ SET(test_files ./tests.cpp
 ./index/TestHighFreqTerms.cpp
 ./index/TestReuters.cpp
 ./index/TestAddIndexesNoOptimize.cpp
+./index/TestTermVectorsReader.cpp
 ./index/store/TestRAMDirectory.cpp
 ./util/TestPriorityQueue.cpp
 ./util/TestBitSet.cpp

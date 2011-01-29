@@ -297,6 +297,7 @@ void IndexWriter::setMergeScheduler(MergeScheduler* mergeScheduler) {
   if (this->mergeScheduler != mergeScheduler) {
     finishMerges(true);
     this->mergeScheduler->close();
+    _CLLDELETE(this->mergeScheduler)
   }
   this->mergeScheduler = mergeScheduler;
   if (infoStream != NULL)
@@ -533,8 +534,10 @@ void IndexWriter::closeInternal(bool waitForMerges) {
         deleter->checkpoint(segmentInfos, true);
 
         commitPending = false;
-        _CLDELETE(rollbackSegmentInfos);
+//        _CLDELETE(rollbackSegmentInfos);
       }
+    _CLDELETE(rollbackSegmentInfos);
+
 
       if (infoStream != NULL)
         message("at close: " + segString());

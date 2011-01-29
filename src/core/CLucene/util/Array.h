@@ -322,6 +322,7 @@ public:
   void deleteValues(){
     if ( this->values == NULL )
         return;
+    ArrayBase<T>::deleteValues();
     this->deleteArray();
     }
   void deleteValue(T v){
