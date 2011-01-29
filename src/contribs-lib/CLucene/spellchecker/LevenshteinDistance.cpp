@@ -44,15 +44,7 @@ float LevenshteinDistanceC::getDistance(const TCHAR *s1, const TCHAR *s2) const
 
       int cost;
 
-      // TODO // !!! Why this fucking shit doesn't work on my system? !!!
-      //if( wcscmp( &s_i, &t_j ) == 0 )
-      //  cost = 0;
-      //else
-      //  cost = 1;
-
-      std::wstring s1; s1 = s_i;
-      std::wstring s2; s2 = t_j;
-      if( s1 == s2 )
+      if (_tcscmp(&s_i, &t_j) == 0)
         cost = 0;
       else
         cost = 1;

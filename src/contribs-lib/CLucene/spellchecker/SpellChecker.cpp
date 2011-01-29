@@ -4,8 +4,8 @@
 #include "LevenshteinDistance.h"
 #include <queue>
 #include <vector>
-#include <sstream>
-#include <string.h>
+
+#include "CLucene/util/StringBuffer.h"
 
 SpellCheckerC::SpellCheckerC(CL_NS(store)::Directory *dir, StringDistanceC *sd, bool closeDir)
 :_fword(_T("word")), _bStart(2.0F), _bGram(1.0F), _bEnd(1.0F), _minScore(0.5F), _stringDistance(NULL), _dir(NULL), _indexSearcher(NULL), _closeDir(closeDir)
@@ -134,26 +134,21 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
   int nMax = this->getMaxNGramLen(wordLen);
   for (int n=nMin; n<=nMax; n++)
   {
-    std::wstringstream ss;
-    ss << n;
-    std::wstring wsnum = ss.str();
-    
-    // Fields.    
-    std::wstring wsfstart(_T("start"));
-    wsfstart += wsnum;
+    CL_NS(util)::StringBuffer fstart(_T("start"));
+    fstart.appendInt(n);
 
-    std::wstring wsfgram(_T("gram"));
-    wsfgram += wsnum;
+    CL_NS(util)::StringBuffer fgram(_T("gram"));
+    fgram.appendInt(n);
 
-    std::wstring wsfend(_T("end"));
-    wsfend += wsnum;
+    CL_NS(util)::StringBuffer fend(_T("end"));
+    fend.appendInt(n);
 
     // Create ngram parts of the search word.
     int grammsLen;
     TCHAR **gramms = this->createNGram(word, n, grammsLen);
 
     // The "startX" term.
-    term = new CL_NS(index)::Term(wsfstart.c_str(), gramms[0]);
+    term = new CL_NS(index)::Term(fstart.getBuffer(), gramms[0]);
     termQuery = new CL_NS(search)::TermQuery(term);
     termQuery->setBoost(this->_bStart);
     query.add(termQuery, false, false);
@@ -161,14 +156,14 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
     // The "gramX" terms.
     for (int i=0; i<grammsLen; i++)
     {
-      term = new CL_NS(index)::Term(wsfgram.c_str(), gramms[i]);
+      term = new CL_NS(index)::Term(fgram.getBuffer(), gramms[i]);
       termQuery = new CL_NS(search)::TermQuery(term);
       termQuery->setBoost( this->_bGram );
       query.add(termQuery, false, false);
     }
 
     // The "endX" term.
-    term = new CL_NS(index)::Term( wsfend.c_str(), gramms[grammsLen-1] );
+    term = new CL_NS(index)::Term(fend.getBuffer(), gramms[grammsLen-1] );
     termQuery = new CL_NS(search)::TermQuery( term );
     termQuery->setBoost( this->_bEnd );
     query.add( termQuery, false, false );
@@ -264,7 +259,6 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
     {
       // Get the lowest word from queue and remove it.
       SuggestWordC *sw = queue.top();
-      queue.pop();
 
       // Create a new element for the array.
       size_t swWordLen = _tcslen(sw->getWord());
@@ -273,6 +267,7 @@ const TCHAR** SpellCheckerC::suggestSimilar(const TCHAR *word, int numSug)
 
       ret[i] = tmp;
       delete sw;
+      queue.pop();
     }
     ret[queueLen] = 0;
     delete hits;
@@ -395,20 +390,14 @@ bool SpellCheckerC::fillDocument( CL_NS(document)::Document *doc, const TCHAR *w
   // Add grams to document.
   for( int n=min; n<=max; n++ )
   {
-    // Convert the current N-gram to wchar_t.
-    std::wstringstream ss;
-    ss << n;
-    std::wstring wsnum = ss.str();
-    
-    // Fields.    
-    std::wstring wsfstart(_T("start"));
-    wsfstart += wsnum;
+    CL_NS(util)::StringBuffer fstart(_T("start"));
+    fstart.appendInt(n);
 
-    std::wstring wsfgram(_T("gram"));
-    wsfgram += wsnum;
+    CL_NS(util)::StringBuffer fgram(_T("gram"));
+    fgram.appendInt(n);
 
-    std::wstring wsfend(_T("end"));
-    wsfend += wsnum;
+    CL_NS(util)::StringBuffer fend(_T("end"));
+    fend.appendInt(n);
 
     // Create ngram parts of the search word.
     int grammsLen;
@@ -416,7 +405,7 @@ bool SpellCheckerC::fillDocument( CL_NS(document)::Document *doc, const TCHAR *w
 
     // The "start(n)" field.
     f = new CL_NS(document)::Field(
-        wsfstart.c_str(), gramms[0],
+        fstart.getBuffer(), gramms[0],
         CL_NS(document)::Field::STORE_NO | CL_NS(document)::Field::INDEX_UNTOKENIZED
       );
     doc->add( (*f) );
@@ -425,7 +414,7 @@ bool SpellCheckerC::fillDocument( CL_NS(document)::Document *doc, const TCHAR *w
     for( int i=0; i<grammsLen; i++ )
     {
       f = new CL_NS(document)::Field(
-          wsfgram.c_str(), gramms[i],
+          fgram.getBuffer(), gramms[i],
           CL_NS(document)::Field::STORE_NO | CL_NS(document)::Field::INDEX_UNTOKENIZED
         );
       doc->add( (*f) );
@@ -433,7 +422,7 @@ bool SpellCheckerC::fillDocument( CL_NS(document)::Document *doc, const TCHAR *w
 
     // The "end(n)" field.
     f = new CL_NS(document)::Field(
-        wsfend.c_str(), gramms[grammsLen-1],
+        fend.getBuffer(), gramms[grammsLen-1],
         CL_NS(document)::Field::STORE_NO | CL_NS(document)::Field::INDEX_UNTOKENIZED
       );
     doc->add( (*f) );

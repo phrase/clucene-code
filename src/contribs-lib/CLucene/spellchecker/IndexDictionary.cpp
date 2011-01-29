@@ -74,7 +74,7 @@ CL_NS(index)::TermEnum* IndexDictionaryC::getTermEnum()
   {
     if (this->_fieldName != NULL)
     {
-      CL_NS(index)::Term *startTerm = new CL_NS(index)::Term(this->_fieldName, L"");
+      CL_NS(index)::Term *startTerm = new CL_NS(index)::Term(this->_fieldName, _T(""));
       this->_termEnum = this->_indexReader->terms(startTerm);
       _CLDECDELETE(startTerm);
     }
