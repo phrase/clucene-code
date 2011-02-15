@@ -118,6 +118,11 @@ CL_NS_DEF(util)
 			{
 				// Note that fromIndex == 0.
 				memcpy(a+srcDestDiff,src,toIndex * sizeof(_type));
+				_CLDELETE_ARRAY(src);
+			}
+			else
+			{
+				_CLDELETE_ARRAY(dest);
 			}
 		}
 	};
