@@ -173,7 +173,7 @@ public:
 
 
 
-int32_t compare(Comparable* o1, Comparable* o2);
+int32_t CLUCENE_EXPORT compare(Comparable* o1, Comparable* o2);
 
 ////////////////////////////////////////////////////////////////////////////////
 // allocators

@@ -95,6 +95,7 @@ SET(test_files ./tests.cpp
 ./index/store/TestRAMDirectory.cpp
 ./util/TestPriorityQueue.cpp
 ./util/TestBitSet.cpp
+./util/TestArrays.cpp
 ./util/TestStringBuffer.cpp
 ./util/English.cpp
 ${test_HEADERS}

@@ -39,6 +39,7 @@ unittest tests[] = {
     {"store", teststore},
     {"utf8", testutf8},
     {"bitset", testBitSet},
+    {"arrays", testArrays},
     {"extractterms",testExtractTerms},
     {"spanqueries",testSpanQueries},
     {"stringbuffer", testStringBuffer},
