@@ -594,6 +594,84 @@ void testDeleteDocument(CuTest* tc) {
     _CLLDELETE( dir );
 }
 
+void testUpdateDocument(CuTest* tc) {
+    RAMDirectory* dir = _CLNEW RAMDirectory();
+    StandardAnalyzer a;
+    IndexWriter* writer = _CLNEW IndexWriter(dir, &a, true);
+
+    Document* doc = _CLNEW Document();
+    TCHAR* contents = _CL_NEWARRAY(TCHAR, 2);
+    _i64tot(1, contents, 10);
+    doc->add(* _CLNEW Field(_T("content"), contents, Field::STORE_NO | Field::INDEX_TOKENIZED));
+    writer->addDocument(doc);
+    _CLDELETE_ARRAY( contents );
+    _CLLDELETE(doc);
+
+    writer->optimize();
+    writer->close();
+    _CLLDELETE( writer );
+
+    writer = _CLNEW IndexWriter(dir, &a, false);
+    contents = _CL_NEWARRAY(TCHAR, 2);
+    _i64tot(1, contents, 10);
+    Term* t = _CLNEW Term(_T("content"), contents);
+    _CLDELETE_ARRAY( contents );
+
+    doc = _CLNEW Document();
+    contents = _CL_NEWARRAY(TCHAR, 2);
+    _i64tot(2, contents, 10);
+    doc->add(* _CLNEW Field(_T("content"), contents, Field::STORE_NO | Field::INDEX_TOKENIZED));
+    writer->updateDocument(t, doc);
+    writer->flush();
+    writer->close();
+
+    _CLLDELETE(writer);
+    _CLDECDELETE(t);
+    _CLLDELETE(doc);
+    _CLDELETE_LARRAY( contents );
+
+    IndexReader* reader = IndexReader::open(dir);
+    IndexSearcher* searcher = _CLNEW IndexSearcher(reader);
+    CuAssert(tc, _T("Miss a deleted document"), searcher->getReader()->hasDeletions());
+
+    Document d;
+    try {
+        searcher->doc(0, &d);
+    } catch (CLuceneError& e) {
+        CuAssertIntEquals(tc, _T("Unexpected error code"), 8, e.number());
+    }
+
+    searcher->doc(1, &d);
+
+    contents = _CL_NEWARRAY(TCHAR, 2);
+    _i64tot(1, contents, 10);
+    t = _CLNEW Term(_T("content"), contents);
+
+    TermQuery query(t);
+    Hits* h = searcher->search(&query);
+    CuAssertIntEquals(tc, _T("Unexpected hits"), 0, h->length());
+    _CLLDELETE(h);
+
+    _i64tot(2, contents, 10);
+    query.getTerm()->set(_T("content"), contents);
+
+    h = searcher->search(&query);
+    CuAssertIntEquals(tc, _T("Unexpected hits"), 1, h->length());
+    CuAssertIntEquals(tc, _T("Unexpected document"), 1, h->id(0));
+    _CLLDELETE(h);
+
+    searcher->close();
+    reader->close();
+
+    _CLDECDELETE(t);
+    _CLDELETE_ARRAY( contents );
+    _CLLDELETE(searcher);
+    _CLLDELETE(reader);
+
+    dir->close();
+    _CLLDELETE( dir );
+}
+
 void testMergeIndex(CuTest* tc) {
 
     // A crash depends on the following:
@@ -659,6 +737,7 @@ CuSuite *testindexwriter(void)
 
     SUITE_ADD_TEST(suite, testExceptionFromTokenStream);
     SUITE_ADD_TEST(suite, testDeleteDocument);
+    SUITE_ADD_TEST(suite, testUpdateDocument);
     SUITE_ADD_TEST(suite, testMergeIndex);
 
     return suite;
