@@ -525,23 +525,134 @@ void testNormalizedScores(CuTest *tc) {
 	_CLDELETE(scoresA);
 }
 
+void testPerformSortSearch(CuTest*tc, Directory* ram_dir, lucene::analysis::Analyzer* analyzer)
+{
+	IndexReader* reader = IndexReader::open(ram_dir);
+	IndexSearcher* s = new IndexSearcher(reader);
+	Query* q = QueryParser::parse(_T("test"),_T("field1"),analyzer);
+	Sort* sort = NULL;
+	sort = new Sort();;
+	sort->setSort( new SortField( _T("doc_id"), SortField::INT, true) );
+
+	Hits* h = s->search(q,sort);
+
+	Document* doc = &h->doc(0);
+    CuAssertStrEquals (tc, _T("tracer value"), _T("3"), doc->get(_T("doc_id")));
+	doc = &h->doc(1);
+    CuAssertStrEquals (tc, _T("tracer value"), _T("2"), doc->get(_T("doc_id")));
+	doc = &h->doc(2);
+    CuAssertStrEquals (tc, _T("tracer value"), _T("1"), doc->get(_T("doc_id")));
+
+	_CLDELETE(h);
+	_CLDELETE(q);
+	_CLDELETE(sort);
+	s->close();
+	_CLDELETE(s);
+	_CLDELETE(reader);
+}
+
+void testSortSearchAfterAddIndex(CuTest*tc)
+{
+	CL_NS(analysis)::Analyzer* analyzer = _CLNEW CL_NS2(analysis,standard)::StandardAnalyzer();
+	RAMDirectory* ram_dir = _CLNEW RAMDirectory();
+	IndexWriter* ram_writer = _CLNEW IndexWriter(ram_dir, true, analyzer, true);
+
+	Document doc;
+
+	doc.add(*_CLNEW Field(_T("doc_id"),_T("3"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+	doc.add(*_CLNEW Field(_T("field1"),_T("test"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+	ram_writer->addDocument(&doc);
+	doc.clear();
+
+	doc.add(*_CLNEW Field(_T("doc_id"),_T("1"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+	doc.add(*_CLNEW Field(_T("field1"),_T("test"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+	ram_writer->addDocument(&doc);
+	doc.clear();
+
+	doc.add(*_CLNEW Field(_T("doc_id"),_T("2"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+	doc.add(*_CLNEW Field(_T("field1"),_T("test"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+	ram_writer->addDocument(&doc);
+	doc.clear();
+
+	ram_writer->flush();
+
+	testPerformSortSearch(tc, ram_dir, analyzer);
+
+	for (int i=0; i<1000; ++i) {
+		Document doc;
+
+		doc.add(*_CLNEW Field(_T("doc_id"),_T("3"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+		doc.add(*_CLNEW Field(_T("field1"),_T("test"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+		Term *t3 = _CLNEW Term(_T("doc_id"), _T("3") );
+		ram_writer->updateDocument(t3, &doc);
+		doc.clear();
+
+
+		doc.add(*_CLNEW Field(_T("doc_id"),_T("1"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+		doc.add(*_CLNEW Field(_T("field1"),_T("test"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+		Term *t1 = _CLNEW Term(_T("doc_id"), _T("1") );
+		ram_writer->updateDocument(t1, &doc);
+		doc.clear();
+
+
+		doc.add(*_CLNEW Field(_T("doc_id"),_T("2"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+		doc.add(*_CLNEW Field(_T("field1"),_T("test"),Field::STORE_YES | Field::INDEX_UNTOKENIZED));
+		Term *t2 = _CLNEW Term(_T("doc_id"), _T("2") );
+		ram_writer->updateDocument(t2, &doc);
+		doc.clear();
+	}
+
+	ram_writer->flush();
+	ram_writer->close();
+
+	testPerformSortSearch(tc, ram_dir, analyzer);
+
+	char fsdir[CL_MAX_PATH];
+	_snprintf(fsdir, CL_MAX_PATH, "%s/%s",cl_tempDir, "test.sort");
+	IndexWriter* disk_writer = _CLNEW IndexWriter(fsdir, analyzer, true);
+
+	ValueArray<Directory*> dirs(1);
+	dirs[0] = ram_dir;
+
+	disk_writer->addIndexesNoOptimize(dirs);
+	Directory* dir = disk_writer->getDirectory();
+	disk_writer->flush();
+	disk_writer->close();
+
+	testPerformSortSearch(tc, dir, analyzer);
+
+	_CLLDELETE(disk_writer);
+
+	disk_writer = _CLNEW IndexWriter(fsdir, analyzer, true);
+	disk_writer->close();
+	_CLLDELETE(disk_writer);
+
+	ram_dir->close();
+	dir->close();
+
+	_CLDECDELETE(ram_dir);
+	_CLDECDELETE(dir);
+    _CLDELETE(analyzer);
+}
+
 CuSuite *testsort(void)
 {
 	CuSuite *suite = CuSuiteNew(_T("CLucene Sort Test"));
-    SUITE_ADD_TEST(suite, testSortSetup);
+	SUITE_ADD_TEST(suite, testSortSetup);
 
-    SUITE_ADD_TEST(suite, testBuiltInSorts);
-    SUITE_ADD_TEST(suite, testTypedSort);
-    SUITE_ADD_TEST(suite, testEmptyIndex);
-    SUITE_ADD_TEST(suite, testAutoSort);
+	SUITE_ADD_TEST(suite, testBuiltInSorts);
+	SUITE_ADD_TEST(suite, testTypedSort);
+	SUITE_ADD_TEST(suite, testEmptyIndex);
+	SUITE_ADD_TEST(suite, testAutoSort);
 	SUITE_ADD_TEST(suite, testEmptyFieldSort);
 	SUITE_ADD_TEST(suite, testSortCombos);
 	//SUITE_ADD_TEST(suite, testCustomSorts);
 	SUITE_ADD_TEST(suite, testMultiSort);
 	SUITE_ADD_TEST(suite, testNormalizedScores);
 	SUITE_ADD_TEST(suite, testReverseSort);
+	SUITE_ADD_TEST(suite, testSortSearchAfterAddIndex);
 
-    SUITE_ADD_TEST(suite, testSortCleanup);
-    return suite;
+	SUITE_ADD_TEST(suite, testSortCleanup);
+	return suite;
 }
 // EOF
