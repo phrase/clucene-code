@@ -339,15 +339,17 @@ void WeightedSpanTermExtractor::extractFromConstantScoreRangeQuery( ConstantScor
             TermSet setTerms;
             do 
             {
-                Term * pTerm = pTermEnum->term( false );
+                Term * pTerm = pTermEnum->term( true );
                 if( pTerm && pUpper->compareTo( pTerm ) >= 0 )
                     setTerms.insert( pTerm );
                 else 
+                    _CLLDECDELETE( pTerm );
                     break;
             }
             while( pTermEnum->next() );
 
             processNonWeightedTerms( terms, setTerms, pQuery->getBoost() );
+            clearTermSet( setTerms );
             _CLLDELETE( pTermEnum );
         }
         catch( ... )
