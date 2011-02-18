@@ -342,9 +342,11 @@ void WeightedSpanTermExtractor::extractFromConstantScoreRangeQuery( ConstantScor
                 Term * pTerm = pTermEnum->term( true );
                 if( pTerm && pUpper->compareTo( pTerm ) >= 0 )
                     setTerms.insert( pTerm );
-                else 
+                else
+                {
                     _CLLDECDELETE( pTerm );
                     break;
+                }
             }
             while( pTermEnum->next() );
 
