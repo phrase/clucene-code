@@ -14,22 +14,22 @@ CL_NS_USE(util)
 CL_NS_DEF(analysis)
 
 struct Analyzer::Internal{
-	CL_NS(util)::ThreadLocal<void*,
-		CL_NS(util)::Deletor::Object<void> >* tokenStreams;
+	CL_NS(util)::ThreadLocal<TokenStream*,
+		CL_NS(util)::Deletor::Object<TokenStream> >* tokenStreams;
 };
 Analyzer::Analyzer(){
 	_internal = new Internal;
-	_internal->tokenStreams = _CLNEW CL_NS(util)::ThreadLocal<void*,
-		CL_NS(util)::Deletor::Object<void> >;
+	_internal->tokenStreams = _CLNEW CL_NS(util)::ThreadLocal<TokenStream*,
+		CL_NS(util)::Deletor::Object<TokenStream> >;
 }
 Analyzer::~Analyzer(){
 	_CLLDELETE(_internal->tokenStreams);
 	delete _internal;
 }
-void* Analyzer::getPreviousTokenStream() {
+TokenStream* Analyzer::getPreviousTokenStream() {
 	return _internal->tokenStreams->get();
 }
-void Analyzer::setPreviousTokenStream(void* obj) {
+void Analyzer::setPreviousTokenStream(TokenStream* obj) {
 	_internal->tokenStreams->set(obj);
 }
 TokenStream* Analyzer::reusableTokenStream(const TCHAR* fieldName, CL_NS(util)::Reader* reader) {
@@ -192,7 +192,7 @@ size_t Token::termTextLength() {
 size_t Token::termLength() {
 	if ( _termTextLen == -1 ) //it was invalidated by growBuffer
 		_termTextLen = _tcslen(_buffer);
-	return _termTextLen; 
+	return _termTextLen;
 }
 void Token::resetTermTextLen(){
 	_termTextLen=-1;
@@ -268,8 +268,8 @@ void TokenFilter::close() {
 
 
 
-Tokenizer::Tokenizer() {
-	input = NULL;
+Tokenizer::Tokenizer() : input(NULL)
+{
 }
 
 Tokenizer::Tokenizer(CL_NS(util)::Reader* _input):
@@ -294,7 +294,7 @@ Tokenizer::~Tokenizer(){
 }
 
 
-int32_t Analyzer::getPositionIncrementGap(const TCHAR* fieldName)
+int32_t Analyzer::getPositionIncrementGap(const TCHAR* /*fieldName*/)
 {
 	return 0;
 }

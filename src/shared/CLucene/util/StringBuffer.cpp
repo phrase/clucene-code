@@ -201,6 +201,10 @@ CL_NS_DEF(util)
 	  }
   }
 
+  void StringBuffer::appendBool(const bool value){
+      append( value ? _T( "true" ) : _T( "false" ));
+  }
+
   void StringBuffer::prepend(const TCHAR* value){
   //Func - Puts a copy of the string value infront of the current string in the StringBuffer
   //Pre  - value != NULL
@@ -271,7 +275,7 @@ CL_NS_DEF(util)
 
     return buffer;
   }
- 
+
   TCHAR* StringBuffer::giveBuffer() {
     TCHAR* ret = getBuffer();
     buffer = NULL;
@@ -311,7 +315,6 @@ CL_NS_DEF(util)
   //       leaving the first skippingNInitialChars uninitialized (presumably to be
   //       filled immediately thereafter by the caller).
 
-    CND_PRECONDITION (skippingNInitialChars >= 0, "skippingNInitialChars is less than zero");
     CND_PRECONDITION (minLength >= skippingNInitialChars + len + 1,"skippingNInitialChars is not large enough");
 
     //More aggressive growth strategy to offset smaller default buffer size:
@@ -319,14 +322,14 @@ CL_NS_DEF(util)
       assert(bufferLength>=minLength);
       return;
     }
-  
+
     bufferLength *= 2;
     //Check that bufferLength is bigger than minLength
     if (bufferLength < minLength){
       //Have bufferLength become minLength because it still was too small
       bufferLength = minLength;
     }
-  
+
     //Allocate a new buffer of length bufferLength
     TCHAR* tmp = _CL_NEWARRAY(TCHAR,bufferLength);
     memset(tmp, 0, sizeof(TCHAR) * skippingNInitialChars);
@@ -342,6 +345,79 @@ CL_NS_DEF(util)
 
 	//Assign the new buffer tmp to buffer
     buffer = tmp;
+  }
+
+  void StringBuffer::setCharAt(size_t pos, const TCHAR chr) {
+    CND_PRECONDITION (pos < len, "pos is not in string");
+    buffer[pos] = chr;
+  }
+
+  TCHAR StringBuffer::charAt(size_t pos) {
+    CND_PRECONDITION (pos < len, "pos is not in string");
+    return buffer[pos];
+  }
+
+  void StringBuffer::insert(const size_t pos, TCHAR chr) {
+    CND_PRECONDITION (pos <= len, "pos is larger than string len");
+    growBuffer(len + 1, 0);
+    memmove(&buffer[pos + 1], &buffer[pos], sizeof(TCHAR) * (len - pos));
+    buffer[pos] = chr;
+    len++;
+  }
+
+  void StringBuffer::insert(const size_t pos, const TCHAR* chrs, size_t length) {
+    CND_PRECONDITION (pos <= len, "pos is larger than string len");
+
+    if (length == -1) {
+      length = _tcslen(chrs);
+    }
+
+    if (length > 0) {
+      growBuffer(len + length, 0);
+      memmove(&buffer[pos + length], &buffer[pos], sizeof(TCHAR) * (len - pos));
+      memcpy(&buffer[pos], chrs, sizeof(TCHAR) * (length));
+      len += length;
+    }
+  }
+
+  void StringBuffer::deleteCharAt(size_t pos) {
+    CND_PRECONDITION (pos < len, "pos is larger than string len");
+
+    memmove(&buffer[pos], &buffer[pos + 1], sizeof(TCHAR) * (len - pos));
+    len--;
+    buffer[len] = _T('\0');
+  }
+
+  void StringBuffer::deleteChars(size_t start, size_t end) {
+    CND_PRECONDITION (start <= end && end <= len, "start/end is not in string");
+
+    if (start < end) {
+      memmove(&buffer[start], &buffer[end], sizeof(TCHAR) * (len - end));
+      buffer[len - (end - start)] = _T('\0');
+      len -= end - start;
+    }
+  }
+
+  void StringBuffer::toLower() {
+    _tcslwr(buffer);
+  }
+
+  bool StringBuffer::substringEquals(size_t start, size_t end, const TCHAR* str, size_t length) const {
+    if (length == -1) {
+      length = _tcslen(str);
+    }
+
+    if (end - start != length) {
+      return false;
+    }
+
+    for (size_t c = start; c < end; c++) {
+      if (buffer[c] != str[c - start]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
 CL_NS_END

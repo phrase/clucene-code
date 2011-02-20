@@ -5,8 +5,8 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "test.h"
-
 #include "CLucene/index/IndexModifier.h"
+#include <sstream>
 
 CL_NS_USE(store)
 CL_NS_USE(index)
@@ -85,11 +85,129 @@ void IndexModifierExceptionTest(CuTest *tc)
     }
 }
 
-CuSuite *testIndexModifier(void)
-{
-    CuSuite *suite = CuSuiteNew(_T("CLucene IndexModifer Test"));
-    SUITE_ADD_TEST(suite, IndexModifierExceptionTest);
+class bulk_modification {
+public:
+	void modify_index(CuTest *tc, IndexModifier& ndx);
+};
 
-  return suite;
+class incremental_modification {
+public:
+	void modify_index(CuTest *tc, IndexModifier& ndx);
+};
+
+template<typename modification>
+class IMinsertDelete_tester : public modification {
+public:
+    void invoke(Directory::Pointer storage, CuTest *tc);
+};
+
+void bulk_modification::modify_index(CuTest *tc, IndexModifier& ndx){
+	std::basic_stringstream<TCHAR> field;
+	for ( int i=0;i<1000;i++ ){
+		field.str(_T(""));
+		field << _T("fielddata") << i;
+
+		Document doc;
+		
+		doc.add (
+			*_CLNEW Field(
+				_T("field0"),
+				field.str().c_str(),
+				Field::STORE_YES | Field::INDEX_UNTOKENIZED
+			)
+		);
+		ndx.addDocument(&doc);
+	}
+	for ( int i=0;i<1000;i+=2 ){
+		field.str(_T(""));
+		field << _T("fielddata") << i;
+
+		Term::Pointer deleted(new Term(
+			_T("field0"),
+			field.str().c_str(),
+			true
+		));
+		CLUCENE_ASSERT(ndx.deleteDocuments(deleted) > 0);
+	}
 }
 
+void incremental_modification::modify_index(CuTest *tc, IndexModifier& ndx){
+	std::basic_stringstream<TCHAR> field;
+	for ( int i=0;i<1000;i++ ){
+		field.str(_T(""));
+		field << _T("fielddata") << i;
+
+		Document doc;
+		
+		doc.add (
+			*_CLNEW Field(
+				_T("field0"),
+				field.str().c_str(),
+				Field::STORE_YES | Field::INDEX_UNTOKENIZED
+			)
+		);
+		ndx.addDocument(&doc);
+		if ( 0 == i % 2 ) {
+			Term::Pointer deleted(new Term(
+				_T("field0"),
+				field.str().c_str(),
+				true
+			));
+			CLUCENE_ASSERT(ndx.deleteDocuments(deleted) > 0);
+		}
+	}
+}
+
+template<typename modification>
+void IMinsertDelete_tester<modification>::invoke(
+    Directory::Pointer storage,
+	CuTest *tc
+){
+	SimpleAnalyzer a;
+
+	IndexModifier ndx2(storage,&a,true);
+	ndx2.close();
+	IndexModifier ndx(storage,&a,false);
+
+	ndx.setUseCompoundFile(false);
+	ndx.setMergeFactor(2);
+
+	this->modify_index(tc, ndx);
+
+	ndx.optimize();
+	ndx.close();
+
+	//test the ram loading
+	RAMDirectory::Pointer ram2(new RAMDirectory(storage));
+	IndexReader* reader2 = IndexReader::open(ram2);
+	Term::Pointer term(new Term(_T("field0"),_T("fielddata1")));
+	TermDocs* en = reader2->termDocs(term);
+	CLUCENE_ASSERT(en->next());
+	_CLDELETE(en);
+	term.reset(new Term(_T("field0"),_T("fielddata0")));
+	en = reader2->termDocs(term);
+	CLUCENE_ASSERT(!en->next());
+	_CLDELETE(en);
+	_CLDELETE(reader2);
+}
+
+void testIMinsertDelete(CuTest *tc){
+	char fsdir[CL_MAX_PATH];
+	_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "test.search");
+	RAMDirectory::Pointer ram(new RAMDirectory);
+	FSDirectory::Pointer disk = FSDirectory::getDirectory(fsdir);
+	IMinsertDelete_tester<bulk_modification>().invoke(ram, tc);
+	IMinsertDelete_tester<incremental_modification>().invoke(ram, tc);
+	IMinsertDelete_tester<bulk_modification>().invoke(disk, tc);
+	IMinsertDelete_tester<incremental_modification>().invoke(disk, tc);
+	disk->close();
+}
+
+CuSuite *testIndexModifier(void)
+{
+	CuSuite *suite = CuSuiteNew(_T("CLucene IndexModifier Test"));
+	SUITE_ADD_TEST(suite, IndexModifierExceptionTest);
+	SUITE_ADD_TEST(suite, testIMinsertDelete);
+
+  return suite; 
+}

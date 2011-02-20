@@ -4,6 +4,7 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+#include <assert.h>
 #include "test.h"
 #include <stdio.h>
 
@@ -24,12 +25,12 @@
 
 			    if ( h->length() > 0 ){
 			    //check for explanation memory leaks...
-					Explanation expl1;
+          CL_NS(search)::Explanation expl1;
 					search->explain(q, h->id(0), &expl1);
 					TCHAR* tmp = expl1.toString();
 					_CLDELETE_CARRAY(tmp);
 					if ( h->length() > 1 ){ //do a second one just in case
-						Explanation expl2;
+						CL_NS(search)::Explanation expl2;
 						search->explain(q, h->id(1), &expl2);
 						tmp = expl2.toString();
 						_CLDELETE_CARRAY(tmp);
@@ -226,7 +227,7 @@ void SearchTest(CuTest *tc, bool bram) {
 	SimpleAnalyzer analyzer;
 
 	char fsdir[CL_MAX_PATH];
-	sprintf(fsdir,"%s/%s",cl_tempDir, "test.search");
+	_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "test.search");
 	Directory::Pointer ram = (bram ? Directory::Pointer(new RAMDirectory) : FSDirectory::getDirectory(fsdir, true) );
 
 	IndexWriter writer( ram, &analyzer, true);
@@ -288,7 +289,7 @@ void SearchTest(CuTest *tc, bool bram) {
   //test MultiPositionQuery...
   {
     MultiPhraseQuery* query = _CLNEW MultiPhraseQuery();
-		Term::Vector terms;
+    Term::Vector terms;
     Term::Pointer termE(new Term(_T("contents"), _T("e")));
     terms.push_back(Term::Pointer(new Term(_T("contents"), _T("asdf"))));
     terms.push_back(Term::Pointer(new Term(_T("contents"), _T("asdg"))));
@@ -296,6 +297,7 @@ void SearchTest(CuTest *tc, bool bram) {
 
     query->add(termE);
     query->add(&terms);
+    terms.clear();
 
 		TCHAR* qryInfo = query->toString(_T("contents"));
 		hits = searcher.search(query);
@@ -316,28 +318,28 @@ void SearchTest(CuTest *tc, bool bram) {
 
 void testNormEncoding(CuTest *tc) {
 	//just a quick test of the default similarity
-	CLUCENE_ASSERT(Similarity::getDefault()->queryNorm(1)==1.0);
+	CLUCENE_ASSERT(CL_NS(search)::Similarity::getDefault()->queryNorm(1)==1.0);
 
-    float_t f = Similarity::getDefault()->queryNorm(9);
+    float_t f = CL_NS(search)::Similarity::getDefault()->queryNorm(9);
     f -= (1.0/3.0);
     if ( f < 0 )
         f *= -1;
 	CLUCENE_ASSERT(f < 0.1);
 
     //test that div by zero is handled
-    float_t tmp = Similarity::getDefault()->lengthNorm(_T("test"),0);
-    tmp = Similarity::getDefault()->queryNorm(0);
+    float_t tmp = CL_NS(search)::Similarity::getDefault()->lengthNorm(_T("test"),0);
+    tmp = CL_NS(search)::Similarity::getDefault()->queryNorm(0);
 
 	//test that norm encoding is working properly
-	CLUCENE_ASSERT( Similarity::encodeNorm(-1)==0 );
-	CLUCENE_ASSERT( Similarity::encodeNorm(0)==0 );
-	CLUCENE_ASSERT( Similarity::encodeNorm(1)==124 );
-	CLUCENE_ASSERT( Similarity::encodeNorm(1)==124 );
-	CLUCENE_ASSERT( Similarity::encodeNorm(7516192768.0 )==255);
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(-1)==0 );
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(0)==0 );
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(1)==124 );
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(1)==124 );
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(7516192768.0 )==255);
 
 
-	CLUCENE_ASSERT( Similarity::decodeNorm(124)==1 );
-	CLUCENE_ASSERT( Similarity::decodeNorm(255)==7516192768.0 );
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::decodeNorm(124)==1 );
+	CLUCENE_ASSERT( CL_NS(search)::Similarity::decodeNorm(255)==7516192768.0 );
 
     //well know value:
     CLUCENE_ASSERT( CL_NS(search)::Similarity::encodeNorm(0.5f) == 120 );
@@ -385,7 +387,7 @@ void testSrchManyHits(CuTest *tc) {
 }
 
 void testSrchMulti(CuTest *tc) {
-    SimpleAnalyzer analyzer;
+  SimpleAnalyzer analyzer;
 	Directory::Pointer ram0(new RAMDirectory);
 	IndexWriter writer0( ram0, &analyzer, true);
 

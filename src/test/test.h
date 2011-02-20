@@ -20,8 +20,10 @@
 #include "CLucene/index/TermVector.h"
 #include "CLucene/queryParser/MultiFieldQueryParser.h"
 
+#include <stdio.h>
 #include <iostream>
 #include <string.h>
+
 using namespace std;
 
 #define LUCENE_INT64_MAX_SHOULDBE _ILONGLONG(0x7FFFFFFFFFFFFFFF)
@@ -39,9 +41,12 @@ CL_NS_USE2(analysis,standard)
 #include "CuTest.h"
 
 CuSuite *testatomicupdates(void);
+CuSuite *testRAMDirectory(void);
 CuSuite *testindexwriter(void);
 CuSuite *testIndexModifier(void);
 CuSuite *testindexreader(void);
+CuSuite *testIndexSearcher(void);
+CuSuite *testAddIndexesNoOptimize(void);
 CuSuite *teststore(void);
 CuSuite *testanalysis(void);
 CuSuite *testanalyzers(void);
@@ -51,6 +56,7 @@ CuSuite *testpriorityqueue(void);
 CuSuite *testQueryParser(void);
 CuSuite *testMultiFieldQueryParser(void);
 CuSuite *testqueries(void);
+CuSuite *testConstantScoreQueries(void);
 CuSuite *testsearch(void);
 CuSuite *testtermvector(void);
 CuSuite *testsort(void);
@@ -62,9 +68,19 @@ CuSuite *testdebug(void);
 CuSuite *testutf8(void);
 CuSuite *testreuters(void);
 CuSuite *testdocument(void);
+CuSuite *testField(void);
 CuSuite *testNumberTools(void);
 CuSuite *testDateTools(void);
 CuSuite *testBoolean(void);
+CuSuite *testBitSet(void);
+CuSuite *testExtractTerms(void);
+CuSuite *testSpanQueries(void);
+CuSuite *testStringBuffer(void);
+CuSuite *testTermVectorsReader(void);
+
+#ifdef TEST_CONTRIB_LIBS
+CuSuite *testGermanAnalyzer(void);
+#endif
 
 class English{
 public:

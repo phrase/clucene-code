@@ -166,7 +166,7 @@ void LogMergePolicy::setMergeFactor(int32_t mergeFactor) {
   this->mergeFactor = mergeFactor;
 }
 
-bool LogMergePolicy::useCompoundFile(SegmentInfos* infos, SegmentInfo* info) {
+bool LogMergePolicy::useCompoundFile(SegmentInfos* /*infos*/, SegmentInfo* /*info*/) {
   return _useCompoundFile;
 }
 
@@ -178,7 +178,7 @@ bool LogMergePolicy::getUseCompoundFile() {
   return _useCompoundFile;
 }
 
-bool LogMergePolicy::useCompoundDocStore(SegmentInfos* infos) {
+bool LogMergePolicy::useCompoundDocStore(SegmentInfos* /*infos*/) {
   return _useCompoundDocStore;
 }
 

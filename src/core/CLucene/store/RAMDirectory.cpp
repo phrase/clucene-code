@@ -88,6 +88,7 @@ CL_NS_DEF(store)
 		  SCOPED_LOCK_MUTEX(directory->THIS_LOCK);
 		  buffers.push_back( rfb );
 		  directory->sizeInBytes += size;
+          sizeInBytes += size;
 	  } else {
 		buffers.push_back(rfb);
 	  }
@@ -421,7 +422,7 @@ CL_NS_DEF(store)
    Directory(),files( _CLNEW FileMap(true,true) )
   {
     this->sizeInBytes = 0;
-	  setLockFactory( _CLNEW SingleInstanceLockFactory() );
+	setLockFactory( _CLNEW SingleInstanceLockFactory() );
     _copyFromDir(dir,false);
   }
 
@@ -429,7 +430,8 @@ CL_NS_DEF(store)
       Directory(),files( _CLNEW FileMap(true,true) )
    {
       this->sizeInBytes = 0;
-      Directory::Pointer fsdir = FSDirectory::getDirectory(dir,false);
+      setLockFactory( _CLNEW SingleInstanceLockFactory() );
+      Directory::Pointer fsdir = FSDirectory::getDirectory(dir);
       try{
          _copyFromDir(fsdir,false);
       }_CLFINALLY(fsdir->close(););
@@ -454,15 +456,15 @@ CL_NS_DEF(store)
   }
 
 
-  bool RAMDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t bufferSize) {
+  bool RAMDirectory::openInput(const char* name, IndexInput*& ret, CLuceneError& error, int32_t /*bufferSize*/) {
     SCOPED_LOCK_MUTEX(files_mutex);
     RAMFile* file = files->get((char*)name);
-    if (file == NULL) { /* DSR:PROPOSED: Better error checking. */
+    if (file == NULL) {
 		  error.set(CL_ERR_IO, "[RAMDirectory::open] The requested file does not exist.");
 		  return false;
     }
     ret = _CLNEW RAMInputStream( file );
-	return true;
+	  return true;
   }
 
   void RAMDirectory::close(){
@@ -473,9 +475,16 @@ CL_NS_DEF(store)
 
   bool RAMDirectory::doDeleteFile(const char* name) {
     SCOPED_LOCK_MUTEX(files_mutex);
-    files->removeitr( files->find((char*)name) );
-    return true;
-  }
+    FileMap::iterator itr = files->find((char*)name);
+    if (itr != files->end()) {
+        SCOPED_LOCK_MUTEX(this->THIS_LOCK);
+        sizeInBytes -= itr->second->sizeInBytes;
+        files->removeitr(itr);
+        return true;
+    } else {
+        return false;
+    }
+ }
 
   void RAMDirectory::renameFile(const char* from, const char* to) {
 	SCOPED_LOCK_MUTEX(files_mutex);
@@ -487,7 +496,10 @@ CL_NS_DEF(store)
     ** exception, but it happens routinely in CLucene's internals (e.g., during
     ** IndexWriter.addIndexes with the file named 'segments'). */
     if (files->exists((char*)to)) {
-      files->removeitr( files->find((char*)to) );
+        FileMap::iterator itr1 = files->find((char*)to);
+        SCOPED_LOCK_MUTEX(this->THIS_LOCK);
+        sizeInBytes -= itr1->second->sizeInBytes;
+        files->removeitr( itr1 );
     }
     if ( itr == files->end() ){
       char tmp[1024];
@@ -534,6 +546,8 @@ CL_NS_DEF(store)
 	if ( itr!=files->end() )  {
 		n = itr->first;
 		RAMFile* rf = itr->second;
+        SCOPED_LOCK_MUTEX(this->THIS_LOCK);
+        sizeInBytes -= rf->sizeInBytes;
 		_CLDELETE(rf);
 	} else {
 		n = STRDUP_AtoA(name);

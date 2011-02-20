@@ -8,6 +8,7 @@
 #include "Misc.h"
 #include <assert.h>
 #include <iostream>
+#include <map>
 
 #if defined(_CL_HAVE_SYS_TIME_H)
 # include <sys/time.h>
@@ -33,7 +34,7 @@
 #include "CLucene/util/dirent.h" //if we have dirent, then the native one will be used
 
 //for zlib...
-#include "zlib/zlib.h"
+#include "zlib.h"
 #if defined(MSDOS) || defined(OS2) || defined(WIN32) || defined(__CYGWIN__)
 #  include <fcntl.h>
 #  include <io.h>
@@ -208,6 +209,40 @@ int64_t Misc::file_Size(const char* path){
 	else
 		return -1;
 }
+
+int Misc::file_Unlink(const char* path, int32_t maxAttempts )
+{
+    int32_t i;
+
+    if( ! path || ! * path )
+        return -1;
+
+    if( maxAttempts == 0 )
+        maxAttempts = 1;
+
+    while( maxAttempts != 0 )
+    {
+        if( _unlink( path ) != 0 )
+            return -1;
+
+        i = 0;
+        while( i < 100 )
+        {
+            if( ! Misc::dir_Exists( path ) )
+                return 1;
+
+            if( ++i > 50 )      // if it still doesn't show up, then we do some sleeping for the last 50ms
+                _LUCENE_SLEEP( 1 );
+        }
+
+        if( maxAttempts > 0 )
+            maxAttempts--;
+    }
+
+    return 0;
+}
+
+
 //static
 TCHAR* Misc::join ( const TCHAR* a, const TCHAR* b, const TCHAR* c, const TCHAR* d,const TCHAR* e,const TCHAR* f ) {
 #define LEN(x) (x == NULL ? 0 : _tcslen(x))
@@ -430,6 +465,14 @@ bool Misc::listFiles(const char* directory, std::vector<std::string>& files, boo
 
 std::string Misc::toString(const bool value){
   return value ? "true" : "false";
+}
+std::string Misc::toString(_LUCENE_THREADID_TYPE value){
+  static int32_t nextindex = 0;
+  static std::map<_LUCENE_THREADID_TYPE, int32_t> ids;
+  if (ids.find(value) == ids.end()) {
+    ids[value] = nextindex++;
+  }
+  return toString(ids[value]);
 }
 std::string Misc::toString(const int32_t value){
   char buf[20];

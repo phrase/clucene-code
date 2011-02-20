@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #ifndef _lucene_search_ConstantScoreQuery_
@@ -25,6 +25,11 @@ protected:
     Filter* filter;
 
 public:
+    /**
+    * Constructs a new ConstantScoreQuery, and takes ownership of the filter object
+    *
+    * @memory this object consumes _filter
+    */
     ConstantScoreQuery(Filter* _filter);
     virtual ~ConstantScoreQuery();
 
@@ -33,13 +38,8 @@ public:
 
     Query* rewrite(CL_NS(index)::IndexReader* reader);
 
-    /*
-    TODO:
-    void extractTerms(Set terms) {
-    // OK to not add any terms when used for MultiSearcher,
-    // but may not be OK for highlighting
-    }
-    */
+    /** Constant score query does not return any terms */
+    void extractTerms( TermSet * termset ) const;
 
 protected:
     Weight* _createWeight(Searcher* searcher);
@@ -55,6 +55,7 @@ public:
     size_t hashCode() const;
 
     const char* getObjectName() const;
+	static const char* getClassName(){ return "ConstantScoreQuery"; }
     Query* clone() const;
 
     friend class ConstantWeight;
@@ -85,7 +86,7 @@ private:
     bool includeUpper;
 
 public:
-    ConstantScoreRangeQuery(const TCHAR* _fieldName, TCHAR* _lowerVal, TCHAR* _upperVal,
+    ConstantScoreRangeQuery(const TCHAR* _fieldName, const TCHAR* _lowerVal, const TCHAR* _upperVal,
         bool _includeLower, bool _includeUpper);
     virtual ~ConstantScoreRangeQuery();
 
@@ -112,6 +113,7 @@ public:
     size_t hashCode() const;
 
     const char* getObjectName() const;
+	static const char* getClassName(){ return "ConstantScoreRangeQuery"; }
     Query* clone() const;
 protected:
     ConstantScoreRangeQuery( const ConstantScoreRangeQuery& copy );

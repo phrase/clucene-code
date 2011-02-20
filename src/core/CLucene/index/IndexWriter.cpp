@@ -32,6 +32,7 @@
 #include "_Term.h"
 #include <assert.h>
 #include <algorithm>
+#include <iostream>
 
 CL_NS_USE(store)
 CL_NS_USE(util)
@@ -99,7 +100,7 @@ void IndexWriter::ensureOpen()   {
 void IndexWriter::message(string message) {
   if (infoStream != NULL){
     (*infoStream) << string("IW ") << Misc::toString(messageID) << string(" [")
-    						  << Misc::toString( (int32_t)(_LUCENE_CURRTHREADID) ) << string("]: ") << message << string("\n");
+    						  << Misc::toString( _LUCENE_CURRTHREADID ) << string("]: ") << message << string("\n");
   }
 }
 
@@ -297,6 +298,7 @@ void IndexWriter::setMergeScheduler(MergeScheduler* mergeScheduler) {
   if (this->mergeScheduler != mergeScheduler) {
     finishMerges(true);
     this->mergeScheduler->close();
+    _CLLDELETE(this->mergeScheduler)
   }
   this->mergeScheduler = mergeScheduler;
   if (infoStream != NULL)
@@ -533,8 +535,10 @@ void IndexWriter::closeInternal(bool waitForMerges) {
         deleter->checkpoint(segmentInfos, true);
 
         commitPending = false;
-        _CLDELETE(rollbackSegmentInfos);
+//        _CLDELETE(rollbackSegmentInfos);
       }
+    _CLDELETE(rollbackSegmentInfos);
+
 
       if (infoStream != NULL)
         message("at close: " + segString());
@@ -1479,7 +1483,8 @@ bool IndexWriter::doFlush(bool _flushDocStores) {
 
           if (!segment.empty())
             deleter->refresh(segment.c_str());
-        }
+        } else if (flushDeletes)
+            _CLDELETE(rollback);
       )
 
       deleter->checkpoint(segmentInfos, autoCommit);
@@ -2219,6 +2224,7 @@ void IndexWriter::applyDeletes(bool flushedNewSegment) {
           reader->doCommit();
         } _CLFINALLY (
           reader->doClose();
+          _CLLDELETE(reader);
         )
       }
     )

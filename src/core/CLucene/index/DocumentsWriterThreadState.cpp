@@ -50,10 +50,10 @@ DocumentsWriter::ThreadState::ThreadState(DocumentsWriter* __parent):
   fieldDataArray(ValueArray<FieldData*>(8)),
   fieldDataHash(ValueArray<FieldData*>(16)),
   postingsVectors(ObjectArray<PostingVector>(1)),
-  allFieldDataArray(ValueArray<FieldData*>(10)),
   postingsPool( _CLNEW ByteBlockPool(true, __parent) ),
   vectorsPool( _CLNEW ByteBlockPool(false, __parent) ),
   charPool( _CLNEW CharBlockPool(__parent) ),
+  allFieldDataArray(ValueArray<FieldData*>(10)),
   _parent(__parent)
 {
   fieldDataHashMask = 15;
@@ -89,7 +89,7 @@ DocumentsWriter::ThreadState::~ThreadState(){
   _CLDELETE(tvfLocal);
   _CLDELETE(fdtLocal);
 
-  for ( int i=0; i<allFieldDataArray.length;i++)
+  for ( size_t i=0; i<allFieldDataArray.length;i++)
     _CLDELETE(allFieldDataArray.values[i]);
 }
 
@@ -507,7 +507,7 @@ void DocumentsWriter::ThreadState::trimFields() {
     }
   }
   //delete everything after up to in allFieldDataArray
-  for ( int i=upto;i<allFieldDataArray.length;i++ ){
+  for ( size_t i=upto;i<allFieldDataArray.length;i++ ){
     allFieldDataArray[i] = NULL;
   }
 
@@ -516,7 +516,10 @@ void DocumentsWriter::ThreadState::trimFields() {
   for(size_t i=0;i<_parent->norms.length;i++) {
     BufferedNorms* n = _parent->norms[i];
     if (n != NULL && n->upto == 0)
+    {
+      _CLLDELETE(n);
       _parent->norms.values[i] = NULL;
+    }
   }
 
   numAllFieldData = upto;
@@ -529,7 +532,7 @@ void DocumentsWriter::ThreadState::trimFields() {
       newSize = 1;
     else
       newSize = (int32_t) (1.5*maxPostingsVectors);
-    postingsVectors.resize(newSize);
+    postingsVectors.resize(newSize, true);
   }
 }
 
@@ -955,7 +958,7 @@ DocumentsWriter::PostingVector* DocumentsWriter::ThreadState::FieldData::addNewV
       newSize = 2;
     else
       newSize = (int32_t) (1.5*threadState->postingsVectors.length);
-    threadState->postingsVectors.resize(newSize);
+    threadState->postingsVectors.resize(newSize, true);
   }
 
   threadState->p->vector = threadState->postingsVectors[postingsVectorsUpto];

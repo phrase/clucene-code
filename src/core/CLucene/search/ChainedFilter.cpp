@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 
@@ -22,18 +22,21 @@ CL_NS_USE(document)
 
 
 ChainedFilter::ChainedFilter( Filter ** _filters, int _op ):
+	Filter(),
 	filters(_filters),
 	logicArray(NULL),
 	logic(_op)
 {
 }
 ChainedFilter::ChainedFilter( Filter** _filters, int* _array ):
+	Filter(),
 	filters(_filters),
 	logicArray(_array),
 	logic(-1)
 {
 }
 ChainedFilter::ChainedFilter( const ChainedFilter& copy ) :
+	Filter(copy),
 	logicArray( copy.logicArray ),
 	logic( copy.logic )
 {
@@ -41,7 +44,7 @@ ChainedFilter::ChainedFilter( const ChainedFilter& copy ) :
 }
 ChainedFilter::~ChainedFilter(void)
 {
-	
+
 }
 
 Filter* ChainedFilter::clone() const {
@@ -65,9 +68,9 @@ const TCHAR* ChainedFilter::getLogicString(int logic){
 
 TCHAR* ChainedFilter::toString()
 {
-	
+
 	Filter** filter = filters;
-	
+
 	StringBuffer buf(_T("ChainedFilter: ["));
 	int* la = logicArray;
 	while(*filter )
@@ -76,18 +79,18 @@ TCHAR* ChainedFilter::toString()
 			buf.appendChar(' ');
 		buf.append(getLogicString(logic==-1?*la:logic));
 		buf.appendChar(' ');
-		
+
 		TCHAR* filterstr = (*filter)->toString();
 		buf.append(filterstr);
 		_CLDELETE_ARRAY( filterstr );
-		
+
 		filter++;
 		if ( logic == -1 )
 			la++;
 	}
-	
+
 	buf.appendChar(']');
-	
+
 	return buf.toString();
 }
 
@@ -108,13 +111,13 @@ BitSet* ChainedFilter::bits( IndexReader* reader )
 BitSet* ChainedFilter::bits( IndexReader* reader, int logic )
 {
 	BitSet* bts = NULL;
-	
+
 	Filter** filter = filters;
-	
+
 	// see discussion at top of file
 	if( *filter ) {
 		BitSet* tmp = (*filter)->bits( reader );
-		if ( (*filter)->shouldDeleteBitSet(tmp) ) //if we are supposed to delete this BitSet, then 
+		if ( (*filter)->shouldDeleteBitSet(tmp) ) //if we are supposed to delete this BitSet, then
 			bts = tmp; //we can safely call it our own
 		else if ( tmp == NULL ){
 			int32_t len = reader->maxDoc();
@@ -128,12 +131,12 @@ BitSet* ChainedFilter::bits( IndexReader* reader, int logic )
 	}
 	else
 		bts = _CLNEW BitSet( reader->maxDoc() );
-	
+
 	while( *filter ) {
 		doChain( bts, reader, logic, *filter );
 		filter++;
 	}
-	
+
 	return bts;
 }
 
@@ -141,14 +144,14 @@ BitSet* ChainedFilter::bits( IndexReader* reader, int logic )
 BitSet* ChainedFilter::bits( IndexReader* reader, int* _logicArray )
 {
 	BitSet* bts = NULL;
-	
+
 	Filter** filter = filters;
 	int* logic = _logicArray;
-	
+
 	// see discussion at top of file
 	if( *filter ) {
 		BitSet* tmp = (*filter)->bits( reader );
-		if ( (*filter)->shouldDeleteBitSet(tmp) ) //if we are supposed to delete this BitSet, then 
+		if ( (*filter)->shouldDeleteBitSet(tmp) ) //if we are supposed to delete this BitSet, then
 			bts = tmp; //we can safely call it our own
 		else if ( tmp == NULL ){
 			int32_t len = reader->maxDoc();
@@ -165,17 +168,17 @@ BitSet* ChainedFilter::bits( IndexReader* reader, int* _logicArray )
 	}
 	else
 		bts = _CLNEW BitSet( reader->maxDoc() );
-	
+
 	while( *filter ) {
 		doChain( bts, reader, *logic, *filter );
 		filter++;
 		logic++;
 	}
-	
+
 	return bts;
 }
 
-void ChainedFilter::doUserChain( CL_NS(util)::BitSet* chain, CL_NS(util)::BitSet* filter, int logic ){
+void ChainedFilter::doUserChain( CL_NS(util)::BitSet* /*chain*/, CL_NS(util)::BitSet* /*filter*/, int /*logic*/ ){
 	_CLTHROWA(CL_ERR_Runtime,"User chain logic not implemented by superclass");
 }
 
@@ -187,7 +190,7 @@ BitSet* ChainedFilter::doChain( BitSet* resultset, IndexReader* reader, int logi
 	if ( logic >= ChainedFilter::USER ){
 		doUserChain(resultset,filterbits,logic);
 	}else{
-		switch( logic ) 
+		switch( logic )
 		{
 		case OR:
 			for( i=0; i < maxDoc; i++ )
@@ -209,10 +212,10 @@ BitSet* ChainedFilter::doChain( BitSet* resultset, IndexReader* reader, int logi
 			doChain( resultset, reader, DEFAULT, filter );
 		}
 	}
-	
+
 	if ( filter->shouldDeleteBitSet(filterbits) )
 		_CLDELETE( filterbits );
-	
+
 	return resultset;
 }
 

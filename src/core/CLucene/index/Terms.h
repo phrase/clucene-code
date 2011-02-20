@@ -7,7 +7,7 @@
 #ifndef _lucene_index_Terms_
 #define _lucene_index_Terms_
 
-//#include "Term.h"
+#include "CLucene/util/Equators.h"
 CL_NS_DEF(index)
 
 //predefine
@@ -24,8 +24,7 @@ class TermPositions;
  */
 class CLUCENE_EXPORT TermDocs {
 public:
-	virtual ~TermDocs(){
-	}
+	virtual ~TermDocs();
 
 	// Sets this to the data for a term.
 	// The enumeration is reset to the start of the data for this term.
@@ -92,7 +91,10 @@ public:
 	/** Increments the enumeration to the next element.  True if one exists.*/ 
 	virtual bool next()=0;
 
-	// Returns a reference to the current Term in the enumeration.
+	/**
+	* Returns the current Term in the enumeration.
+	* @param pointer if true, then increment the reference count before returning
+	*/
 	virtual Term* term()=0;
 
 	/** Returns a pointer to the current Term in the enumeration.*/

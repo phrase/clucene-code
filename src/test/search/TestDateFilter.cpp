@@ -5,12 +5,11 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "test.h"
-#include <stdio.h>
 
 	void testBefore(CuTest *tc) {
 	// create an index
 		char fsdir[CL_MAX_PATH];
-		sprintf(fsdir,"%s/%s",cl_tempDir, "dfindex");
+		_snprintf(fsdir,CL_MAX_PATH,"%s/%s",cl_tempDir, "dfindex");
 		
 		FSDirectory::Pointer indexStore = FSDirectory::getDirectory( fsdir,true);
 		Analyzer* a = _CLNEW SimpleAnalyzer();
@@ -37,11 +36,11 @@
     	DateFilter* df2 = DateFilter::Before(_T("datefield"), now - 999999);
 	
     	// search something that doesn't exist with DateFilter
-		Term::Pointer term(new Term(_T("body"), _T("NoMatchForThis")));
+	Term::Pointer term(new Term(_T("body"), _T("NoMatchForThis")));
     	Query* query1 = _CLNEW TermQuery(term);
 
     	// search for something that does exists
-		term.reset(new Term(_T("body"), _T("sunny")));
+	term.reset(new Term(_T("body"), _T("sunny")));
     	Query* query2 = _CLNEW TermQuery(term);
 	
     	Hits* result = NULL;

@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 
@@ -20,21 +20,26 @@
 
 CL_NS_DEF(search)
 
-DisjunctionSumScorer::DisjunctionSumScorer(Scorer::Vector& _subScorers
-										   , const int32_t _minimumNrMatchers ) : Scorer( NULL ), nrScorers(0),
-										   minimumNrMatchers(_minimumNrMatchers),scorerDocQueue(NULL),queueSize(-1),
-										   currentDoc(-1),_nrMatchers(-1),currentScore(-1.0f)
+DisjunctionSumScorer::DisjunctionSumScorer(Scorer::Vector& _subScorers, const int32_t _minimumNrMatchers ) :
+    Scorer( NULL ),
+    minimumNrMatchers(_minimumNrMatchers),
+    scorerDocQueue(NULL),
+    queueSize(-1),
+    currentDoc(-1),
+    currentScore(-1.0f),
+    nrScorers(0),
+    _nrMatchers(-1)
 {
 	if ( minimumNrMatchers <= 0 ) {
 		_CLTHROWA(CL_ERR_IllegalArgument,"Minimum nr of matchers must be positive");
 	}
 
 	nrScorers = _subScorers.size();
-	
+
 	if ( nrScorers <= 1 ) {
 		_CLTHROWA(CL_ERR_IllegalArgument,"There must be at least 2 subScorers");
 	}
-	
+
 	// transfer ownership of all subScorers from _subScorer to subScorer
 	subScorers.transfer(subScorers.end(), _subScorers.begin(), _subScorers.end(), _subScorers);
 }
@@ -84,14 +89,14 @@ bool DisjunctionSumScorer::skipTo( int32_t target )
 	if ( target <= currentDoc ) {
 		return true;
 	}
-	do { 		
+	do {
 		if ( scorerDocQueue->topDoc() >= target ) {
 			return advanceAfterCurrent();
 		} else if ( !scorerDocQueue->topSkipToAndAdjustElsePop( target )) {
 			if ( --queueSize < minimumNrMatchers ) {
 				return false;
 			}
-		}		
+		}
 	} while ( true );
 }
 
@@ -155,9 +160,9 @@ bool DisjunctionSumScorer::advanceAfterCurrent()
 	do { // repeat until minimum nr of matchers
 		currentDoc = scorerDocQueue->topDoc();
 		currentScore = scorerDocQueue->topScore();
-		
+
 		_nrMatchers = 1;
-		do { // Until all subscorers are after currentDoc 
+		do { // Until all subscorers are after currentDoc
 			if ( !scorerDocQueue->topNextAndAdjustElsePop() ) {
 				if ( --queueSize == 0 ) {
 					break; // nothing more to advance, check for last match.
@@ -167,9 +172,9 @@ bool DisjunctionSumScorer::advanceAfterCurrent()
 				break; // All remaining subscorers are after currentDoc.
 			}
 			currentScore += scorerDocQueue->topScore();
-			_nrMatchers++;	
+			_nrMatchers++;
 		} while( true );
-		
+
 		if ( _nrMatchers >= minimumNrMatchers ) {
 			return true;
 		} else if ( queueSize < minimumNrMatchers ) {
@@ -183,7 +188,7 @@ void DisjunctionSumScorer::initScorerDocQueue()
 	// No need to _CLLDELETE here since this function since this function is only called if scorerDocQueue==NULL
 	scorerDocQueue = _CLNEW ScorerDocQueue( nrScorers );
 	queueSize = 0;
-	
+
 	for ( Scorer::Vector::iterator it = subScorers.begin(); it != subScorers.end(); ++it ) {
 		// ownership isn't transfered here
 		Scorer& scorer = *it;

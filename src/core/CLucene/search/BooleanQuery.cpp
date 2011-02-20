@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
@@ -23,6 +23,8 @@
 #include "Similarity.h"
 #include "Explanation.h"
 #include "_BooleanScorer2.h"
+
+#include <assert.h>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -46,7 +48,7 @@ CL_NS_DEF(search)
 		BooleanQuery* parentQuery;
 	public:
 		BooleanWeight(Searcher* searcher,
-			CL_NS(util)::CLVector<BooleanClause*,CL_NS(util)::Deletor::Object<BooleanClause> >* clauses, 
+			CL_NS(util)::CLVector<BooleanClause*,CL_NS(util)::Deletor::Object<BooleanClause> >* clauses,
 			BooleanQuery* parentQuery);
 		virtual ~BooleanWeight();
 		Query* getQuery();
@@ -68,7 +70,7 @@ CL_NS_DEF(search)
   Weight* BooleanQuery::_createWeight(Searcher* searcher) {
 		return _CLNEW BooleanWeight(searcher, clauses,this);
 	}
-	
+
 	BooleanQuery::BooleanQuery(const BooleanQuery& clone):
 		Query(clone),
 		clauses(_CLNEW ClausesType(true)),
@@ -169,12 +171,12 @@ CL_NS_DEF(search)
 
   void BooleanQuery::setAllowDocsOutOfOrder(bool allow) {
     allowDocsOutOfOrder = allow;
-  }  
-  
+  }
+
   bool BooleanQuery::getAllowDocsOutOfOrder() {
     return allowDocsOutOfOrder;
-  }  
-  
+  }
+
 
   size_t BooleanQuery::getClauseCount() const {
     return (int32_t) clauses->size();
@@ -210,7 +212,7 @@ CL_NS_DEF(search)
       if (i != clauses->size()-1)
         buffer.append(_T(" "));
 	}
-	
+
 	if (needParens) {
 		buffer.append(_T(")"));
 	}
@@ -232,7 +234,7 @@ CL_NS_DEF(search)
 		getClauses(ret);
 		return ret;
 	}
-	
+
 	void BooleanQuery::getClauses(BooleanClause** ret) const
 	{
 		size_t size=clauses->size();
@@ -275,6 +277,15 @@ CL_NS_DEF(search)
       return this;                                // no clauses rewrote
   }
 
+    void BooleanQuery::extractTerms( TermSet * termset ) const
+    {
+		for (size_t i = 0 ; i < clauses->size(); i++)
+        {
+            BooleanClause* clause = (*clauses)[i];
+            clause->getQuery()->extractTerms( termset );
+        }
+    }
+
   Query* BooleanQuery::clone()  const{
     BooleanQuery* clone = _CLNEW BooleanQuery(*this);
     return clone;
@@ -298,8 +309,8 @@ CL_NS_DEF(search)
 	float_t BooleanWeight::getValue() { return parentQuery->getBoost(); }
 	Query* BooleanWeight::getQuery() { return (Query*)parentQuery; }
 
-	BooleanWeight::BooleanWeight(Searcher* searcher, 
-		CLVector<BooleanClause*,Deletor::Object<BooleanClause> >* clauses, BooleanQuery* parentQuery) 
+	BooleanWeight::BooleanWeight(Searcher* searcher,
+		CLVector<BooleanClause*,Deletor::Object<BooleanClause> >* clauses, BooleanQuery* parentQuery)
 	{
 		this->searcher = searcher;
 		this->similarity = parentQuery->getSimilarity( searcher );
@@ -330,7 +341,6 @@ CL_NS_DEF(search)
     void BooleanWeight::normalize(float_t norm) {
       norm *= parentQuery->getBoost();                         // incorporate boost
       for (uint32_t i = 0 ; i < weights.size(); i++) {
-        BooleanClause* c = (*clauses)[i];
         Weight* w = weights[i];
         // normalize all clauses, (even if prohibited in case of side affects)
         w->normalize(norm);
@@ -349,9 +359,8 @@ CL_NS_DEF(search)
         if (subScorer.get() != NULL)
           result->add(subScorer, c->isRequired(), c->isProhibited());
         else if (c->isRequired()) {
-					Scorer::AutoPtr empty;
-          return empty;
-				}
+          return Scorer::AutoPtr();
+        }
       }
 
       return auto_ptr_static_cast<Scorer>(result);
@@ -376,7 +385,6 @@ CL_NS_DEF(search)
 					sumExpl->addDetail(e);
 					sum += e->getValue();
 					coord++;
-					e = NULL; //prevent e from being deleted
 				} else {
 					StringBuffer buf(100);
 					buf.append(_T("match on prohibited clause ("));
@@ -537,7 +545,7 @@ CL_NS_DEF(search)
 		buffer.append( query->toString() );
 		return buffer.toString();
 	}
-	
+
 	void BooleanClause::setFields(Occur occur) {
 		if (occur == MUST) {
 			required = true;

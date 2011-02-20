@@ -2,13 +2,14 @@
 #include <boost/shared_ptr.hpp>
 #include "CLucene/store/Directory.h"
 #include "_IndexFileDeleter.h"
-#include "IndexFileNameFilter.h"
+#include "_IndexFileNameFilter.h"
 #include "Term.h"
 #include "_DocumentsWriter.h"
 #include "_SegmentHeader.h"
 #include "CLucene/LuceneThreads.h"
 #include <algorithm>
 #include <assert.h>
+#include <iostream>
 
 CL_NS_USE(store)
 CL_NS_USE(util)
@@ -92,7 +93,7 @@ void IndexFileDeleter::setInfoStream(std::ostream* infoStream) {
 }
 
 void IndexFileDeleter::message(string message) {
-	(*infoStream) << string("IFD [") << Misc::toString( (int32_t)(_LUCENE_CURRTHREADID) ) << string("]: ") << message << string("\n");
+	(*infoStream) << string("IFD [") << Misc::toString( _LUCENE_CURRTHREADID ) << string("]: ") << message << string("\n");
 }
 
 

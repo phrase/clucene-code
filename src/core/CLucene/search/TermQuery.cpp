@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
@@ -20,11 +20,13 @@
 #include "CLucene/util/StringBuffer.h"
 #include "CLucene/index/Terms.h"
 
+#include <assert.h>
+
 CL_NS_USE(index)
 CL_NS_DEF(search)
 
 
-	
+
 	class TermWeight: public Weight {
 	private:
 		Similarity* similarity; // ISH: was Searcher*, for no apparent reason
@@ -39,7 +41,7 @@ CL_NS_DEF(search)
 	public:
 		TermWeight(Searcher* searcher, TermQuery* parentQuery, CL_NS(index)::Term::Pointer _term);
 		virtual ~TermWeight();
-		
+
 		// return a *new* string describing this object
 		TCHAR* toString();
 		Query* getQuery() { return (Query*)parentQuery; }
@@ -119,12 +121,12 @@ CL_NS_DEF(search)
 	   _term.swap(term);
 	   idf = similarity->idf(_term, _searcher); // compute idf
    }
-   
+
    TermWeight::~TermWeight(){
    }
 
    //
-   TCHAR* TermWeight::toString() { 
+   TCHAR* TermWeight::toString() {
 	   int32_t size=strlen(parentQuery->getObjectName()) + 10;
 	   TCHAR* tmp = _CL_NEWARRAY(TCHAR, size);
 	   _sntprintf(tmp,size,_T("weight(%S)"),parentQuery->getObjectName());
@@ -140,16 +142,16 @@ CL_NS_DEF(search)
 	void TermWeight::normalize(float_t _queryNorm) {
 		this->queryNorm = _queryNorm;
 		queryWeight *= queryNorm;                   // normalize query weight
-		value = queryWeight * idf;                  // idf for document 
+		value = queryWeight * idf;                  // idf for document
 	}
 
 	Scorer::AutoPtr TermWeight::scorer(IndexReader* reader) {
 		TermDocs* termDocs = reader->termDocs(_term);
 		Scorer::AutoPtr result;
-		    
+
 		if (termDocs == NULL)
 			return result; // result.get() == NULL
-		    
+
 		result.reset(new TermScorer(this, termDocs, similarity, reader->norms(_term->field())));
 		return result;
 	}
@@ -188,12 +190,12 @@ CL_NS_DEF(search)
 
 		Explanation* queryNormExpl = _CLNEW Explanation(queryNorm,_T("queryNorm"));
 		queryExpl->addDetail(queryNormExpl);
-		    
+
 		queryExpl->setValue(parentQuery->getBoost()* // always 1.0 | TODO: original Java code is boostExpl.getValue()
 							idfExpl->getValue() *
 							queryNormExpl->getValue());
 		result->addDetail(queryExpl);
-		    
+
 		// explain field weight
 		const TCHAR* field = _term->field();
 		ComplexExplanation* fieldExpl = _CLNEW ComplexExplanation();
@@ -219,7 +221,7 @@ CL_NS_DEF(search)
 			_T("fieldNorm(field=%s, doc=%d)"),field,doc);
 		fieldNormExpl->setDescription(buf);
 		fieldExpl->addDetail(fieldNormExpl);
-		
+
 		fieldExpl->setMatch(tfExpl->isMatch());
 		fieldExpl->setValue(tfExpl->getValue() *
 							idfExpl->getValue() *
@@ -238,8 +240,16 @@ CL_NS_DEF(search)
 
 		return result;
 	}
-	
+
 	Weight* TermQuery::_createWeight(Searcher* _searcher) {
         return _CLNEW TermWeight(_searcher,this,term);
     }
+
+    void TermQuery::extractTerms( TermSet * termset ) const
+    {
+        if( term && termset->end() == termset->find( term ))
+            termset->insert(  term );
+    }
+
+
 CL_NS_END

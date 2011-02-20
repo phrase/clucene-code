@@ -212,7 +212,7 @@ void SegmentMerger::addIndexed(IndexReader* reader, FieldInfos* fieldInfos, Stri
 // in  merge mode, we use this FieldSelector
 class FieldSelectorMerge: public FieldSelector{
 public:
-  FieldSelectorResult accept(const TCHAR* fieldName) const{
+  FieldSelectorResult accept(const TCHAR* /*fieldName*/) const{
     return FieldSelector::LOAD_FOR_MERGE;
   }
 };
@@ -282,7 +282,7 @@ int32_t SegmentMerger::mergeFields() {
 	    tmp.clear(); reader->getFieldNames(IndexReader::UNINDEXED, tmp);
 	    if ( tmp.size() > 0 ){
 		    TCHAR** arr = _CL_NEWARRAY(TCHAR*,tmp.size()+1);
-		    tmp.toArray(arr, true);
+            tmp.toArray_nullTerminated(arr);
 		    fieldInfos->add((const TCHAR**)arr, false);
 		    _CLDELETE_ARRAY(arr); //no need to delete the contents, since tmp is responsible for it
 	    }
@@ -400,10 +400,10 @@ void SegmentMerger::mergeVectors(){
 					continue;
 
 				ArrayBase<TermFreqVector*>* tmp = reader->getTermFreqVectors(docNum);
-        if ( tmp != NULL ){
+//        if ( tmp != NULL ){
 					termVectorsWriter->addAllDocVectors(tmp);
 				  _CLLDELETE(tmp);
-        }
+//        }
           if (checkAbort != NULL)
             checkAbort->work(300);
 			}
@@ -517,7 +517,7 @@ void SegmentMerger::mergeTermInfos(){
     }
 
 	  //Instantiate an array of SegmentMergeInfo instances called match
-    SegmentMergeInfo** match = _CL_NEWARRAY(SegmentMergeInfo*,readers.size()+1);
+    SegmentMergeInfo** match = _CL_NEWARRAY(SegmentMergeInfo*,readers.size());
 
     //Condition check to see if match points to a valid instance
     CND_CONDITION(match != NULL, "Memory allocation for match failed")	;
@@ -549,7 +549,6 @@ void SegmentMerger::mergeTermInfos(){
         //Get the next SegmentMergeInfo
         top = queue->top();
       }
-		  match[matchSize]=NULL;
       int32_t df = mergeTermInfo(match, matchSize);		  // add new TermInfo
       if (checkAbort != NULL)
         checkAbort->work(df/3.0);
@@ -637,9 +636,9 @@ int32_t SegmentMerger::appendPostings(SegmentMergeInfo** smis, int32_t n){
   SegmentMergeInfo* smi = NULL;
 
   //Iterate through all SegmentMergeInfo instances in smis
-  int32_t i = 0;
-  while ( (smi=smis[i]) != NULL ){
+  for ( int32_t i=0;i<n;i++ ){
     //Get the i-th SegmentMergeInfo
+    smi = smis[i];
 
     //Condition check to see if smi points to a valid instance
     CND_PRECONDITION(smi!=NULL,"	 is NULL");
@@ -690,7 +689,7 @@ int32_t SegmentMerger::appendPostings(SegmentMergeInfo** smis, int32_t n){
         freqOutput->writeVInt(freq);
       }
 
-      /** See {@link DocumentWriter#writePostings(Posting[], String) for
+      /** See {@link DocumentWriter#writePostings(Posting[], String)} for
       *  documentation about the encoding of positions and payloads
       */
       int32_t lastPosition = 0;
@@ -721,8 +720,6 @@ int32_t SegmentMerger::appendPostings(SegmentMergeInfo** smis, int32_t n){
         lastPosition = position;
       }
     }
-
-    i++;
   }
 
   //Return total number of documents across all segments where term was found

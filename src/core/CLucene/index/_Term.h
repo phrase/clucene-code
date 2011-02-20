@@ -32,16 +32,5 @@ public:
 	}
 };
 
-class Term_UnorderedCompare:LUCENE_BASE, public CL_NS(util)::Compare::_base //<Term*>
-{
-public:
-	bool operator() (const Term::Pointer& t1, const Term::Pointer& t2) const {
-		return ( t1->hashedCompareTo(t2) < 0 );
-	}
-	size_t operator() (const Term::Pointer& t) const {
-		return t->hashCode();
-	}
-};
-
 CL_NS_END
 #endif

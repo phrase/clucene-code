@@ -13,8 +13,20 @@ SOURCE_GROUP("document" ./document/*)
 SOURCE_GROUP("index" ./index/*)
 SOURCE_GROUP("queryParser" ./queryParser/*)
 SOURCE_GROUP("search" ./search/*)
+SOURCE_GROUP("search-spans" ./search/spans/*)
 SOURCE_GROUP("store" ./store/*)
 SOURCE_GROUP("util" ./util/*)
+
+IF ( BUILD_CONTRIBS_LIB )
+    SET(test_contribs_lib_files ./contribs-lib/analysis/de/TestGermanStemFilter.cpp)
+    SET(EXTRA_LIBS ${EXTRA_LIBS} clucene-contribs-lib)
+    ADD_DEFINITIONS(-DTEST_CONTRIB_LIBS)
+    INCLUDE_DIRECTORIES(${clucene-test_SOURCE_DIR} ${clucene-contribs-lib_SOURCE_DIR})
+	
+    SOURCE_GROUP("contribs-lib" REGULAR_EXPRESSION ./contribs-lib/*)
+    SOURCE_GROUP("contribs-lib\\analysis" REGULAR_EXPRESSION ./contribs-lib/analysis/*)
+    SOURCE_GROUP("contribs-lib\\analysis\\de" FILES ${test_contribs_lib_files})
+ENDIF ( BUILD_CONTRIBS_LIB )
 
 file(GLOB_RECURSE test_HEADERS ${CMAKE_SOURCE_DIR}/test/*.h)
 
@@ -26,10 +38,14 @@ SET(test_files ./tests.cpp
 ./analysis/TestAnalysis.cpp
 ./analysis/TestAnalyzers.cpp
 ./debug/TestError.cpp
+./document/TestDateTools.cpp
 ./document/TestDocument.cpp
 ./document/TestNumberTools.cpp
-./document/TestDateTools.cpp
+./document/TestField.cpp
 ./store/TestStore.cpp
+./store/MockRAMDirectory.cpp
+./search/MockScorer.h
+./search/MockHitCollector.h
 ./search/TestBoolean.cpp
 ./search/TestDateFilter.cpp
 ./search/TestForDuplicates.cpp
@@ -39,15 +55,47 @@ SET(test_files ./tests.cpp
 ./search/TestSort.cpp
 ./search/TestWildcard.cpp
 ./search/TestTermVector.cpp
+./search/TestExtractTerms.cpp
+./search/TestConstantScoreRangeQuery.cpp
+./search/TestIndexSearcher.cpp
+./index/IndexWriter4Test.cpp
+./search/BaseTestRangeFilter.h
+./search/BaseTestRangeFilter.cpp
+./search/QueryUtils.h
+./search/QueryUtils.cpp
+./search/CheckHits.h
+./search/CheckHits.cpp
+./search/TestExplanations.cpp
+./search/TestExplanations.h
+./search/spans/TestSpans.h
+./search/spans/TestSpans.cpp
+./search/spans/TestSpanQueries.cpp
+./search/spans/TestBasics.h
+./search/spans/TestBasics.cpp
+./search/spans/TestSpansAdvanced.cpp
+./search/spans/TestSpansAdvanced.h
+./search/spans/TestSpansAdvanced2.cpp
+./search/spans/TestSpansAdvanced2.h
+./search/spans/TestNearSpansOrdered.cpp
+./search/spans/TestNearSpansOrdered.h
+./search/spans/TestSpanExplanations.cpp
+./search/spans/TestSpanExplanations.h
+./search/spans/TestSpanExplanationsOfNonMatches.cpp
+./search/spans/TestSpanExplanationsOfNonMatches.h
 ./index/TestIndexModifier.cpp
 ./index/TestIndexWriter.cpp
-#./index/TestIndexModifier.cpp
+./index/TestIndexModifier.cpp
 ./index/TestIndexReader.cpp
 ./index/TestThreading.cpp
 ./index/TestUtf8.cpp
 ./index/TestHighFreqTerms.cpp
 ./index/TestReuters.cpp
+./index/TestAddIndexesNoOptimize.cpp
+./index/TestTermVectorsReader.cpp
+./index/store/TestRAMDirectory.cpp
 ./util/TestPriorityQueue.cpp
+./util/TestBitSet.cpp
+./util/TestStringBuffer.cpp
 ./util/English.cpp
 ${test_HEADERS}
 )
@@ -56,7 +104,7 @@ IF ( USE_SHARED_OBJECT_FILES )
 ENDIF ( USE_SHARED_OBJECT_FILES )
 
 #todo: do glob header and include header files for IDE.
-ADD_EXECUTABLE(cl_test EXCLUDE_FROM_ALL ${clucene_shared_Files} ${test_files} )
+ADD_EXECUTABLE(cl_test EXCLUDE_FROM_ALL ${clucene_shared_Files} ${test_files} ${test_contribs_lib_files})
 
 #link the executable against the releavent clucene-shared library (if we aren't using the object files)
 IF ( NOT USE_SHARED_OBJECT_FILES )
@@ -192,6 +240,21 @@ ADD_CUSTOM_TARGET(test-all
 )
 
 ENDIF ( ENABLE_COMPILE_TESTS )
+
+############################
+
+IF ( BUILD_STATIC_LIBRARIES )
+PROJECT(clucene-test-static)
+
+ADD_EXECUTABLE(cl_test-static EXCLUDE_FROM_ALL ${clucene_shared_Files} ${test_files} )
+
+IF ( UNIX )
+	TARGET_LINK_LIBRARIES(cl_test-static clucene-core-static clucene-shared-static pthread ${EXTRA_LIBS})
+ELSE ()
+	TARGET_LINK_LIBRARIES(cl_test-static clucene-core-static clucene-shared-static ${EXTRA_LIBS})
+ENDIF ( UNIX )
+
+ENDIF ( BUILD_STATIC_LIBRARIES )
 
 ############################
 

@@ -18,12 +18,12 @@
 
 CL_NS_DEF(store)
 
-	class RAMFile:LUCENE_BASE {
+	class CLUCENE_EXPORT RAMFile:LUCENE_BASE {
 	private:
 		struct RAMFileBuffer:LUCENE_BASE {
 			uint8_t* _buffer; size_t _len;
 			RAMFileBuffer(uint8_t* buf = NULL, size_t len=0) : _buffer(buf), _len(len) {};
-			~RAMFileBuffer() { _CLDELETE_LARRAY(_buffer); };
+			virtual ~RAMFileBuffer() { _CLDELETE_LARRAY(_buffer); };
 		};
 
 
@@ -31,22 +31,23 @@ CL_NS_DEF(store)
 
 
 		int64_t length;
-		RAMDirectory* directory;
 		int64_t sizeInBytes;                  // Only maintained if in a directory; updates synchronized on directory
 
 		// This is publicly modifiable via Directory::touchFile(), so direct access not supported
 		uint64_t lastModified;
 
+	protected:
+		RAMDirectory* directory;
 
 	public:
-    DEFINE_MUTEX(THIS_LOCK)
+		DEFINE_MUTEX(THIS_LOCK)
 
     #ifdef _DEBUG
 		const char* filename;
     #endif
 		// File used as buffer, in no RAMDirectory
 		RAMFile( RAMDirectory* directory=NULL );
-		~RAMFile();
+		virtual ~RAMFile();
 		
 		// For non-stream access from thread that might be concurrent with writing
 		int64_t getLength();
@@ -63,10 +64,11 @@ CL_NS_DEF(store)
 		uint8_t* newBuffer( const int32_t size );
 		
 		int64_t getSizeInBytes() const;
+
+		friend class RAMDirectory;
 	};
 
-
-	class RAMOutputStream: public IndexOutput {		
+	class CLUCENE_EXPORT RAMOutputStream: public IndexOutput {
 	protected:
 		RAMFile* file;
 		bool deleteFile;
@@ -107,12 +109,12 @@ CL_NS_DEF(store)
   	int64_t getFilePointer() const;
     	
 		const char* getObjectName();
-		static const char* getClassName();   	
+		static const char* getClassName();
    	
 	};
 	typedef RAMOutputStream RAMIndexOutput; //deprecated
 
-	class RAMInputStream:public IndexInput {				
+	class CLUCENE_EXPORT RAMInputStream:public IndexInput {
 	private:
 		RAMFile* file;
 		int64_t _length;
@@ -134,16 +136,16 @@ CL_NS_DEF(store)
 		LUCENE_STATIC_CONSTANT(int32_t,BUFFER_SIZE=RAMOutputStream::BUFFER_SIZE);
 
 		RAMInputStream(RAMFile* f);
-		~RAMInputStream();
+		virtual ~RAMInputStream();
 		IndexInput* clone() const;
 
 		void close();
 		int64_t length() const;
 		
-		inline uint8_t readByte();
+		uint8_t readByte();
 		void readBytes( uint8_t* dest, const int32_t len );
 		
-		inline int64_t getFilePointer() const;
+		int64_t getFilePointer() const;
 		
 		void seek(const int64_t pos);
 		const char* getDirectoryType() const;

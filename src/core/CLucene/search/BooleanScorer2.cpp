@@ -134,10 +134,10 @@ public:
 		_CLTHROWA(CL_ERR_UnsupportedOperation, "UnsupportedOperationException: BooleanScorer2::NonMatchingScorer::score");
 		return 0.0;
 	}
-	bool skipTo( int32_t target ) { return false; }
+	bool skipTo( int32_t /*target*/ ) { return false; }
 	virtual TCHAR* toString() { return stringDuplicate(_T("NonMatchingScorer")); }
 
-	Explanation* explain( int32_t doc ) {
+	Explanation* explain( int32_t /*doc*/ ) {
 		Explanation* e = _CLNEW Explanation();
 		e->setDescription(_T("No document matches."));
 		return e;
@@ -574,12 +574,17 @@ public:
 		minNrShouldMatch(_minNrShouldMatch),
 		allowDocsOutOfOrder(_allowDocsOutOfOrder)
 	{
-		if ( minNrShouldMatch < 0 ) {
+		if ( _minNrShouldMatch < 0 ) {
       _CLTHROWA(CL_ERR_IllegalArgument, "Minimum number of optional scorers should not be negative");
 		}
 	}
 	~Internal() {
 		// empty
+		/* TODO: these leak memory... haven't figure out how it should be fixed though...
+		requiredScorers.clear();
+		optionalScorers.clear();
+		prohibitedScorers.clear();
+		*/
 	}
 
 };
@@ -629,7 +634,7 @@ void BooleanScorer2::score( HitCollector* hc )
 
 		// Ownership is transfered from probibitedScorers to bs
 		si = _internal->prohibitedScorers.begin();
-		while ( si != _internal->prohibitedScorers.begin() ) {
+		while ( si != _internal->prohibitedScorers.end() ) {
 			Scorer::AutoPtr scorer(_internal->prohibitedScorers.release(si).release());
 			bs->add(scorer, false /* required */, true /* prohibited */ );
 		}
@@ -677,7 +682,7 @@ TCHAR* BooleanScorer2::toString()
 	return stringDuplicate(_T("BooleanScorer2"));
 }
 
-Explanation* BooleanScorer2::explain( int32_t doc )
+Explanation* BooleanScorer2::explain( int32_t /*doc*/ )
 {
 	_CLTHROWA(CL_ERR_UnsupportedOperation,"UnsupportedOperationException: BooleanScorer2::explain");
 	/* How to explain the coordination factor?

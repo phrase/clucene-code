@@ -84,6 +84,12 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 	
 	TermDocs* termDocs = reader->termDocs();
 	
+  #define CLEANUP \
+    termDocs->close(); \
+    _CLLDELETE( termDocs ); \
+    enumerator->close(); \
+    _CLLDELETE( enumerator )
+    
 	try
 	{
 		do
@@ -119,15 +125,13 @@ BitSet* RangeFilter::bits( IndexReader* reader )
 			}
 		}
 		while (term);
+		_CLDELETE(bts);
+	} catch (CLuceneError& err) {
+		CLEANUP;
+		throw err;
 	}
-	_CLFINALLY
-	(
-		termDocs->close();
-		_CLLDELETE(termDocs);
-		enumerator->close();
-		_CLLDELETE( enumerator );
-	);
-	
+	CLEANUP;
+
 	return bts;
 }
 

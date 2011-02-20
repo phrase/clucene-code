@@ -37,6 +37,8 @@ CL_NS_DEF(util)
    void appendFloat(const float_t value, const size_t digits);
    ///Appends a Lucene boost, formatted in the format used in the toString() functions; replaces JL's ToStringUtils::boost
    void appendBoost(const float_t boost);
+   ///Appends a bool in the same way as java StringBuffer does (i.e. "true", "false" )
+   void appendBool(const bool value);
    ///Puts a copy of the string value in front of the current string in the StringBuffer
    void prepend(const TCHAR* value);
    ///Puts a copy of the string value in front of the current string in the StringBuffer
@@ -52,6 +54,17 @@ CL_NS_DEF(util)
        appendInt(value);
        return *this;
    }
+
+   void setCharAt(size_t pos, const TCHAR chr);
+   TCHAR charAt(size_t pos);
+
+   void insert(const size_t pos, TCHAR chr);
+   void insert(const size_t pos, const TCHAR* chrs, size_t length = -1);
+   void deleteCharAt(size_t pos);
+   void deleteChars(size_t start, size_t end);
+
+   void toLower();
+   bool substringEquals(size_t start, size_t end, const TCHAR* str, size_t length = -1) const;
 
    ///Contains the length of string in the StringBuffer
    ///Public so that analyzers can edit the length directly

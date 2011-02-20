@@ -129,7 +129,7 @@ TokenStream* TokenSources::getTokenStream(TermPositionVector* tpv, bool tokenPos
                 unsortedTokens=_CLNEW CLSetList<Token*,TokenOrderCompare>(false);
             for (int32_t tp=0; tp < offsets->length; tp++)
             {
-                unsortedTokens->insert(_CLNEW Token((*terms)[t],
+                unsortedTokens->insert(_CLNEW Token(terms->values[t],
                     (*offsets)[tp]->getStartOffset(),
                     (*offsets)[tp]->getEndOffset()));
             }
@@ -144,7 +144,7 @@ TokenStream* TokenSources::getTokenStream(TermPositionVector* tpv, bool tokenPos
             //tokens stored with positions - can use this to index straight into sorted array
             for (int32_t tp = 0; tp < pos->length; tp++)
             {
-                tokensInOriginalOrder[(*pos)[tp]]=_CLNEW Token((*terms)[t],
+                tokensInOriginalOrder[(*pos)[tp]]=_CLNEW Token(terms->values[t],
                         (*offsets)[tp]->getStartOffset(),
 						(*offsets)[tp]->getEndOffset());
             }                
@@ -158,7 +158,7 @@ TokenStream* TokenSources::getTokenStream(TermPositionVector* tpv, bool tokenPos
 			tokensInOriginalOrder = _CL_NEWARRAY(Token*,unsortedTokens->size()+1);
 		}
 		//the list has already sorted our items //todo:check that this is true...
-		unsortedTokens->toArray(tokensInOriginalOrder, true);
+		unsortedTokens->toArray_nullTerminated(tokensInOriginalOrder);
 		
 		return _CLNEW StoredTokenStream(tokensInOriginalOrder,unsortedTokens->size());
     }else

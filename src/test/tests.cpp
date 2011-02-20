@@ -7,16 +7,20 @@
 #include "test.h"
 
 unittest tests[] = {
-    //{"threads", testatomicupdates},
+    {"threads", testatomicupdates},
     {"indexreader", testindexreader},
+    {"indexsearcher", testIndexSearcher},
     {"reuters", testreuters},
     {"analysis", testanalysis},
     {"analyzers", testanalyzers},
     {"document", testdocument},
+    {"field", testField},
     {"numbertools", testNumberTools},
     {"debug", testdebug},
+    {"ramdirectory", testRAMDirectory},
     {"indexwriter", testindexwriter},
     {"indexmodifier", testIndexModifier},
+    {"addIndexesNoOptimize", testAddIndexesNoOptimize},
     {"highfreq", testhighfreq},
     {"priorityqueue", testpriorityqueue},
     {"datetools", testDateTools},
@@ -26,6 +30,7 @@ unittest tests[] = {
     {"search", testsearch},
     {"rangefilter", testRangeFilter},
     {"queries", testqueries},
+    {"csrqueries", testConstantScoreQueries},
     {"termvector",testtermvector},
     {"sort",testsort},
     {"duplicates", testduplicates},
@@ -33,5 +38,13 @@ unittest tests[] = {
     {"wildcard", testwildcard},
     {"store", teststore},
     {"utf8", testutf8},
+    {"bitset", testBitSet},
+    {"extractterms",testExtractTerms},
+    {"spanqueries",testSpanQueries},
+    {"stringbuffer", testStringBuffer},
+    {"termvectorsreader",testTermVectorsReader},
+#ifdef TEST_CONTRIB_LIBS
+    {"germananalyzer", testGermanAnalyzer},
+#endif
     {"LastTest", NULL}
 };

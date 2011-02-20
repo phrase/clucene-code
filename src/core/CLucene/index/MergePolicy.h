@@ -377,7 +377,7 @@ protected:
 
 /** This is a {@link LogMergePolicy} that measures size of a
  *  segment as the total byte size of the segment's files. */
-class LogByteSizeMergePolicy: public LogMergePolicy {
+class CLUCENE_EXPORT LogByteSizeMergePolicy: public LogMergePolicy {
 protected:
   int64_t size(SegmentInfo* info);
 

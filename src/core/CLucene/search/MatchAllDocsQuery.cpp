@@ -10,6 +10,7 @@
 #include "Explanation.h"
 #include <boost/shared_ptr.hpp>
 #include "CLucene/index/Term.h"
+#include "SearchHeader.h"
 #include "Searchable.h"
 
 #include "CLucene/store/Directory.h"
@@ -17,6 +18,55 @@
 #include "CLucene/util/StringBuffer.h"
 
 CL_NS_DEF(search)
+
+class MatchAllDocsQuery::MatchAllDocsWeight : public Weight {
+private:
+    Similarity* similarity;
+    float_t queryWeight;
+    float_t queryNorm;
+    MatchAllDocsQuery* parentQuery;
+
+public:
+    MatchAllDocsWeight(MatchAllDocsQuery* enclosingInstance, Searcher* searcher);
+    virtual ~MatchAllDocsWeight(){}
+
+    virtual TCHAR* toString();
+
+    Query* getQuery();
+
+    float_t getValue();
+
+    float_t sumOfSquaredWeights();
+
+    void normalize(float_t _queryNorm);
+
+    Scorer::AutoPtr scorer(CL_NS(index)::IndexReader* reader);
+
+    Explanation* explain(CL_NS(index)::IndexReader* reader, int32_t doc);
+};
+
+class MatchAllDocsQuery::MatchAllScorer : public Scorer {
+    CL_NS(index)::IndexReader* reader;
+    int32_t id;
+    int32_t maxId;
+    float_t _score;
+
+public:
+    MatchAllScorer(CL_NS(index)::IndexReader* _reader, Similarity* similarity, Weight* w);
+    virtual ~MatchAllScorer(){}
+
+    Explanation* explain(int32_t doc);
+
+    int32_t doc() const;
+
+    bool next();
+
+    float_t score();
+
+    bool skipTo(int32_t target);
+
+    virtual TCHAR* toString();
+};
 
 MatchAllDocsQuery::MatchAllScorer::MatchAllScorer(CL_NS(index)::IndexReader* _reader, Similarity* similarity, Weight* w)
 			:Scorer(similarity),reader(_reader),id(-1)
@@ -57,7 +107,8 @@ TCHAR* MatchAllDocsQuery::MatchAllScorer::toString(){
 	return stringDuplicate(_T("MatchAllScorer"));
 }
 
-MatchAllDocsQuery::MatchAllDocsWeight::MatchAllDocsWeight(MatchAllDocsQuery* enclosingInstance, Searcher* searcher):parentQuery(enclosingInstance){
+MatchAllDocsQuery::MatchAllDocsWeight::MatchAllDocsWeight(MatchAllDocsQuery* enclosingInstance, Searcher* searcher):
+		parentQuery(enclosingInstance){
 	this->similarity = searcher->getSimilarity();
 }
 
@@ -92,8 +143,7 @@ void MatchAllDocsQuery::MatchAllDocsWeight::normalize(float_t _queryNorm) {
 }
 
 Scorer::AutoPtr MatchAllDocsQuery::MatchAllDocsWeight::scorer(CL_NS(index)::IndexReader* reader) {
-	Scorer::AutoPtr result(new MatchAllScorer(reader, similarity, this));
-	return result;
+	return Scorer::AutoPtr(new MatchAllScorer(reader, similarity, this));
 }
 
 Explanation* MatchAllDocsQuery::MatchAllDocsWeight::explain(CL_NS(index)::IndexReader* reader, int32_t doc) {
@@ -106,9 +156,7 @@ Explanation* MatchAllDocsQuery::MatchAllDocsWeight::explain(CL_NS(index)::IndexR
 	return queryExpl;
 }
 
-MatchAllDocsQuery::MatchAllDocsQuery(){
-}
-
+MatchAllDocsQuery::MatchAllDocsQuery(){}
 MatchAllDocsQuery::~MatchAllDocsQuery(){}
 
 Weight* MatchAllDocsQuery::_createWeight(Searcher* searcher){
@@ -122,18 +170,24 @@ const char* MatchAllDocsQuery::getObjectName() const{
 	return getClassName();
 }
 
-TCHAR* MatchAllDocsQuery::toString(const TCHAR* field) const{
+TCHAR* MatchAllDocsQuery::toString(const TCHAR* /*field*/) const{
 	CL_NS(util)::StringBuffer buffer(25);
     buffer.append(_T("MatchAllDocsQuery"));
     buffer.appendBoost(getBoost());
     return buffer.giveBuffer();
 }
 
-MatchAllDocsQuery::MatchAllDocsQuery(const MatchAllDocsQuery& clone){
+MatchAllDocsQuery::MatchAllDocsQuery(const MatchAllDocsQuery& clone):
+  Query(clone)
+{
 }
 
 Query* MatchAllDocsQuery::clone() const{
 	return _CLNEW MatchAllDocsQuery(*this);
+}
+
+void MatchAllDocsQuery::extractTerms( TermSet * termset ) const
+{
 }
 
 bool MatchAllDocsQuery::equals(Query* o) const{

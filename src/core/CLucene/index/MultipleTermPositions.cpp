@@ -9,9 +9,7 @@
 #include "Term.h"
 #include "CLucene/store/Directory.h"
 #include "MultipleTermPositions.h"
-
 #include "IndexReader.h"
-
 #include "CLucene/util/Array.h"
 #include "CLucene/util/PriorityQueue.h"
 
@@ -19,6 +17,38 @@ CL_NS_USE(util)
 
 CL_NS_DEF(index)
 
+void MultipleTermPositions::seek(const Term::Pointer&) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
+}
+
+void MultipleTermPositions::seek(TermEnum*) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::seek");
+}
+
+int32_t MultipleTermPositions::read(int32_t*, int32_t*,int32_t) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::read");
+}
+
+int32_t MultipleTermPositions::getPayloadLength() const {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::getPayloadLength");
+}
+
+uint8_t* MultipleTermPositions::getPayload(uint8_t*) {
+	_CLTHROWA(CL_ERR_UnsupportedOperation, "Unsupported operation: MultipleTermPositions::getPayload");
+}
+
+bool MultipleTermPositions::isPayloadAvailable() const{
+	return false;
+} 
+
+TermDocs* MultipleTermPositions::__asTermDocs(){ 
+	return (TermDocs*)this; 
+}
+TermPositions* MultipleTermPositions::__asTermPositions(){ 
+	return (TermPositions*)this; 
+}
+
+	
 class MultipleTermPositions::TermPositionsQueue : public CL_NS(util)::PriorityQueue<TermPositions*,
 	CL_NS(util)::Deletor::Object<TermPositions> > {
 public:
@@ -29,6 +59,9 @@ public:
 			while (termPositions[i]!=NULL) {
 				if (termPositions[i]->next())
 					put(termPositions[i]);
+                else
+                    _CLDELETE( termPositions[ i ] );
+
 				++i;
 			}
 		}
@@ -93,9 +126,15 @@ MultipleTermPositions::MultipleTermPositions(IndexReader* indexReader, const Ter
 	}
 
 	TermPositions** tps = _CL_NEWARRAY(TermPositions*, terms->size() + 1); // i == tpsSize
-	termPositions.toArray(tps, true);
+	termPositions.toArray_nullTerminated(tps);
 
 	_termPositionsQueue = _CLNEW TermPositionsQueue(tps, terms->size());
+	_CLDELETE_LARRAY(tps);
+}
+
+MultipleTermPositions::~MultipleTermPositions() {
+	_CLLDELETE(_termPositionsQueue);
+	_CLLDELETE(_posList);
 }
 
 bool MultipleTermPositions::next() {
@@ -117,6 +156,7 @@ bool MultipleTermPositions::next() {
 		else {
 			_termPositionsQueue->pop();
 			tp->close();
+			_CLLDELETE(tp);
 		}
 	} while (_termPositionsQueue->size() > 0 && _termPositionsQueue->peek()->doc() == _doc);
 
@@ -135,8 +175,10 @@ bool MultipleTermPositions::skipTo(int32_t target) {
 		TermPositions* tp = _termPositionsQueue->pop();
 		if (tp->skipTo(target))
 			_termPositionsQueue->put(tp);
-		else
+		else {
 			tp->close();
+			_CLLDELETE(tp);
+		}
 	}
 	return next();
 }
@@ -150,8 +192,11 @@ int32_t MultipleTermPositions::freq() const {
 }
 
 void MultipleTermPositions::close() {
-	while (_termPositionsQueue->size() > 0)
-		_termPositionsQueue->pop()->close();
+	while (_termPositionsQueue->size() > 0) {
+		TermPositions* tp = _termPositionsQueue->pop();
+		tp->close();
+		_CLLDELETE(tp);
+	}
 }
 
 CL_NS_END

@@ -15,6 +15,7 @@
 
 CL_CLASS_DEF(analysis,Analyzer)
 CL_CLASS_DEF(analysis,Token)
+CL_CLASS_DEF(analysis,TokenStream)
 CL_CLASS_DEF(document,Field)
 CL_CLASS_DEF(store,IndexOutput)
 CL_CLASS_DEF(document,Document)
@@ -124,7 +125,7 @@ public:
  */
 class DocumentsWriter {
 public:
-  
+
   // Number of documents a delete term applies to.
   class Num {
   private:
@@ -205,7 +206,7 @@ private:
    * we use this when tokenizing the string value from a
    * Field. */
   typedef CL_NS(util)::StringReader ReusableStringReader;
-  	
+
   class ByteBlockPool;
   class CharBlockPool;
 	class FieldMergeState;
@@ -238,12 +239,12 @@ private:
     int64_t length() const;
     void seek(const int64_t pos);
     void close();
-	
+
 	  IndexInput* clone() const;
 	  const char* getDirectoryType() const;
 	  const char* getObjectName() const;
 	  static const char* getClassName();
-    
+
     friend class FieldMergeState;
   };
 
@@ -379,7 +380,7 @@ private:
       ThreadState* threadState;
 
       int32_t fieldCount;
-	    CL_NS(util)::ValueArray<CL_NS(document)::Field*> docFields;
+	  CL_NS(util)::ValueArray<CL_NS(document)::Field*> docFields;
 
       FieldData* next;
 
@@ -691,7 +692,7 @@ private:
     friend class DocumentsWriter::FieldMergeState;
     friend class DocumentsWriter::ByteSliceReader;
   };
-  
+
   class CharBlockPool: public BlockPool<TCHAR>{
   public:
     CharBlockPool(DocumentsWriter* _parent);
@@ -708,7 +709,7 @@ private:
     int32_t newSlice(const int32_t size);
     int32_t allocSlice(uint8_t* slice, const int32_t upto);
     void reset();
-    	
+
     friend class DocumentsWriter::ThreadState;
   };
 
@@ -805,7 +806,7 @@ public:
   std::string closeDocStore();
 
   const std::vector<std::string>* abortedFiles();
-  
+
   /* Returns list of files in use by this instance,
    * including any flushed segments. */
   const std::vector<std::string>& files();

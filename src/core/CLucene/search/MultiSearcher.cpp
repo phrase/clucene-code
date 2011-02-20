@@ -25,7 +25,6 @@ CL_NS_USE(document)
 
 CL_NS_DEF(search)
 
-
     class MultiHitCollector: public HitCollector{
     private:
       HitCollector* results;
@@ -58,6 +57,12 @@ CL_NS_DEF(search)
     _CLDELETE_ARRAY(starts);
   }
 
+	int32_t* MultiSearcher::getStarts() {
+		return starts;
+	}
+	int32_t MultiSearcher::getLength() {
+		return searchablesLen;
+	}
 
   // inherit javadoc
   void MultiSearcher::close() {

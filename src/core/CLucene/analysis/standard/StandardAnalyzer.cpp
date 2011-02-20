@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
@@ -30,7 +30,7 @@ CL_NS_DEF2(analysis,standard)
 	{
 		StopFilter::fillStopTable( stopSet,stopWords );
 	}
-	
+
 	StandardAnalyzer::StandardAnalyzer(const char* stopwordsFile, const char* enc):
 		stopSet(_CLNEW CLTCSetList(true)), maxTokenLength(DEFAULT_MAX_TOKEN_LENGTH)
 	{
@@ -38,14 +38,14 @@ CL_NS_DEF2(analysis,standard)
 			enc = "ASCII";
 		WordlistLoader::getWordSet(stopwordsFile, enc, stopSet);
 	}
-	
+
 	StandardAnalyzer::StandardAnalyzer(CL_NS(util)::Reader* stopwordsReader, const bool _bDeleteReader):
 		stopSet(_CLNEW CLTCSetList(true)), maxTokenLength(DEFAULT_MAX_TOKEN_LENGTH)
 	{
 		WordlistLoader::getWordSet(stopwordsReader, stopSet, _bDeleteReader);
 	}
 
-        class StandardAnalyzer::SavedStreams {
+        class StandardAnalyzer::SavedStreams : public TokenStream {
         public:
             StandardTokenizer* tokenStream;
             TokenStream* filteredTokenStream;
@@ -53,6 +53,9 @@ CL_NS_DEF2(analysis,standard)
             SavedStreams():tokenStream(NULL), filteredTokenStream(NULL)
             {
             }
+
+            void close(){}
+            Token* next(Token* token) {return NULL;}
         };
 
 	StandardAnalyzer::~StandardAnalyzer(){
@@ -61,7 +64,8 @@ CL_NS_DEF2(analysis,standard)
 		_CLLDELETE(stopSet);
 	}
 
-	TokenStream* StandardAnalyzer::tokenStream(const TCHAR* fieldName, Reader* reader) 
+
+	TokenStream* StandardAnalyzer::tokenStream(const TCHAR* /*fieldName*/, Reader* reader)
 	{
 		BufferedReader* bufferedReader = reader->__asBufferedReader();
 		TokenStream* ret;

@@ -26,11 +26,10 @@ CL_NS_DEF(store)
 		typedef boost::shared_ptr<RAMDirectory> SharedPtr;
 		/** Shared pointer is default pointer */
 		typedef SharedPtr Pointer;
-	private:
+	protected:
 		typedef CL_NS(util)::CLHashMap<char*,RAMFile*,
 				CL_NS(util)::Compare::Char, CL_NS(util)::Equals::Char,
 				CL_NS(util)::Deletor::acArray , CL_NS(util)::Deletor::Object<RAMFile> > FileMap;
-	protected:
 		/// Removes an existing file in the directory.
 		virtual bool doDeleteFile(const char* name);
 

@@ -209,7 +209,7 @@ public:
 	}
 };
 
-Query* MultiPhraseQuery::rewrite(IndexReader* reader) {
+Query* MultiPhraseQuery::rewrite(IndexReader* /*reader*/) {
 	if (termArrays->size() == 1) {                 // optimize one-term case
 		Term::Vector* terms = termArrays->at(0);
 		BooleanQuery* boq = _CLNEW BooleanQuery(true);
@@ -221,6 +221,20 @@ Query* MultiPhraseQuery::rewrite(IndexReader* reader) {
 	} else {
 	  return this;
 	}
+}
+
+void MultiPhraseQuery::extractTerms( TermSet * termset ) const
+{
+    for( size_t i = 0; i < termArrays->size(); i++ )
+    {
+        Term::Vector* terms = termArrays->at( i );
+        for( size_t j=0; j < terms->size(); j++ )
+        {
+            Term::Pointer pTerm = (*terms)[ j ];
+            if( pTerm && termset->end() == termset->find( pTerm ))
+                termset->insert( pTerm );
+        }
+    }
 }
 
 MultiPhraseQuery::MultiPhraseQuery():
@@ -235,10 +249,46 @@ MultiPhraseQuery::MultiPhraseQuery():
 	>;
 }
 
+MultiPhraseQuery::MultiPhraseQuery( const MultiPhraseQuery& clone ):
+    Query(clone)
+{
+    this->field = clone.field ? STRDUP_TtoT( clone.field ) : NULL;
+    this->slop  = clone.slop;
+
+    this->termArrays = _CLNEW CLArrayList<
+        Term::Vector*,
+        Deletor::Object<Term::Vector>
+    >;
+    this->positions  = _CLNEW CL_NS(util)::CLVector<int32_t,CL_NS(util)::Deletor::DummyInt32>();
+
+    size_t size = clone.positions->size();
+    for( size_t i = 0; i < size; i++ )
+    {
+        int32_t n = (*clone.positions)[i];
+        this->positions->push_back( n );
+    }
+
+    size = clone.termArrays->size();
+    for( size_t j = 0; j < size; j++ )
+    {
+        Term::Vector* termsToClone = (*clone.termArrays)[ j ];
+        Term::Vector* terms = _CLNEW Term::Vector( termsToClone->size() );
+        for( Term::Vector::size_type t = 0; t < termsToClone->size(); t++ )
+            (*terms)[ t ] = (*termsToClone)[ t ];
+
+        this->termArrays->push_back( terms );
+    }
+}
+
 MultiPhraseQuery::~MultiPhraseQuery() {
 	_CLLDELETE(termArrays);
 	_CLLDELETE(positions);
-	_CLDELETE_CARRAY(field);
+	_CLDELETE_LCARRAY(field);
+}
+
+Query * MultiPhraseQuery::clone() const
+{
+    return _CLNEW MultiPhraseQuery( *this );
 }
 
 void MultiPhraseQuery::setSlop(const int32_t s) { slop = s; }
@@ -274,6 +324,9 @@ void MultiPhraseQuery::add(const Term::Vector* _terms, const int32_t position) {
 	termArrays->push_back(terms);
 	positions->push_back(position);
 }
+const CL_NS(util)::CLArrayList< CL_NS(index)::Term::Vector*, CL_NS(util)::Deletor::Object<CL_NS(index)::Term::Vector> >* MultiPhraseQuery::getTermArrays() {
+  return termArrays;
+}
 
 void MultiPhraseQuery::getPositions(ValueArray<int32_t>& result) const {
 	result.length = positions->size();
@@ -294,7 +347,7 @@ TCHAR* MultiPhraseQuery::toString(const TCHAR* f) const {
 	}
 
 	buffer.appendChar(_T('"'));
-	
+
 	CLArrayList<
 		Term::Vector*,
 		Deletor::Object<Term::Vector>
@@ -383,16 +436,14 @@ size_t MultiPhraseQuery::hashCode() const {
 	size_t ret = Similarity::floatToByte(getBoost()) ^ slop;
 
 	{ //msvc6 scope fix
-		for ( size_t i=0;termArrays->size();i++ ) {
-			size_t j = 0;
-			while ( termArrays->at(j) != NULL ) {
-		        ret = 31 * ret + (*termArrays->at(j))[i]->hashCode();
-				++j;
-			}
+        for( size_t i = 0; i < termArrays->size(); i++ )
+        {
+		    for( size_t j = 0; j < termArrays->at( i )->size(); j++ )
+                ret = 31 * ret + (*(termArrays->at(i)))[j]->hashCode();
 		}
 	}
 	{ //msvc6 scope fix
-		for ( size_t i=0;positions->size();i++ )
+		for ( size_t i=0;i<positions->size();i++ )
 			ret = 31 * ret + (*positions)[i];
 	}
 	ret ^= 0x4AC65113;

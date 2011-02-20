@@ -57,7 +57,7 @@ public:
 	typedef ConstSharedPtr ConstPointer;
 
 	CompoundFileReader(CL_NS(store)::Directory::Pointer dir, const char* name, int32_t _readBufferSize=CL_NS(store)::BufferedIndexInput::BUFFER_SIZE);
-	~CompoundFileReader();
+	virtual ~CompoundFileReader();
 	CL_NS(store)::Directory::Pointer getDirectory();
 	const char* getName() const;
 

@@ -35,6 +35,7 @@
 #include "_DocumentsWriter.h"
 #include <assert.h>
 #include <algorithm>
+#include <iostream>
 
 CL_NS_USE(util)
 CL_NS_USE(store)
@@ -80,8 +81,9 @@ AbortException::AbortException(CLuceneError& _err, DocumentsWriter* docWriter):
 
 DocumentsWriter::DocumentsWriter(CL_NS(store)::Directory::Pointer directory, IndexWriter* writer):
   bufferedDeleteTerms(_CLNEW CL_NS(util)::CLHashMap<Term::Pointer, Num*, Term_Compare, Term_Equals, Term::Deletor, Deletor::Object<Num> >),
-  waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) ),
-  freeByteBlocks(FreeByteBlocksType(true)), freeCharBlocks(FreeCharBlocksType(true))
+  freeCharBlocks(FreeCharBlocksType(true)),
+  freeByteBlocks(FreeByteBlocksType(true)),
+  waitingThreadStates( CL_NS(util)::ValueArray<ThreadState*>(MAX_THREAD_STATE) )
 {
   numBytesAlloc = 0;
   numBytesUsed = 0;
@@ -121,9 +123,11 @@ DocumentsWriter::~DocumentsWriter(){
 
   // Make sure unused posting slots aren't attempted delete on
   if (this->postingsFreeListDW.values){
-      memset(this->postingsFreeListDW.values + this->postingsFreeCountDW
-          , NULL
-          , sizeof(Posting*));
+      if (this->postingsFreeCountDW < this->postingsFreeListDW.length) {
+          memset(this->postingsFreeListDW.values + this->postingsFreeCountDW
+              , NULL
+              , sizeof(Posting*));
+      }
       postingsFreeListDW.deleteUntilNULL();
   }
 }
@@ -993,6 +997,7 @@ void DocumentsWriter::clearBufferedDeletes() {
   DocumentsWriter::TermNumMapType::iterator term = bufferedDeleteTerms->begin();
   while ( term != bufferedDeleteTerms->end() ){
     Term::Pointer t = term->first;
+    _CLDELETE(term->second);
     bufferedDeleteTerms->erase(term);
     term = bufferedDeleteTerms->begin();
   }
@@ -1219,7 +1224,7 @@ uint8_t* DocumentsWriter::getByteBlock(bool trackAllocations) {
     b = _CL_NEWARRAY(uint8_t, BYTE_BLOCK_SIZE);
     memset(b,0,sizeof(uint8_t) * BYTE_BLOCK_SIZE);
   } else {
-    b = *freeByteBlocks.begin();    
+    b = *freeByteBlocks.begin();
     freeByteBlocks.remove(freeByteBlocks.begin(),true);
   }
   if (trackAllocations)
@@ -1569,7 +1574,7 @@ void DocumentsWriter::ByteSliceReader::readBytes(uint8_t* b, int32_t len) {
 
 int64_t DocumentsWriter::ByteSliceReader::getFilePointer() const{_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 int64_t DocumentsWriter::ByteSliceReader::length() const{_CLTHROWA(CL_ERR_Runtime,"not implemented");}
-void DocumentsWriter::ByteSliceReader::seek(const int64_t pos) {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
+void DocumentsWriter::ByteSliceReader::seek(const int64_t /*pos*/) {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 void DocumentsWriter::ByteSliceReader::close() {_CLTHROWA(CL_ERR_Runtime,"not implemented");}
 
 DocumentsWriter::ByteBlockPool::ByteBlockPool( bool _trackAllocations, DocumentsWriter* _parent):

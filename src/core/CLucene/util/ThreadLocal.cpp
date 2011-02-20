@@ -4,6 +4,8 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+#include <algorithm>
+
 #include "CLucene/_ApiHeader.h"
 #include "CLucene/LuceneThreads.h"
 #include "_ThreadLocal.h"
@@ -46,7 +48,7 @@ CL_NS_DEF ( util )
 	ret = true;
 
     //the function that is called when the thread shutsdown
-    void pthread_threadlocal_destructor(void* _holder){
+    void pthread_threadlocal_destructor(void* /*_holder*/){
         _ThreadLocal::UnregisterCurrentThread();
     }
     //the key initialiser function
@@ -61,23 +63,24 @@ class _ThreadLocal;
 /**
 * List that holds the list of ThreadLocals that this thread has data in.
 */
-class ThreadLocals: private CL_NS ( util ) ::CLVector<_ThreadLocal*,
-		CL_NS ( util ) ::Deletor::ConstNullVal<_ThreadLocal*> >{
+class ThreadLocals : private std::set<_ThreadLocal*>
+{
 public:
 	void UnregisterThread();
 	void add(_ThreadLocal* thread);
+    void remove(_ThreadLocal* thread);
 };
 
 //map of thread<>ThreadLocals
-typedef CL_NS ( util ) ::CLMultiMap<const _LUCENE_THREADID_TYPE, ThreadLocals*,
+typedef CL_NS ( util ) ::CLMultiMap<_LUCENE_THREADID_TYPE, ThreadLocals*,
 	CL_NS ( util ) ::CLuceneThreadIdCompare,
 	CL_NS ( util ) ::Deletor::ConstNullVal<_LUCENE_THREADID_TYPE>,
 	CL_NS ( util ) ::Deletor::Object<ThreadLocals> > ThreadDataType;
-static ThreadDataType*  threadData; 
+static ThreadDataType*  threadData = NULL; 
 
 #ifndef _CL_DISABLE_MULTITHREADING
 	//the lock for locking ThreadData
-	//we don't use STATIC_DEFINE_MUTEX, because then the initialisation order will be undefined.
+	//we don't use STATIC_DEFINE_MUTEX, because then the initialization order will be undefined.
 	static _LUCENE_THREADMUTEX *threadData_LOCK = NULL;
 #endif
 
@@ -122,6 +125,9 @@ _ThreadLocal::_ThreadLocal ( CL_NS ( util ) ::AbstractDeletor* _deletor ) :
 
 _ThreadLocal::~_ThreadLocal()
 {
+	setNull();
+	UnregisterCurrentThread();
+    RemoveThreadLocal( this );
 	delete _internal;
 }
 
@@ -211,6 +217,22 @@ void _ThreadLocal::UnregisterCurrentThread()
 	}
 }
 
+void _ThreadLocal::RemoveThreadLocal( _ThreadLocal * tl )
+{
+	if ( threadData == NULL )
+		return;
+
+    SCOPED_LOCK_MUTEX ( *threadData_LOCK );
+
+	ThreadDataType::iterator itr = threadData->begin();
+    for( ThreadDataType::iterator itr = threadData->begin(); itr != threadData->end(); itr++ )
+    {
+		ThreadLocals* threadLocals = itr->second;
+        threadLocals->remove( tl );
+        // Remove empty threadLocals
+	}
+}
+
 void _ThreadLocal::_shutdown()
 {
 #ifndef _CL_DISABLE_MULTITHREADING
@@ -224,17 +246,21 @@ void _ThreadLocal::_shutdown()
 void ThreadLocals::UnregisterThread()
 {
 	//this should only be accessed from its own thread... if this changes, then this access has to be locked.
-	while ( !this->empty() )
-	{
-		_ThreadLocal* tl = this->back();
-		this->pop_back();
-		tl->setNull();
-	}
-
+    for( ThreadLocals::iterator iTLocal = begin(); iTLocal != end(); iTLocal++ )
+        (*iTLocal)->setNull();
+    clear();
 }
-void ThreadLocals::add(_ThreadLocal* thread){
+void ThreadLocals::add(_ThreadLocal* thread)
+{
 	//this should only be accessed from its own thread... if this changes, then this access has to be locked.
-	this->push_back(thread);
+    if( end() == find( thread ) )
+        insert( thread );
+}
+void ThreadLocals::remove(_ThreadLocal* thread)
+{    
+    ThreadLocals::iterator iTLocal = find( thread );
+    if( iTLocal != end() )
+        erase( iTLocal );
 }
 
 CL_NS_END

@@ -14,7 +14,7 @@
 #include "CLucene/search/Similarity.h"
 #include "CLucene/search/FieldCache.h"
 #include "CLucene/index/TermVector.h"
-#include "CLucene/index/IndexFileNameFilter.h"
+#include "CLucene/index/_IndexFileNameFilter.h"
 #include "CLucene/search/Scorer.h"
 #include "CLucene/search/FieldSortedHitQueue.h"
 #include "CLucene/store/LockFactory.h"

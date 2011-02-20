@@ -11,6 +11,9 @@
 
 CL_NS_DEF(index)
 
+TermDocs::~TermDocs(){
+}
+
 TermEnum::~TermEnum(){
 }
 

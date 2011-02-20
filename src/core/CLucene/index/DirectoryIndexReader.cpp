@@ -25,7 +25,7 @@ CL_NS_DEF(index)
 
   void DirectoryIndexReader::doClose() {
     if(closeDirectory && _directory){
-      _directory->close();
+        _directory->close();
     }
     _directory.reset();
   }
@@ -36,7 +36,7 @@ CL_NS_DEF(index)
 
         // Default deleter (for backwards compatibility) is
         // KeepOnlyLastCommitDeleter:
-        IndexFileDeleter* deleter =  _CLNEW IndexFileDeleter(_directory,
+        IndexFileDeleter deleter(_directory,
                                                          deletionPolicy == NULL ? _CLNEW KeepOnlyLastCommitDeletionPolicy() : deletionPolicy,
                                                          segmentInfos, NULL, NULL);
 
@@ -63,20 +63,18 @@ CL_NS_DEF(index)
             // Recompute deletable files & remove them (so
             // partially written .del files, etc, are
             // removed):
-            deleter->refresh();
+            deleter.refresh();
           }
         )
 
         // Have the deleter remove any now unreferenced
         // files due to this commit:
-        deleter->checkpoint(segmentInfos, true);
+        deleter.checkpoint(segmentInfos, true);
 
         if (writeLock != NULL) {
           writeLock->release();  // release write lock
-          writeLock = NULL;
+          _CLDELETE(writeLock);
         }
-
-        _CLLDELETE(deleter);
       }
       else
         commitChanges();
@@ -92,8 +90,11 @@ CL_NS_DEF(index)
 
       if (writeLock == NULL) {
         LuceneLock* writeLock = _directory->makeLock(IndexWriter::WRITE_LOCK_NAME);
-        if (!writeLock->obtain(IndexWriter::WRITE_LOCK_TIMEOUT)) // obtain write lock
-          _CLTHROWA(CL_ERR_LockObtainFailed, (string("Index locked for write: ") + writeLock->getObjectName()).c_str());
+        if (!writeLock->obtain(IndexWriter::WRITE_LOCK_TIMEOUT)) { // obtain write lock
+          string message = string("Index locked for write: ") + writeLock->getObjectName();
+          _CLDELETE(writeLock);
+          _CLTHROWA(CL_ERR_LockObtainFailed, message.c_str());
+        }
         this->writeLock = writeLock;
 
         // we have to check whether index has changed since this reader was opened.
@@ -101,7 +102,7 @@ CL_NS_DEF(index)
         if (SegmentInfos::readCurrentVersion(_directory) > segmentInfos->getVersion()) {
           stale = true;
           this->writeLock->release();
-          this->writeLock = NULL;
+          _CLDELETE(writeLock);
           _CLTHROWA(CL_ERR_StaleReader, "IndexReader out of date and no longer valid for delete, undelete, or setNorm operations");
         }
       }
@@ -131,6 +132,7 @@ CL_NS_DEF(index)
     }catch(...){
     }
      _CLDELETE(segmentInfos);
+     _CLDELETE(rollbackSegmentInfos);
   }
   DirectoryIndexReader::DirectoryIndexReader(const Directory::Pointer& __directory, SegmentInfos* segmentInfos, bool closeDirectory):
     IndexReader()
@@ -192,7 +194,7 @@ CL_NS_DEF(index)
       return newReader;
     }
   public:
-    FindSegmentsFile_Reopen( bool closeDirectory, IndexDeletionPolicy* deletionPolicy, 
+    FindSegmentsFile_Reopen( bool closeDirectory, IndexDeletionPolicy* deletionPolicy,
         const CL_NS(store)::Directory::Pointer& dir, DirectoryIndexReader* _this ):
       SegmentInfos::FindSegmentsFile<DirectoryIndexReader*>(dir)
     {
@@ -210,7 +212,7 @@ CL_NS_DEF(index)
       // the index hasn't changed - nothing to do here
       return this;
     }
-    FindSegmentsFile_Reopen runner(closeDirectory, deletionPolicy, _directory, this); 
+    FindSegmentsFile_Reopen runner(closeDirectory, deletionPolicy, _directory, this);
     IndexReader* ret = runner.run();
 
     //disown this memory...
@@ -293,7 +295,7 @@ CL_NS_DEF(index)
         // segmentInfos, so we reset it in place instead:
         segmentInfos->info(i)->reset(rollbackSegmentInfos->info(i));
       }
-      rollbackSegmentInfos = NULL;
+      _CLDELETE(rollbackSegmentInfos);
     }
 
     hasChanges = rollbackHasChanges;

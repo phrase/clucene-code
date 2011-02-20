@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 * Copyright (C) 2003-2006 Ben van Klinken and the CLucene Team
-* 
-* Distributable under the terms of either the Apache License (Version 2.0) or 
+*
+* Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
@@ -48,8 +48,8 @@ CL_NS_DEF(search)
 	TCHAR* ConjunctionScorer::toString(){
 		return stringDuplicate(_T("ConjunctionScorer"));
 	}
-	
-  int32_t ConjunctionScorer::doc()  const{ 
+
+  int32_t ConjunctionScorer::doc()  const{
     return lastDoc;
   }
 
@@ -84,13 +84,13 @@ CL_NS_DEF(search)
   int ConjunctionScorer_sort(const void* _elem1, const void* _elem2){
     const Scorer* elem1 = *(const Scorer**)_elem1;
     const Scorer* elem2 = *(const Scorer**)_elem2;
-	  return elem1->doc() - elem2->doc();
+    return elem1->doc() - elem2->doc();
   }
 
   bool ConjunctionScorer::init(int32_t target)  {
     firstTime = false;
     more = scorers.size() > 1;
-    
+
     for (size_t i = 0; i < scorers.size(); i++) {
       more = target == 0 ? scorers[i].next() : scorers[i].skipTo(target);
       if (!more)
@@ -131,7 +131,7 @@ CL_NS_DEF(search)
     }
     return sum * coord;
   }
-  Explanation* ConjunctionScorer::explain(int32_t doc) {
+  Explanation* ConjunctionScorer::explain(int32_t /*doc*/) {
 	  _CLTHROWA(CL_ERR_UnsupportedOperation,"UnsupportedOperationException: ConjunctionScorer::explain");
   }
 

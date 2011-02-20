@@ -25,13 +25,13 @@ private:
 	bool isIndex;           ///Indicates if the Segment is a an index
 	bool isClone;           ///Indicates if SegmentTermEnum is an orignal instance or
 	                        ///a clone of another SegmentTermEnum
-	
+
 	TCHAR* buffer;			///The buffer that contains the data read from the Term Infos File
 	uint32_t bufferLength;	///Length of the buffer
 
 	int32_t format;
 	int32_t formatM1SkipInterval;
-	
+
 	CL_NS(store)::IndexInput* input;    ///The IndexInput that reads from the Term Infos File
 	FieldInfos* fieldInfos;	///contains the Field Infos for the segment
 	int64_t size;			///The size of the enumeration
@@ -41,13 +41,13 @@ private:
 	int32_t indexInterval;
 	int32_t skipInterval;
 	int32_t maxSkipLevels;
-	
+
 	friend class TermInfosReader;
 	friend class SegmentTermDocs;
 protected:
-	
+
 	/**
-	 * Constructor. 
+	 * Constructor.
 	 * The instance is created by cloning all properties of clone
 	 */
 	SegmentTermEnum( const SegmentTermEnum& clone);
@@ -55,7 +55,7 @@ protected:
 public:
 	///Constructor
 	SegmentTermEnum(CL_NS(store)::IndexInput* i, FieldInfos* fis, const bool isi );
-	
+
 	///Destructor
 	~SegmentTermEnum();
 
@@ -78,8 +78,8 @@ public:
 	 */
 	void scanTo(const Term::ConstPointer& term);
 
-	/** 
-	 * Closes the enumeration to further activity, freeing resources. 
+	/**
+	 * Closes the enumeration to further activity, freeing resources.
 	 */
 	void close();
 

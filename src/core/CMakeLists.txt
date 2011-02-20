@@ -19,6 +19,7 @@ SOURCE_GROUP("index" ./CLucene/index/*)
 SOURCE_GROUP("queryParser" ./CLucene/queryParser/*)
 SOURCE_GROUP("queryParser-legacy" ./CLucene/queryParser/legacy/*)
 SOURCE_GROUP("search" ./CLucene/search/*)
+SOURCE_GROUP("search-spans" ./CLucene/search/spans/*)
 SOURCE_GROUP("store" ./CLucene/store/*)
 SOURCE_GROUP("util" ./CLucene/util/*)
 
@@ -55,12 +56,7 @@ SET(clucene_core_Files
 	./CLucene/store/IndexOutput.cpp
 	./CLucene/store/Directory.cpp
 	./CLucene/store/FSDirectory.cpp
-#	./CLucene/store/MMapDirectory.cpp
 	./CLucene/store/RAMDirectory.cpp
-#	./CLucene/store/RawDirectory.cpp
-#	./CLucene/store/RawIndexInput.cpp
-#	./CLucene/store/RawIndexOutput.cpp
-#	./CLucene/store/SharedHandle.cpp
 	./CLucene/document/Document.cpp
 	./CLucene/document/DateField.cpp
 	./CLucene/document/DateTools.cpp
@@ -89,14 +85,14 @@ SET(clucene_core_Files
 	./CLucene/index/SkipListWriter.cpp
 	./CLucene/index/IndexFileDeleter.cpp
 	./CLucene/index/SegmentReader.cpp
-  ./CLucene/index/DirectoryIndexReader.cpp
+	./CLucene/index/DirectoryIndexReader.cpp
 	./CLucene/index/TermVectorWriter.cpp
 	./CLucene/index/IndexReader.cpp
 	./CLucene/index/SegmentTermPositions.cpp
 	./CLucene/index/SegmentMerger.cpp
 	./CLucene/index/IndexWriter.cpp
-  ./CLucene/index/MultiReader.cpp
-  ./CLucene/index/MultiSegmentReader.cpp
+	./CLucene/index/MultiReader.cpp
+	./CLucene/index/MultiSegmentReader.cpp
 	./CLucene/index/Payload.cpp
 	./CLucene/index/SegmentTermEnum.cpp
 	./CLucene/index/TermInfo.cpp
@@ -147,6 +143,35 @@ SET(clucene_core_Files
 	./CLucene/search/DateFilter.cpp
 	./CLucene/search/MatchAllDocsQuery.cpp
 	./CLucene/search/MultiPhraseQuery.cpp
+	./CLucene/search/CachingSpanFilter.cpp
+	./CLucene/search/CachingSpanFilter.h
+	./CLucene/search/SpanFilter.h
+	./CLucene/search/SpanFilterResult.h
+	./CLucene/search/SpanQueryFilter.cpp
+	./CLucene/search/SpanQueryFilter.h	
+	./CLucene/search/spans/_EmptySpans.h
+	./CLucene/search/spans/_NearSpansOrdered.h
+	./CLucene/search/spans/_NearSpansUnordered.h
+	./CLucene/search/spans/_TermSpans.h
+	./CLucene/search/spans/NearSpansOrdered.cpp
+	./CLucene/search/spans/NearSpansUnordered.cpp
+	./CLucene/search/spans/SpanFirstQuery.cpp
+	./CLucene/search/spans/SpanFirstQuery.h
+	./CLucene/search/spans/SpanNearQuery.cpp
+	./CLucene/search/spans/SpanNearQuery.h
+	./CLucene/search/spans/SpanNotQuery.cpp
+	./CLucene/search/spans/SpanNotQuery.h
+	./CLucene/search/spans/SpanOrQuery.cpp
+	./CLucene/search/spans/SpanOrQuery.h
+	./CLucene/search/spans/SpanQuery.h
+	./CLucene/search/spans/Spans.h
+	./CLucene/search/spans/SpanScorer.cpp
+	./CLucene/search/spans/SpanScorer.h
+	./CLucene/search/spans/SpanTermQuery.cpp
+	./CLucene/search/spans/SpanTermQuery.h
+	./CLucene/search/spans/SpanWeight.cpp
+	./CLucene/search/spans/SpanWeight.h
+	./CLucene/search/spans/TermSpans.cpp
 )
 
 #if USE_SHARED_OBJECT_FILES then we link directly to the object files (means rebuilding them for the core)

@@ -17,6 +17,7 @@
 #include "Searchable.h"
 #include "Explanation.h"
 
+#include <boost/shared_ptr.hpp>
 #include "CLucene/index/_Term.h"
 #include "CLucene/index/Term.h"
 #include "CLucene/store/Directory.h"
@@ -29,6 +30,8 @@
 
 #include "_ExactPhraseScorer.h"
 #include "_SloppyPhraseScorer.h"
+
+#include <assert.h>
 
 CL_NS_USE(index)
 CL_NS_USE(util)
@@ -93,6 +96,8 @@ CL_NS_DEF(search)
 	  return _CLNEW PhraseQuery(*this);
   }
 
+  const TCHAR* PhraseQuery::getFieldName() const{ return field; }
+
   void PhraseQuery::setSlop(const int32_t s) { slop = s; }
   int32_t PhraseQuery::getSlop() const { return slop; }
 
@@ -136,11 +141,11 @@ CL_NS_DEF(search)
 		size_t ret = Similarity::floatToByte(getBoost()) ^ Similarity::floatToByte(slop);
 
 		{ //msvc6 scope fix
-			for ( size_t i=0;terms->size();i++ )
+			for ( size_t i=0;i<terms->size();i++ )
 				ret = 31 * ret + (*terms)[i]->hashCode();
 		}
 		{ //msvc6 scope fix
-			for ( size_t i=0;positions->size();i++ )
+			for ( size_t i=0;i<positions->size();i++ )
 				ret = 31 * ret + (*positions)[i];
 		}
 		return ret;
@@ -265,6 +270,16 @@ CL_NS_DEF(search)
 	  return buffer.giveBuffer();
   }
 
+void PhraseQuery::extractTerms( TermSet * termset ) const
+{
+    for( size_t i = 0; i < terms->size(); i++ )
+    {
+        Term::Pointer pTerm = (*terms)[i];
+        if( pTerm && termset->end() == termset->find( pTerm ))
+            termset->insert( pTerm );
+    }
+}
+
 
  PhraseWeight::PhraseWeight(Searcher* searcher, PhraseQuery* _parentQuery) {
    this->parentQuery=_parentQuery;
@@ -305,7 +320,7 @@ CL_NS_DEF(search)
     Scorer::AutoPtr ret;
 
 	  //Get the length of terms
-      const size_t tpsLength = parentQuery->terms->size();
+      const int32_t tpsLength = (const int32_t)parentQuery->terms->size();
 
 	  //optimize zero-term case
       if (tpsLength == 0)
@@ -319,7 +334,7 @@ CL_NS_DEF(search)
     TermPositions* p = NULL;
 
 	//Iterate through all terms
-    for (size_t i = 0; i < tpsLength; i++) {
+    for (int32_t i = 0; i < tpsLength; i++) {
         //Get the termPostitions for the i-th term
         p = reader->termPositions((*parentQuery->terms)[i]);
 
