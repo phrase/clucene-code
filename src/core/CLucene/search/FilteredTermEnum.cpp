@@ -54,7 +54,7 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
 				return false;
             if (actualEnum->next()) {
                 //Order term not to return reference ownership here. */
-                Term::Pointer term(actualEnum->term());
+                Term::Pointer term(actualEnum->termPointer());
                 //Compare the retrieved term
                 if (termCompare(term)){
                     //Get a reference to the matched term
@@ -111,7 +111,7 @@ FilteredTermEnum::FilteredTermEnum() : actualEnum(NULL) {
 
         // Find the first term that matches
         //Ordered term not to return reference ownership here.
-        Term::Pointer term(actualEnum->term());
+        Term::Pointer term(actualEnum->termPointer());
         if (term && termCompare(term)){
             currentTerm.swap(term);
         }else{
