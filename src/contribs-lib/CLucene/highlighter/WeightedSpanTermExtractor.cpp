@@ -86,9 +86,17 @@ void WeightedSpanTermExtractor::PositionCheckingMap::put( WeightedSpanTerm * spa
 {
     const TCHAR * term = spanTerm->getTerm();
     WeightedSpanTermMap::iterator iST = mapSpanTerms.find( term );
-    if( iST != mapSpanTerms.end() && ! iST->second->isPositionSensitive() )
-        spanTerm->setPositionSensitive( false );
-    mapSpanTerms[ term ] = spanTerm;
+    if( iST != mapSpanTerms.end() )
+    {
+        if( ! spanTerm->isPositionSensitive() )
+            iST->second->setPositionSensitive( false );  
+
+        _CLDELETE( spanTerm );
+    }
+    else
+    {
+        mapSpanTerms[ term ] = spanTerm;
+    }
 }
 
 WeightedSpanTerm * WeightedSpanTermExtractor::PositionCheckingMap::get( const TCHAR * term )
