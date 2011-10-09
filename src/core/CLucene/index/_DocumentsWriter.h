@@ -242,7 +242,7 @@ private:
     void seek(const int64_t pos);
     void close();
 
-	  IndexInput* clone() const;
+	  CL_NS(store)::IndexInput* clone() const;
 	  const char* getDirectoryType() const;
 	  const char* getObjectName() const;
 	  static const char* getClassName();
