@@ -245,7 +245,7 @@ CL_NS(search)::Query * SpanNotQuery::rewrite( CL_NS(index)::IndexReader * reader
 
 bool SpanNotQuery::equals( Query* other ) const
 {
-    if( this == other ) return true;
+    if( static_cast<const Query*>(this) == other ) return true;
     if( other == NULL || !( other->instanceOf( SpanNotQuery::getClassName() )))
 	    return false;
 

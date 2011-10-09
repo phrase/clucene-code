@@ -152,7 +152,7 @@ TCHAR* SpanNearQuery::toString( const TCHAR* field ) const
 
 bool SpanNearQuery::equals( Query* other ) const
 {
-    if( this == other ) return true;
+    if( static_cast<const Query*>(this) == other ) return true;
     if( other == NULL || !( other->instanceOf( SpanNearQuery::getClassName() )))
 	    return false;
 

@@ -357,7 +357,7 @@ CL_NS_DEF(search)
 	  return val;
   }
   bool FuzzyQuery::equals(Query* other) const{
-	  if (this == other) return true;
+	  if (static_cast<const Query*>(this) == other) return true;
 	  if (!(other->instanceOf(FuzzyQuery::getClassName())))
 		  return false;
 

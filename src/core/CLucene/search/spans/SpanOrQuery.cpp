@@ -256,7 +256,7 @@ TCHAR* SpanOrQuery::toString( const TCHAR* field ) const
 
 bool SpanOrQuery::equals( Query* other ) const
 {
-    if( this == other ) return true;
+    if( static_cast<const Query*>(this) == other ) return true;
     if( other == NULL || !( other->instanceOf( SpanOrQuery::getClassName() )))
 	    return false;
 

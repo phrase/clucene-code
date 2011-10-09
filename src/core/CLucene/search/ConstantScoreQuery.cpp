@@ -184,7 +184,7 @@ TCHAR* ConstantScoreQuery::toString(const TCHAR* /*field*/) const
 
 // TODO: Filter is missing an equals() function, hence this equals() is incomplete
 bool ConstantScoreQuery::equals(Query* o) const {
-    if (this == o) return true;
+    if (static_cast<const Query*>(this) == o) return true;
     if (!(o->instanceOf("ConstantScoreQuery"))) return false;
     ConstantScoreQuery* other = (ConstantScoreQuery*)o;
     return this->getBoost()==other->getBoost()
@@ -273,7 +273,7 @@ TCHAR* ConstantScoreRangeQuery::toString(const TCHAR* field) const
 }
 
 bool ConstantScoreRangeQuery::equals(Query* o) const {
-    if (this == o) return true;
+    if (static_cast<const Query*>(this) == o) return true;
     if (!(o->instanceOf("ConstantScoreRangeQuery"))) return false;
     ConstantScoreRangeQuery* other = (ConstantScoreRangeQuery*) o;
 
