@@ -527,6 +527,11 @@ CL_NS_DEF(index)
     	  bool doBody( const char* segmentFileName );
     	};
     	friend class SegmentInfos::FindSegmentsRead;
+
+#if _MSC_VER == 1200
+        // VC6 needs an explicit friend class declaration for nested classes
+        friend class _FindSegmentsFile;
+#endif
   };
 CL_NS_END
 #endif

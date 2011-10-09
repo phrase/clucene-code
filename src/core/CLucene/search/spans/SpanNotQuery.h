@@ -61,6 +61,11 @@ public:
     size_t hashCode() const;
 
     Spans * getSpans( CL_NS(index)::IndexReader * reader );
+
+#if _MSC_VER == 1200
+    // VC6 needs an explicit friend class declaration for nested classes
+    friend class SpanNotQuerySpans;
+#endif
 };
 
 CL_NS_END2

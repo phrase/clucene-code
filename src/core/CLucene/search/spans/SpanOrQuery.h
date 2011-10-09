@@ -98,6 +98,11 @@ public:
 
 protected:
     void setField( const TCHAR * field );
+
+#if _MSC_VER == 1200
+    // VC6 needs an explicit friend class declaration for nested classes
+    friend class SpanOrQuerySpans;
+#endif
 };
 
 CL_NS_END2

@@ -97,6 +97,11 @@ private:
     void queueToList();
     void listToQueue();
     bool atMatch();
+
+#if _MSC_VER == 1200
+    // VC6 needs an explicit friend class declaration for nested classes
+    friend class SpansCell;
+#endif
 };
 
 CL_NS_END2
