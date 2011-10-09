@@ -218,6 +218,11 @@ public:
    *  (have not yet been incref'd). */
   void CLUCENE_LOCAL_DECL deleteNewFiles(const std::vector<std::string>& files);
   void CLUCENE_LOCAL_DECL deleteFile(const char* fileName);
+
+#if _MSC_VER == 1200
+  // VC6 needs an explicit friend class declaration for nested classes
+  friend class CommitPoint;
+#endif
 };
 
 CL_NS_END

@@ -248,6 +248,11 @@ private:
 	  static const char* getClassName();
 
     friend class FieldMergeState;
+
+#if _MSC_VER == 1200
+    // VC6 needs an explicit friend class declaration for nested classes
+    friend class FieldData;
+#endif
   };
 
 
@@ -621,6 +626,10 @@ private:
     void writePosByte(uint8_t b);
 
     friend class FieldMergeState;
+#if _MSC_VER == 1200
+    // VC6 needs an explicit friend class declaration for nested classes
+    friend class FieldData;
+#endif
   };
 
   /* Class that Posting and PostingVector use to write uint8_t
@@ -959,7 +968,12 @@ public:
 
   std::string toMB(int64_t v);
 
-
+#if _MSC_VER == 1200
+  // VC6 needs an explicit friend class declaration for nested classes
+  friend class BufferedNorms;
+  friend class ThreadState;
+  friend class ThreadState::FieldData;
+#endif
 };
 
 #define CLUCENE_END_OF_WORD 0x0
