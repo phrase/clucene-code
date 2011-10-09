@@ -698,10 +698,10 @@ private:
     }
 
 		friend class DocumentsWriter;
-    friend class DocumentsWriter::ThreadState;
-    friend class DocumentsWriter::ThreadState::FieldData;
-    friend class DocumentsWriter::FieldMergeState;
-    friend class DocumentsWriter::ByteSliceReader;
+    friend class ThreadState;
+    friend class ThreadState::FieldData;
+    friend class FieldMergeState;
+    friend class ByteSliceReader;
   };
 
   class CharBlockPool: public BlockPool<TCHAR>{
@@ -710,7 +710,7 @@ private:
     virtual ~CharBlockPool();
     TCHAR* getNewBlock(bool trackAllocations);
     void reset();
-    friend class DocumentsWriter::FieldMergeState;
+    friend class FieldMergeState;
   };
   class ByteBlockPool: public BlockPool<uint8_t>{
   public:
@@ -721,7 +721,7 @@ private:
     int32_t allocSlice(uint8_t* slice, const int32_t upto);
     void reset();
 
-    friend class DocumentsWriter::ThreadState;
+    friend class ThreadState;
   };
 
 
