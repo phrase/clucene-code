@@ -55,7 +55,7 @@ public:
 
     CL_NS(search)::Query * rewrite( CL_NS(index)::IndexReader * reader );
 
-    using Query::toString;
+    using SpanQuery::toString; // it is Query::toString that is needed, but VC6 allows only the access to direct base classes
     TCHAR* toString( const TCHAR* field ) const;
     bool equals( Query* other ) const;
     size_t hashCode() const;
