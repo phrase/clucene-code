@@ -4,6 +4,12 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4786)
+#   pragma warning (disable : 4996)
+#endif
+
 #include "CLucene/_ApiHeader.h"
 
 #include "_SegmentInfos.h"

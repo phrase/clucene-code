@@ -5,6 +5,10 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4786)
+#endif
+
 #include "CLucene/_ApiHeader.h"
 #include "Scorer.h"
 #include "ScorerDocQueue.h"

@@ -7,6 +7,10 @@
 #ifndef _lucene_util_CLStreams_
 #define _lucene_util_CLStreams_
 
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4275) // warning C4275: non dll-interface class 'lucene::util::CLStream<unsigned short>' used as base for dll-interface class 'lucene::util::Reader'
+#endif
+
 CL_NS_DEF(util)
 
 template <typename T>

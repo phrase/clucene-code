@@ -1,3 +1,7 @@
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4786)
+#endif
+
 #include "CLucene/_ApiHeader.h"
 #include "_IndexFileDeleter.h"
 #include "_IndexFileNameFilter.h"

@@ -4,9 +4,13 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or 
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+
 #ifndef _lucene_search_FieldSortedHitQueue_
 #define _lucene_search_FieldSortedHitQueue_
 
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4786)
+#endif
 
 CL_CLASS_DEF(search,FieldDoc)
 CL_CLASS_DEF(search,SortComparatorSource)

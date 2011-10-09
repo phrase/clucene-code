@@ -7,6 +7,10 @@
 #ifndef _lucene_util_VoidList_
 #define _lucene_util_VoidList_
 
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4786)
+#endif
+
 #include "Equators.h"
 #include "CLucene/LuceneThreads.h"
 

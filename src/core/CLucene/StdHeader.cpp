@@ -4,6 +4,11 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or 
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
+
+#if _MSC_VER == 1200
+#   pragma warning (disable : 4275) // warning C4275: non dll-interface class 'lucene::util::PriorityQueue<class lucene::search::FieldDoc *,class lucene::util::Deletor::Object<class lucene::search::FieldDoc> >' used as base for dll-interface c
+#endif
+
 #include "CLucene/_ApiHeader.h"
 #include "CLucene/util/Misc.h"
 
