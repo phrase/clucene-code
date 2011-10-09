@@ -50,7 +50,7 @@ protected:
 	int32_t nrScorers;
 
 	/** The subscorers. */
-	DisjunctionSumScorer::ScorersType subScorers;
+	ScorersType subScorers;
 
 	/** The number of subscorers that provide the current match. */
 	int32_t _nrMatchers;
@@ -97,7 +97,7 @@ public:
 	* <br>When minimumNrMatchers equals the number of subScorers,
 	* it more efficient to use <code>ConjunctionScorer</code>.
 	*/
-	DisjunctionSumScorer( DisjunctionSumScorer::ScorersType* _subScorers, const int32_t _minimumNrMatchers = 1);
+	DisjunctionSumScorer( ScorersType* _subScorers, const int32_t _minimumNrMatchers = 1);
 	virtual ~DisjunctionSumScorer();
 
 	/** Scores and collects all matching documents.
