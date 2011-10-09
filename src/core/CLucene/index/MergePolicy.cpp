@@ -485,7 +485,12 @@ void LogByteSizeMergePolicy::setMaxMergeMB(float_t mb) {
  *  with other segments.
  *  @see #setMaxMergeMB */
 float_t LogByteSizeMergePolicy::getMaxMergeMB() {
-  return ((float_t) maxMergeSize)/1024/1024;
+  return ((float_t)
+#if _MSC_VER == 1200
+      // VC6 doesn't implements conversion from uint64_t to double
+      (int64_t)
+#endif      
+      maxMergeSize)/1024/1024;
 }
 
 /** Sets the minimum size for the lowest level segments.
