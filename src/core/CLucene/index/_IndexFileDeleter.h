@@ -60,6 +60,7 @@ private:
   class RefCount {
   public:
 	  int count;
+      RefCount() : count(0) {}
 	  int IncRef() {
 		  return ++count;
 	  }
