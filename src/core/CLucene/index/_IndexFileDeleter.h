@@ -99,7 +99,7 @@ private:
      */
     void deleteCommitPoint();
 
-    int32_t compareTo(NamedObject* obj);
+    int32_t compareTo(CL_NS(util)::NamedObject* obj);
 
 		static const char* getClassName();
 		const char* getObjectName() const;
