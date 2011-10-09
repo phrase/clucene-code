@@ -1431,7 +1431,7 @@ bool IndexWriter::doFlush(bool _flushDocStores) {
             assert (docStoreSegment.compare(segment)==0);
             docStoreOffset = -1;
             docStoreIsCompoundFile = false;
-            docStoreSegment.clear();
+            docStoreSegment.erase();
           }
 
           int32_t flushedDocCount = docWriter->flush(_flushDocStores);
@@ -1964,7 +1964,7 @@ void IndexWriter::_mergeInit(MergePolicy::OneMerge* _merge) {
 
   if (mergeDocStores) {
     docStoreOffset = -1;
-    docStoreSegment.clear();
+    docStoreSegment.erase();
     docStoreIsCompoundFile = false;
   } else {
     SegmentInfo* si = sourceSegments->info(0);

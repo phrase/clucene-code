@@ -216,7 +216,7 @@ std::string DocumentsWriter::closeDocStore() {
     }
 
     std::string s = docStoreSegment;
-    docStoreSegment.clear();
+    docStoreSegment.erase();
     docStoreOffset = 0;
     numDocsInStore = 0;
     return s;
@@ -302,7 +302,7 @@ void DocumentsWriter::abort(AbortException* ae) {
 		    _CLDELETE(_abortedFiles);
       }
 
-	    docStoreSegment.clear();
+	    docStoreSegment.erase();
       numDocsInStore = 0;
       docStoreOffset = 0;
       _CLDELETE(_files);

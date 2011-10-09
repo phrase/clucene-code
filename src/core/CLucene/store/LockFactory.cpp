@@ -38,7 +38,7 @@ void LockFactory::setLockPrefix( const char* lockPrefix )
   if ( lockPrefix != NULL )
     this->lockPrefix = lockPrefix;
   else
-    this->lockPrefix.clear();
+    this->lockPrefix.erase();
 }
 
 const char* LockFactory::getLockPrefix()
