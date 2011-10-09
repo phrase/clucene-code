@@ -338,7 +338,7 @@ void MultiReader::doClose() {
 
 void MultiReader::getFieldNames(FieldOption fieldNames, StringArrayWithDeletor& retarray){
     ensureOpen();
-    return MultiSegmentReader::getFieldNames(fieldNames, retarray, this->subReaders);
+    MultiSegmentReader::getFieldNames(fieldNames, retarray, this->subReaders);
 }
 
 bool MultiReader::isCurrent(){
