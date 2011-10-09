@@ -481,7 +481,7 @@ size_t FilteredBufferedReader::size(){
 	return (size_t)_internal->jsbuffer->size();
 }
 void FilteredBufferedReader::setMinBufSize(int32_t minbufsize){
-	return _internal->jsbuffer->_setMinBufSize(minbufsize);
+	_internal->jsbuffer->_setMinBufSize(minbufsize);
 }
 
 
@@ -544,7 +544,7 @@ size_t FilteredBufferedInputStream::size(){
 	return (size_t)_internal->jsbuffer->size();
 }
 void FilteredBufferedInputStream::setMinBufSize(int32_t minbufsize){
-	return _internal->jsbuffer->_setMinBufSize(minbufsize);
+	_internal->jsbuffer->_setMinBufSize(minbufsize);
 }
 
 CL_NS_END
