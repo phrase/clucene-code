@@ -174,6 +174,11 @@ SET(clucene_core_Files
 	./CLucene/search/spans/TermSpans.cpp
 )
 
+IF (${MSVC_VERSION} EQUAL "1200")
+  SET(clucene_workaround_Files ./CLucene/util/workaround/vc6/operators.cpp)
+  SET(HEADERS_workaround ./CLucene/util/workaround/vc6/operators.h)
+ENDIF ()
+
 #if USE_SHARED_OBJECT_FILES then we link directly to the object files (means rebuilding them for the core)
 IF ( USE_SHARED_OBJECT_FILES )
     GET_SHARED_FILES(clucene_shared_Files)
@@ -187,7 +192,7 @@ file(GLOB_RECURSE HEADERS ${clucene-core_SOURCE_DIR}/*.h)
 INCLUDE_DIRECTORIES( ${clucene_SOURCE_DIR}/src/core )
 
 add_library(clucene-core SHARED
-	${clucene_core_Files} ${clucene_shared_Files} ${HEADERS}
+	${clucene_core_Files} ${clucene_shared_Files} ${clucene_workaround_Files} ${HEADERS} ${HEADERS_workaround}
 )
 
 #set properties on the libraries

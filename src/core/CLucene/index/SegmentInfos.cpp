@@ -8,6 +8,7 @@
 #if _MSC_VER == 1200
 #   pragma warning (disable : 4786)
 #   pragma warning (disable : 4996)
+#   include "CLucene/workaround/vc6/operators.h"
 #endif
 
 #include "CLucene/_ApiHeader.h"
