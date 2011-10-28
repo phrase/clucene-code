@@ -5,7 +5,10 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 
-#ifndef  _lucene_workaround_vc6_DocumentsWriter_
+#ifndef _lucene_workaround_vc6_DocumentsWriter_
+#define _lucene_workaround_vc6_DocumentsWriter_
+
+#include <iostream>
 
 std::ostream& operator << (std::ostream& os, __int64 i);
 

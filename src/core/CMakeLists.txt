@@ -175,8 +175,8 @@ SET(clucene_core_Files
 )
 
 IF (${MSVC_VERSION} EQUAL "1200")
-  SET(clucene_workaround_Files ./CLucene/util/workaround/vc6/operators.cpp)
-  SET(HEADERS_workaround ./CLucene/util/workaround/vc6/operators.h)
+  SET(clucene_workaround_Files ./CLucene/workaround/vc6/operators.cpp)
+  SET(HEADERS_workaround ./CLucene/workaround/vc6/operators.h)
 ENDIF ()
 
 #if USE_SHARED_OBJECT_FILES then we link directly to the object files (means rebuilding them for the core)
