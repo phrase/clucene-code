@@ -61,13 +61,14 @@ void FastCharStream::refill() {
 	tokenStart = 0;
 
 	const TCHAR* charBuf = NULL;
+	int32_t bufferspace = _bufferSize - newPosition;
 	int32_t charsRead =				  // fill space in buffer
-		input->read(charBuf, newPosition, _bufferSize-newPosition);
+		input->read(charBuf, cl_min(newPosition, bufferspace ), bufferspace );
 	if (charsRead == -1){
 		_CLTHROWA(CL_ERR_IO, "read past eof");
 	}
 	else {
-		memcpy(buffer, charBuf, charsRead * sizeof(TCHAR)); // TODO: Can we use the reader buffer instead of copying to our own?
+		memcpy(buffer + newPosition, charBuf, charsRead * sizeof(TCHAR)); // TODO: Can we use the reader buffer instead of copying to our own?
 		bufferLength += charsRead;
 	}
 }
