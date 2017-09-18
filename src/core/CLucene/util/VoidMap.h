@@ -149,16 +149,16 @@ public:
 
  //a CLSet with CLHashMap traits
 template<typename _kt, typename _vt,
-	typename _Compare,
+	typename CompareType,
 	typename _EqualDummy,
 	typename _KeyDeletor=CL_NS(util)::Deletor::Dummy,
 	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy>
 class CLUCENE_INLINE_EXPORT CLHashMap:public __CLMap<_kt,_vt,
-	CL_NS_STD(map)<_kt,_vt, _Compare>,
+	CL_NS_STD(map)<_kt,_vt, CompareType>,
 	_KeyDeletor,_ValueDeletor>
 {
-	typedef typename CL_NS_STD(map)<_kt,_vt,_Compare> _base;
-	typedef __CLMap<_kt, _vt, CL_NS_STD(map)<_kt,_vt, _Compare>,
+	typedef typename CL_NS_STD(map)<_kt,_vt,CompareType> _base;
+	typedef __CLMap<_kt, _vt, CL_NS_STD(map)<_kt,_vt, CompareType>,
 		_KeyDeletor,_ValueDeletor> _this;
 public:
 	CLHashMap ( const bool deleteKey=false, const bool deleteValue=false )
@@ -255,15 +255,15 @@ public:
 //A collection that contains no duplicates
 //does not guarantee that the order will remain constant over time
 template<typename _kt, typename _vt,
-	typename _Compare,
+	typename CompareType,
 	typename _KeyDeletor=CL_NS(util)::Deletor::Dummy,
 	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy>
 class CLUCENE_INLINE_EXPORT CLSet:public __CLMap<_kt,_vt,
-	CL_NS_STD(map)<_kt,_vt, _Compare>,
+	CL_NS_STD(map)<_kt,_vt, CompareType>,
 	_KeyDeletor,_ValueDeletor>
 {
-	typedef typename CL_NS_STD(map)<_kt,_vt,_Compare> _base;
-	typedef __CLMap<_kt, _vt, CL_NS_STD(map)<_kt,_vt, _Compare>,
+	typedef typename CL_NS_STD(map)<_kt,_vt,CompareType> _base;
+	typedef __CLMap<_kt, _vt, CL_NS_STD(map)<_kt,_vt, CompareType>,
 		_KeyDeletor,_ValueDeletor> _this;
 public:
 	CLSet ( const bool deleteKey=false, const bool deleteValue=false )
@@ -289,7 +289,7 @@ public:
 
 //A collection that can contains duplicates
 template<typename _kt, typename _vt,
-	typename _Compare,
+	typename CompareType,
 	typename _KeyDeletor=CL_NS(util)::Deletor::Dummy,
 	typename _ValueDeletor=CL_NS(util)::Deletor::Dummy>
 class CLUCENE_INLINE_EXPORT CLMultiMap:public __CLMap<_kt,_vt,
