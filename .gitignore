@@ -4,8 +4,17 @@
 # exclude patterns (uncomment them if you want to use them):
 # *.[oa]
 # *~
-obj
+
+*.obj
+*.bin
 bin
 msvc
 build
+CMakeFiles
 ~$*
+*.make
+*.cmake
+clucene-config.h
+_clucene-config.h
+CMakeCache.txt
+Makefile
