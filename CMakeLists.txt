@@ -1,7 +1,5 @@
 PROJECT (clucene)
 
-add_compile_options("-Zc:wchar_t-")
-
 #Rules for version:
 #MAJOR and MINOR versions are purely political (tracks JLucene compatibility)
 #REVISION version MUST be revised if the headers or compatibility change
