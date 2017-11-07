@@ -15,9 +15,9 @@
 
 CL_NS_DEF(queryParser)
 
-const int64_t QueryParserTokenManager::jjbitVec2[]={0x0L, 0x0L, _ILONGLONG(0xffffffffffffffff), _ILONGLONG(0xffffffffffffffff)};
+const int64_t QueryParserTokenManager::jjbitVec2[]={0x0L, 0x0L, _ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff)};
 const int64_t QueryParserTokenManager::jjbitVec0[] = {
-	_ILONGLONG(0xfffffffffffffffe), _ILONGLONG(0xffffffffffffffff), _ILONGLONG(0xffffffffffffffff), _ILONGLONG(0xffffffffffffffff)
+	_ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff)
 };
 const int32_t QueryParserTokenManager::jjnextStates[]={
 		15, 17, 18, 29, 32, 23, 33, 30, 20, 21, 32, 23, 33, 31, 34, 27,
