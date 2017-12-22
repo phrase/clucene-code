@@ -35,8 +35,8 @@ private:
 	void jjCheckNAddStates(int32_t start, const int32_t end);
 	void jjCheckNAddStates(const int32_t start);
 
-	static const int64_t jjbitVec0[];
-	static const int64_t jjbitVec2[];
+	static const uint64_t jjbitVec0[];
+	static const uint64_t jjbitVec2[];
 
 	int32_t jjMoveNfa_3(const int32_t startState, int32_t curPos);
 
@@ -64,8 +64,8 @@ private:
 
 	static const int32_t jjnextStates[];
 
-	static bool jjCanMove_0(const int32_t hiByte, const int32_t i1, const int32_t i2, const int64_t l1,
-		const int64_t l2);
+	static bool jjCanMove_0(const int32_t hiByte, const int32_t i1, const int32_t i2, const uint64_t l1,
+		const uint64_t l2);
 
 public:
 	static const TCHAR* jjstrLiteralImages [];

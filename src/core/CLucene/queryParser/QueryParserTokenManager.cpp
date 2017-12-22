@@ -15,9 +15,11 @@
 
 CL_NS_DEF(queryParser)
 
-const int64_t QueryParserTokenManager::jjbitVec2[]={0x0L, 0x0L, _ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff)};
-const int64_t QueryParserTokenManager::jjbitVec0[] = {
-	_ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff), _ILONGLONG(0x7fffffffffffffff)
+#define _UILONGLONG(x) x ## ULL
+
+const uint64_t QueryParserTokenManager::jjbitVec2[]={0x0L, 0x0L, _UILONGLONG(0xffffffffffffffff), _UILONGLONG(0xffffffffffffffff)};
+const uint64_t QueryParserTokenManager::jjbitVec0[] = {
+	_UILONGLONG(0xffffffffffffffff), _UILONGLONG(0xffffffffffffffff), _UILONGLONG(0xffffffffffffffff), _UILONGLONG(0xffffffffffffffff)
 };
 const int32_t QueryParserTokenManager::jjnextStates[]={
 		15, 17, 18, 29, 32, 23, 33, 30, 20, 21, 32, 23, 33, 31, 34, 27,
@@ -1081,7 +1083,7 @@ int32_t QueryParserTokenManager::jjMoveNfa_2(const int32_t startState, int32_t c
 }
 
 /*static*/
-bool QueryParserTokenManager::jjCanMove_0(const int32_t hiByte, const int32_t i1, const int32_t i2, const int64_t l1, const int64_t l2)
+bool QueryParserTokenManager::jjCanMove_0(const int32_t hiByte, const int32_t i1, const int32_t i2, const uint64_t l1, const uint64_t l2)
 {
 	switch(hiByte)
 	{
