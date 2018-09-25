@@ -33,6 +33,8 @@ class CLuceneThreadIdCompare;
   #define _LUCENE_ATOMIC_INC(theInteger) (++(*theInteger))
   #define _LUCENE_ATOMIC_DEC(theInteger) (--(*theInteger))
   #define _LUCENE_ATOMIC_INT int
+  #define _LUCENE_ATOMIC_INT_SET(x,v) x=v
+  #define _LUCENE_ATOMIC_INT_GET(x) x
 #else
 	#if defined(_LUCENE_DONTIMPLEMENT_THREADMUTEX)
 		//do nothing
