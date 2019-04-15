@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////
 //
-// (C) Copyright Ion Gaztanaga 2005-2011.
+// (C) Copyright Ion Gaztanaga 2005-2015.
 // (C) Copyright Gennaro Prota 2003 - 2004.
 //
 // Distributed under the Boost Software License, Version 1.0.
@@ -14,7 +14,11 @@
 #ifndef BOOST_INTERPROCESS_DETAIL_UTILITIES_HPP
 #define BOOST_INTERPROCESS_DETAIL_UTILITIES_HPP
 
-#if (defined _MSC_VER) && (_MSC_VER >= 1200)
+#ifndef BOOST_CONFIG_HPP
+#  include <boost/config.hpp>
+#endif
+#
+#if defined(BOOST_HAS_PRAGMA_ONCE)
 #  pragma once
 #endif
 
@@ -22,20 +26,18 @@
 #include <boost/interprocess/detail/workaround.hpp>
 
 #include <boost/interprocess/interprocess_fwd.hpp>
-#include <boost/move/move.hpp>
-#include <boost/type_traits/has_trivial_destructor.hpp>
+#include <boost/move/utility_core.hpp>
 #include <boost/interprocess/detail/min_max.hpp>
 #include <boost/interprocess/detail/type_traits.hpp>
-#include <boost/interprocess/detail/transform_iterator.hpp>
 #include <boost/interprocess/detail/mpl.hpp>
-#include <boost/interprocess/containers/version_type.hpp>
 #include <boost/intrusive/pointer_traits.hpp>
-#include <boost/move/move.hpp>
-#include <utility>
-#include <algorithm>
+#include <boost/move/utility_core.hpp>
+#include <boost/static_assert.hpp>
+#include <boost/cstdint.hpp>
+#include <climits>
 
 namespace boost {
-namespace interprocess { 
+namespace interprocess {
 namespace ipcdetail {
 
 template <class T>
@@ -46,14 +48,6 @@ template <class Pointer>
 inline typename boost::intrusive::pointer_traits<Pointer>::element_type*
 to_raw_pointer(const Pointer &p)
 {  return boost::interprocess::ipcdetail::to_raw_pointer(p.operator->());  }
-
-//!To avoid ADL problems with swap
-template <class T>
-inline void do_swap(T& x, T& y)
-{
-   using std::swap;
-   swap(x, y);
-}
 
 //Rounds "orig_size" by excess to round_to bytes
 template<class SizeType>
@@ -86,7 +80,10 @@ inline SizeType get_truncated_size_po2(SizeType orig_size, SizeType multiple)
 template <std::size_t OrigSize, std::size_t RoundTo>
 struct ct_rounded_size
 {
-   static const std::size_t value = ((OrigSize-1)/RoundTo+1)*RoundTo;
+   BOOST_STATIC_ASSERT((RoundTo != 0));
+   static const std::size_t intermediate_value = (OrigSize-1)/RoundTo+1;
+   BOOST_STATIC_ASSERT(intermediate_value <= std::size_t(-1)/RoundTo);
+   static const std::size_t value = intermediate_value*RoundTo;
 };
 
 // Gennaro Prota wrote this. Thanks!
@@ -126,24 +123,80 @@ struct is_intrusive_index
    static const bool value = false;
 };
 
-template <typename T> T*
-addressof(T& v)
+template <typename T>
+BOOST_INTERPROCESS_FORCEINLINE T* addressof(T& v)
 {
   return reinterpret_cast<T*>(
        &const_cast<char&>(reinterpret_cast<const volatile char &>(v)));
 }
+
+template<class SizeType>
+struct sqrt_size_type_max
+{
+   static const SizeType value = (SizeType(1) << (sizeof(SizeType)*(CHAR_BIT/2)))-1;
+};
+
+template<class SizeType>
+inline bool multiplication_overflows(SizeType a, SizeType b)
+{
+   const SizeType sqrt_size_max = sqrt_size_type_max<SizeType>::value;
+   return   //Fast runtime check
+         (  (a | b) > sqrt_size_max &&
+            //Slow division check
+            b && a > SizeType(-1)/b
+         );
+}
+
+template<std::size_t SztSizeOfType, class SizeType>
+BOOST_INTERPROCESS_FORCEINLINE bool size_overflows(SizeType count)
+{
+   //Compile time-check
+   BOOST_STATIC_ASSERT(SztSizeOfType <= SizeType(-1));
+   //Runtime check
+   return multiplication_overflows(SizeType(SztSizeOfType), count);
+}
+
+template<class RawPointer, class OffsetType>
+class pointer_offset_caster;
+
+template<class T, class OffsetType>
+class pointer_offset_caster<T*, OffsetType>
+{
+   public:
+   BOOST_INTERPROCESS_FORCEINLINE explicit pointer_offset_caster(OffsetType offset)
+      : m_offset(offset)
+   {}
+
+   BOOST_INTERPROCESS_FORCEINLINE explicit pointer_offset_caster(const volatile T *p)
+      : m_offset(reinterpret_cast<OffsetType>(p))
+   {}
+
+   BOOST_INTERPROCESS_FORCEINLINE OffsetType offset() const
+   {   return m_offset;   }
+
+   BOOST_INTERPROCESS_FORCEINLINE T* pointer() const
+   {   return reinterpret_cast<T*>(m_offset);   }
+
+   private:
+   OffsetType m_offset;
+};
+
+
+template<class SizeType>
+inline bool sum_overflows(SizeType a, SizeType b)
+{  return SizeType(-1) - a < b;  }
 
 //Anti-exception node eraser
 template<class Cont>
 class value_eraser
 {
    public:
-   value_eraser(Cont & cont, typename Cont::iterator it) 
+   value_eraser(Cont & cont, typename Cont::iterator it)
       : m_cont(cont), m_index_it(it), m_erase(true){}
-   ~value_eraser()  
+   ~value_eraser()
    {  if(m_erase) m_cont.erase(m_index_it);  }
 
-   void release() {  m_erase = false;  }
+   BOOST_INTERPROCESS_FORCEINLINE void release() {  m_erase = false;  }
 
    private:
    Cont                   &m_cont;
@@ -151,7 +204,7 @@ class value_eraser
    bool                    m_erase;
 };
 
-}  //namespace interprocess { 
+}  //namespace interprocess {
 }  //namespace boost {
 
 #include <boost/interprocess/detail/config_end.hpp>

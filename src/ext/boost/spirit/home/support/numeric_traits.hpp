@@ -11,6 +11,7 @@
 #endif
 
 #include <boost/config.hpp>
+#include <boost/limits.hpp>
 #include <boost/mpl/bool.hpp>
 
 namespace boost { namespace spirit { namespace traits
@@ -113,6 +114,9 @@ namespace boost { namespace spirit { namespace traits
 
     template <typename T, typename Enable = void>
     struct is_infinite;
+
+    template <typename T, typename Enable = void>
+    struct check_overflow : mpl::bool_<std::numeric_limits<T>::is_bounded> {};
 }}}
 
 #endif

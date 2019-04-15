@@ -7,27 +7,23 @@
 #define BOOST_LEXER_INPUT
 
 #include "char_traits.hpp"
-#include <boost/detail/iterator.hpp>
 #include "size_t.hpp"
 #include "state_machine.hpp"
+#include <iterator> // for std::iterator_traits
 
 namespace boost
 {
 namespace lexer
 {
 template<typename FwdIter, typename Traits =
-    char_traits<typename boost::detail::iterator_traits<FwdIter>::value_type> >
+    char_traits<typename std::iterator_traits<FwdIter>::value_type> >
 class basic_input
 {
 public:
     class iterator
     {
     public:
-#if defined _MSC_VER && _MSC_VER <= 1200
-        friend basic_input;
-#else
         friend class basic_input;
-#endif
 
         struct data
         {
@@ -481,11 +477,7 @@ public:
         }
     };
 
-#if defined _MSC_VER && _MSC_VER <= 1200
-    friend iterator;
-#else
     friend class iterator;
-#endif
 
     // Make it explict that we are NOT taking a copy of state_machine_!
     basic_input (const basic_state_machine<typename Traits::char_type>

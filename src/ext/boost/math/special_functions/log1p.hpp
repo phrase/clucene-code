@@ -8,6 +8,8 @@
 
 #ifdef _MSC_VER
 #pragma once
+#pragma warning(push)
+#pragma warning(disable:4702) // Unreachable code (release mode only warning)
 #endif
 
 #include <boost/config/no_tr1/cmath.hpp>
@@ -24,6 +26,16 @@
 #  include <boost/static_assert.hpp>
 #else
 #  include <boost/assert.hpp>
+#endif
+
+#if defined(__GNUC__) && defined(BOOST_MATH_USE_FLOAT128)
+//
+// This is the only way we can avoid
+// warning: non-standard suffix on floating constant [-Wpedantic]
+// when building with -Wall -pedantic.  Neither __extension__
+// nor #pragma dianostic ignored work :(
+//
+#pragma GCC system_header
 #endif
 
 namespace boost{ namespace math{
@@ -78,7 +90,7 @@ T log1p_imp(T const & x, const Policy& pol, const mpl::int_<0>&)
 
    static const char* function = "boost::math::log1p<%1%>(%1%)";
 
-   if(x < -1)
+   if((x < -1) || (boost::math::isnan)(x))
       return policies::raise_domain_error<T>(
          function, "log1p(x) requires x > -1, but got x = %1%.", x, pol);
    if(x == -1)
@@ -195,7 +207,7 @@ T log1p_imp(T const& x, const Policy& pol, const mpl::int_<64>&)
       BOOST_MATH_BIG_CONSTANT(T, 64, 0.00441709903782239229447)
    };
    static const T Q[] = {    
-      BOOST_MATH_BIG_CONSTANT(T, 64, 1),
+      BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
       BOOST_MATH_BIG_CONSTANT(T, 64, 4.26423872346263928361),
       BOOST_MATH_BIG_CONSTANT(T, 64, 7.48189472704477708962),
       BOOST_MATH_BIG_CONSTANT(T, 64, 6.94757016732904280913),
@@ -258,6 +270,34 @@ T log1p_imp(T const& x, const Policy& pol, const mpl::int_<24>&)
    return result;
 }
 
+template <class T, class Policy, class tag>
+struct log1p_initializer
+{
+   struct init
+   {
+      init()
+      {
+         do_init(tag());
+      }
+      template <int N>
+      static void do_init(const mpl::int_<N>&){}
+      static void do_init(const mpl::int_<64>&)
+      {
+         boost::math::log1p(static_cast<T>(0.25), Policy());
+      }
+      void force_instantiate()const{}
+   };
+   static const init initializer;
+   static void force_instantiate()
+   {
+      initializer.force_instantiate();
+   }
+};
+
+template <class T, class Policy, class tag>
+const typename log1p_initializer<T, Policy, tag>::init log1p_initializer<T, Policy, tag>::initializer;
+
+
 } // namespace detail
 
 template <class T, class Policy>
@@ -286,6 +326,9 @@ inline typename tools::promote_args<T>::type log1p(T x, const Policy&)
          >::type
       >::type
    >::type tag_type;
+
+   detail::log1p_initializer<value_type, forwarding_policy, tag_type>::force_instantiate();
+
    return policies::checked_narrowing_cast<result_type, forwarding_policy>(
       detail::log1p_imp(static_cast<value_type>(x), forwarding_policy(), tag_type()), "boost::math::log1p<%1%>(%1%)");
 }
@@ -465,6 +508,10 @@ inline typename tools::promote_args<T>::type log1pmx(T x)
 
 } // namespace math
 } // namespace boost
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // BOOST_MATH_LOG1P_INCLUDED
 

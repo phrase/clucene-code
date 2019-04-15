@@ -33,7 +33,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
-#include <boost/cast.hpp> // boost::polymorphic_downcast
+#include <boost/polymorphic_cast.hpp> // boost::polymorphic_downcast
 // BOOST_NO_EXCEPTIONS, BOOST_MSVC, BOOST_MSVC_STD_ITERATOR
 #include <boost/config.hpp>
 
@@ -230,7 +230,7 @@ class history_key
 //////////////////////////////////////////////////////////////////////////////
 template< class MostDerived,
           class InitialState,
-          class Allocator = std::allocator< void >,
+          class Allocator = std::allocator< none >,
           class ExceptionTranslator = null_exception_translator >
 class state_machine : noncopyable
 {

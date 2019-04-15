@@ -28,6 +28,16 @@
 #  include <boost/assert.hpp>
 #endif
 
+#if defined(__GNUC__) && defined(BOOST_MATH_USE_FLOAT128)
+//
+// This is the only way we can avoid
+// warning: non-standard suffix on floating constant [-Wpedantic]
+// when building with -Wall -pedantic.  Neither __extension__
+// nor #pragma dianostic ignored work :(
+//
+#pragma GCC system_header
+#endif
+
 namespace boost{ namespace math{
 
 namespace detail
@@ -65,34 +75,37 @@ namespace detail
      expm1_series& operator=(const expm1_series&);
   };
 
-template <class T, bool b = boost::is_pod<T>::value>
-struct expm1_init_on_startup
+template <class T, class Policy, class tag>
+struct expm1_initializer
 {
    struct init
    {
       init()
       {
-         boost::math::expm1(T(0.5f));
+         do_init(tag());
       }
-      void do_nothing()const{}
+      template <int N>
+      static void do_init(const mpl::int_<N>&){}
+      static void do_init(const mpl::int_<64>&)
+      {
+         expm1(T(0.5));
+      }
+      static void do_init(const mpl::int_<113>&)
+      {
+         expm1(T(0.5));
+      }
+      void force_instantiate()const{}
    };
-
-   static void do_nothing()
-   {
-      initializer.do_nothing();
-   }
-
    static const init initializer;
+   static void force_instantiate()
+   {
+      initializer.force_instantiate();
+   }
 };
 
-template <class T, bool b>
-const typename expm1_init_on_startup<T, b>::init expm1_init_on_startup<T, b>::initializer;
+template <class T, class Policy, class tag>
+const typename expm1_initializer<T, Policy, tag>::init expm1_initializer<T, Policy, tag>::initializer;
 
-template <class T>
-struct expm1_init_on_startup<T, true>
-{
-   static void do_nothing(){}
-};
 //
 // Algorithm expm1 is part of C99, but is not yet provided by many compilers.
 //
@@ -104,6 +117,10 @@ T expm1_imp(T x, const mpl::int_<0>&, const Policy& pol)
    BOOST_MATH_STD_USING
 
    T a = fabs(x);
+   if((boost::math::isnan)(a))
+   {
+      return policies::raise_domain_error<T>("boost::math::expm1<%1%>(%1%)", "expm1 requires a finite argument, but got %1%", a, pol);
+   }
    if(a > T(0.5f))
    {
       if(a >= tools::log_max_value<T>())
@@ -133,8 +150,6 @@ T expm1_imp(T x, const mpl::int_<53>&, const P& pol)
 {
    BOOST_MATH_STD_USING
 
-   expm1_init_on_startup<T>::do_nothing();
-
    T a = fabs(x);
    if(a > T(0.5L))
    {
@@ -150,8 +165,8 @@ T expm1_imp(T x, const mpl::int_<53>&, const P& pol)
       return x;
 
    static const float Y = 0.10281276702880859e1f;
-   static const T n[] = { -0.28127670288085937e-1, 0.51278186299064534e0, -0.6310029069350198e-1, 0.11638457975729296e-1, -0.52143390687521003e-3, 0.21491399776965688e-4 };
-   static const T d[] = { 1, -0.45442309511354755e0, 0.90850389570911714e-1, -0.10088963629815502e-1, 0.63003407478692265e-3, -0.17976570003654402e-4 };
+   static const T n[] = { static_cast<T>(-0.28127670288085937e-1), static_cast<T>(0.51278186299064534e0), static_cast<T>(-0.6310029069350198e-1), static_cast<T>(0.11638457975729296e-1), static_cast<T>(-0.52143390687521003e-3), static_cast<T>(0.21491399776965688e-4) };
+   static const T d[] = { 1, static_cast<T>(-0.45442309511354755e0), static_cast<T>(0.90850389570911714e-1), static_cast<T>(-0.10088963629815502e-1), static_cast<T>(0.63003407478692265e-3), static_cast<T>(-0.17976570003654402e-4) };
 
    T result = x * Y + x * tools::evaluate_polynomial(n, x) / tools::evaluate_polynomial(d, x);
    return result;
@@ -161,8 +176,6 @@ template <class T, class P>
 T expm1_imp(T x, const mpl::int_<64>&, const P& pol)
 {
    BOOST_MATH_STD_USING
-
-   expm1_init_on_startup<T>::do_nothing();
 
    T a = fabs(x);
    if(a > T(0.5L))
@@ -189,7 +202,7 @@ T expm1_imp(T x, const mpl::int_<64>&, const P& pol)
        BOOST_MATH_BIG_CONSTANT(T, 64, -0.714539134024984593011e-6)
    };
    static const T d[] = { 
-      1, 
+      BOOST_MATH_BIG_CONSTANT(T, 64, 1.0),
       BOOST_MATH_BIG_CONSTANT(T, 64, -0.461477618025562520389e0),
       BOOST_MATH_BIG_CONSTANT(T, 64, 0.961237488025708540713e-1),
       BOOST_MATH_BIG_CONSTANT(T, 64, -0.116483957658204450739e-1),
@@ -206,8 +219,6 @@ template <class T, class P>
 T expm1_imp(T x, const mpl::int_<113>&, const P& pol)
 {
    BOOST_MATH_STD_USING
-
-   expm1_init_on_startup<T>::do_nothing();
 
    T a = fabs(x);
    if(a > T(0.5L))
@@ -237,7 +248,7 @@ T expm1_imp(T x, const mpl::int_<113>&, const P& pol)
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.45261820069007790520447958280473183582e-10)
    };
    static const T d[] = { 
-      1,
+      BOOST_MATH_BIG_CONSTANT(T, 113, 1.0),
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.45441264709074310514348137469214538853e0),
       BOOST_MATH_BIG_CONSTANT(T, 113, 0.96827131936192217313133611655555298106e-1),
       BOOST_MATH_BIG_CONSTANT(T, 113, -0.12745248725908178612540554584374876219e-1),
@@ -287,6 +298,8 @@ inline typename tools::promote_args<T>::type expm1(T x, const Policy& /* pol */)
       >::type
    >::type tag_type;
 
+   detail::expm1_initializer<value_type, forwarding_policy, tag_type>::force_instantiate();
+   
    return policies::checked_narrowing_cast<result_type, forwarding_policy>(detail::expm1_imp(
       static_cast<value_type>(x),
       tag_type(), forwarding_policy()), "boost::math::expm1<%1%>(%1%)");
@@ -306,7 +319,7 @@ inline float expm1(float x, const policies::policy<>&){ return ::expm1f(x); }
 inline long double expm1(long double x, const policies::policy<>&){ return ::expm1l(x); }
 #     endif
 #  else
-inline float expm1(float x, const policies::policy<>&){ return ::expm1(x); }
+inline float expm1(float x, const policies::policy<>&){ return static_cast<float>(::expm1(x)); }
 #  endif
 inline double expm1(double x, const policies::policy<>&){ return ::expm1(x); }
 #endif

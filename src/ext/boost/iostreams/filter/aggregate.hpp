@@ -8,7 +8,7 @@
 #ifndef BOOST_IOSTREAMS_AGGREGATE_FILTER_HPP_INCLUDED
 #define BOOST_IOSTREAMS_AGGREGATE_FILTER_HPP_INCLUDED
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1020)
+#if defined(_MSC_VER)
 # pragma once
 #endif              
 
@@ -33,7 +33,7 @@ namespace boost { namespace iostreams {
 
 //
 // Template name: aggregate_filter.
-// Template paramters:
+// Template parameters:
 //      Ch - The character type.
 //      Alloc - The allocator type.
 // Description: Utility for defining DualUseFilters which filter an

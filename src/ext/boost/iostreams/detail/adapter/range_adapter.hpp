@@ -8,7 +8,7 @@
 #ifndef BOOST_IOSTREAMS_DETAIL_RANGE_ADAPTER_HPP_INCLUDED
 #define BOOST_IOSTREAMS_DETAIL_RANGE_ADAPTER_HPP_INCLUDED
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1020)
+#if defined(_MSC_VER)
 # pragma once
 #endif              
 
@@ -36,7 +36,7 @@ template<typename Traversal> struct range_adapter_impl;
 //
 // Template name: range_adapter
 // Description: Device based on an instance of boost::iterator_range.
-// Template paramters:
+// Template parameters:
 //     Mode - A mode tag.
 //     Range - An instance of iterator_range.
 //

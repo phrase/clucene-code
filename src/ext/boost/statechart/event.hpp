@@ -12,7 +12,7 @@
 #include <boost/statechart/detail/rtti_policy.hpp>
 #include <boost/statechart/detail/memory.hpp>
 
-#include <boost/cast.hpp> // boost::polymorphic_downcast
+#include <boost/polymorphic_cast.hpp> // boost::polymorphic_downcast
 
 #include <memory> // std::allocator
 
@@ -26,7 +26,7 @@ namespace statechart
 
 
 //////////////////////////////////////////////////////////////////////////////
-template< class MostDerived, class Allocator = std::allocator< void > >
+template< class MostDerived, class Allocator = std::allocator< none > >
 class event : public detail::rtti_policy::rtti_derived_type<
   MostDerived, event_base >
 {

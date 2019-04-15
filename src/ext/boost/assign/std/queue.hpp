@@ -12,18 +12,20 @@
 #ifndef BOOST_ASSIGN_STD_QUEUE_HPP
 #define BOOST_ASSIGN_STD_QUEUE_HPP
 
-#if defined(_MSC_VER) && (_MSC_VER >= 1020)
+#if defined(_MSC_VER)
 # pragma once
 #endif
 
 #include <boost/assign/list_inserter.hpp>
 #include <boost/config.hpp>
+#include <boost/move/utility.hpp>
 #include <queue>
 
 namespace boost
 {
 namespace assign
 {
+#if defined(BOOST_NO_CXX11_RVALUE_REFERENCES)
 
     template< class V, class C, class V2 >
     inline list_inserter< assign_detail::call_push< std::queue<V,C> >, V >
@@ -39,6 +41,23 @@ namespace assign
         return push( c )( v );
     }
 
+#else
+
+    template< class V, class C, class V2 >
+    inline list_inserter< assign_detail::call_push< std::queue<V, C> >, V >
+    operator+=(std::queue<V, C>& c, V2&& v)
+    {
+        return push(c)(boost::forward<V2>(v));
+    }
+
+    template< class V, class C, class V2 >
+    inline list_inserter< assign_detail::call_push< std::priority_queue<V, C> >, V >
+    operator+=(std::priority_queue<V, C>& c, V2&& v)
+    {
+        return push(c)(boost::forward<V2>(v));
+    }
+
+#endif
 }
 }
 

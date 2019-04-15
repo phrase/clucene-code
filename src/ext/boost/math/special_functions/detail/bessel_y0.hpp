@@ -8,6 +8,8 @@
 
 #ifdef _MSC_VER
 #pragma once
+#pragma warning(push)
+#pragma warning(disable:4702) // Unreachable code (release mode only warning)
 #endif
 
 #include <boost/math/special_functions/detail/bessel_j0.hpp>
@@ -17,6 +19,16 @@
 #include <boost/math/policies/error_handling.hpp>
 #include <boost/assert.hpp>
 
+#if defined(__GNUC__) && defined(BOOST_MATH_USE_FLOAT128)
+//
+// This is the only way we can avoid
+// warning: non-standard suffix on floating constant [-Wpedantic]
+// when building with -Wall -pedantic.  Neither __extension__
+// nor #pragma dianostic ignored work :(
+//
+#pragma GCC system_header
+#endif
+
 // Bessel function of the second kind of order zero
 // x <= 8, minimax rational approximations on root-bracketing intervals
 // x > 8, Hankel asymptotic expansion in Hart, Computer Approximations, 1968
@@ -24,8 +36,38 @@
 namespace boost { namespace math { namespace detail{
 
 template <typename T, typename Policy>
+T bessel_y0(T x, const Policy&);
+
+template <class T, class Policy>
+struct bessel_y0_initializer
+{
+   struct init
+   {
+      init()
+      {
+         do_init();
+      }
+      static void do_init()
+      {
+         bessel_y0(T(1), Policy());
+      }
+      void force_instantiate()const{}
+   };
+   static const init initializer;
+   static void force_instantiate()
+   {
+      initializer.force_instantiate();
+   }
+};
+
+template <class T, class Policy>
+const typename bessel_y0_initializer<T, Policy>::init bessel_y0_initializer<T, Policy>::initializer;
+
+template <typename T, typename Policy>
 T bessel_y0(T x, const Policy& pol)
 {
+    bessel_y0_initializer<T, Policy>::force_instantiate();
+
     static const T P1[] = {
          static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, 1.0723538782003176831e+11)),
         static_cast<T>(BOOST_MATH_BIG_CONSTANT(T, 64, -8.3716255451260504098e+09)),
@@ -167,17 +209,32 @@ T bessel_y0(T x, const Policy& pol)
     {
         T y = 8 / x;
         T y2 = y * y;
-        T z = x - 0.25f * pi<T>();
         rc = evaluate_rational(PC, QC, y2);
         rs = evaluate_rational(PS, QS, y2);
-        factor = sqrt(2 / (x * pi<T>()));
-        value = factor * (rc * sin(z) + y * rs * cos(z));
+        factor = constants::one_div_root_pi<T>() / sqrt(x);
+        //
+        // The following code is really just:
+        //
+        // T z = x - 0.25f * pi<T>();
+        // value = factor * (rc * sin(z) + y * rs * cos(z));
+        //
+        // But using the sin/cos addition formulae and constant values for
+        // sin/cos of PI/4 which then cancel part of the "factor" term as they're all
+        // 1 / sqrt(2):
+        //
+        T sx = sin(x);
+        T cx = cos(x);
+        value = factor * (rc * (sx - cx) + y * rs * (cx + sx));
     }
 
     return value;
 }
 
 }}} // namespaces
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif // BOOST_MATH_BESSEL_Y0_HPP
 

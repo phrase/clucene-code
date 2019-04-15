@@ -12,9 +12,7 @@
 #endif
 
 #include <boost/call_traits.hpp>
-#include <boost/detail/iterator.hpp>
-#include <boost/foreach.hpp>
-#include <boost/assert.hpp>
+#include <iterator> // for std::iterator_traits
 
 namespace boost { namespace spirit { namespace qi { namespace detail
 {
@@ -24,8 +22,8 @@ namespace boost { namespace spirit { namespace qi { namespace detail
     template <typename Char, typename T>
     struct tst_node
     {
-        tst_node(Char id)
-          : id(id), data(0), lt(0), eq(0), gt(0)
+        tst_node(Char id_)
+          : id(id_), data(0), lt(0), eq(0), gt(0)
         {
         }
 
@@ -76,7 +74,7 @@ namespace boost { namespace spirit { namespace qi { namespace detail
             while (p && i != last)
             {
                 typename
-                    boost::detail::iterator_traits<Iterator>::value_type
+                    std::iterator_traits<Iterator>::value_type
                 c = filter(*i); // filter only the input
 
                 if (c == p->id)
@@ -120,7 +118,7 @@ namespace boost { namespace spirit { namespace qi { namespace detail
             for(;;)
             {
                 typename
-                    boost::detail::iterator_traits<Iterator>::value_type
+                    std::iterator_traits<Iterator>::value_type
                 c = *first;
 
                 if (*pp == 0)
@@ -156,7 +154,7 @@ namespace boost { namespace spirit { namespace qi { namespace detail
                 return;
 
             typename
-                boost::detail::iterator_traits<Iterator>::value_type
+                std::iterator_traits<Iterator>::value_type
             c = *first;
 
             if (c == p->id)

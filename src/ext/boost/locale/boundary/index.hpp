@@ -14,6 +14,7 @@
 #include <boost/locale/boundary/segment.hpp>
 #include <boost/locale/boundary/boundary_point.hpp>
 #include <boost/iterator/iterator_facade.hpp>
+#include <boost/type_traits/is_same.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/cstdint.hpp>
 #include <boost/assert.hpp>
@@ -59,38 +60,16 @@ namespace boost {
 
                 template<typename CharType,typename SomeIteratorType>
                 struct linear_iterator_traits {
-                    static const bool is_linear = false;
+                    static const bool is_linear =
+                        is_same<SomeIteratorType,CharType*>::value
+                        || is_same<SomeIteratorType,CharType const*>::value
+                        || is_same<SomeIteratorType,typename std::basic_string<CharType>::iterator>::value
+                        || is_same<SomeIteratorType,typename std::basic_string<CharType>::const_iterator>::value
+                        || is_same<SomeIteratorType,typename std::vector<CharType>::iterator>::value
+                        || is_same<SomeIteratorType,typename std::vector<CharType>::const_iterator>::value
+                        ;
                 };
 
-                template<typename CharType>
-                struct linear_iterator_traits<CharType,typename std::basic_string<CharType>::iterator> {
-                    static const bool is_linear = true;
-                };
-
-                template<typename CharType>
-                struct linear_iterator_traits<CharType,typename std::basic_string<CharType>::const_iterator> {
-                    static const bool is_linear = true;
-                };
-                
-                template<typename CharType>
-                struct linear_iterator_traits<CharType,typename std::vector<CharType>::iterator> {
-                    static const bool is_linear = true;
-                };
-
-                template<typename CharType>
-                struct linear_iterator_traits<CharType,typename std::vector<CharType>::const_iterator> {
-                    static const bool is_linear = true;
-                };
-
-                template<typename CharType>
-                struct linear_iterator_traits<CharType,CharType *> {
-                    static const bool is_linear = true;
-                };
-
-                template<typename CharType>
-                struct linear_iterator_traits<CharType,CharType const *> {
-                    static const bool is_linear = true;
-                };
 
 
                 template<typename IteratorType>
@@ -1057,37 +1036,37 @@ namespace boost {
           
             typedef segment_index<std::string::const_iterator> ssegment_index;      ///< convenience typedef
             typedef segment_index<std::wstring::const_iterator> wssegment_index;    ///< convenience typedef
-            #ifdef BOOST_HAS_CHAR16_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR16_T
             typedef segment_index<std::u16string::const_iterator> u16ssegment_index;///< convenience typedef
             #endif
-            #ifdef BOOST_HAS_CHAR32_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR32_T
             typedef segment_index<std::u32string::const_iterator> u32ssegment_index;///< convenience typedef
             #endif
            
             typedef segment_index<char const *> csegment_index;                     ///< convenience typedef
             typedef segment_index<wchar_t const *> wcsegment_index;                 ///< convenience typedef
-            #ifdef BOOST_HAS_CHAR16_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR16_T
             typedef segment_index<char16_t const *> u16csegment_index;              ///< convenience typedef
             #endif
-            #ifdef BOOST_HAS_CHAR32_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR32_T
             typedef segment_index<char32_t const *> u32csegment_index;              ///< convenience typedef
             #endif
 
             typedef boundary_point_index<std::string::const_iterator> sboundary_point_index;///< convenience typedef
             typedef boundary_point_index<std::wstring::const_iterator> wsboundary_point_index;///< convenience typedef
-            #ifdef BOOST_HAS_CHAR16_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR16_T
             typedef boundary_point_index<std::u16string::const_iterator> u16sboundary_point_index;///< convenience typedef
             #endif
-            #ifdef BOOST_HAS_CHAR32_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR32_T
             typedef boundary_point_index<std::u32string::const_iterator> u32sboundary_point_index;///< convenience typedef
             #endif
            
             typedef boundary_point_index<char const *> cboundary_point_index;       ///< convenience typedef
             typedef boundary_point_index<wchar_t const *> wcboundary_point_index;   ///< convenience typedef
-            #ifdef BOOST_HAS_CHAR16_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR16_T
             typedef boundary_point_index<char16_t const *> u16cboundary_point_index;///< convenience typedef
             #endif
-            #ifdef BOOST_HAS_CHAR32_T
+            #ifdef BOOST_LOCALE_ENABLE_CHAR32_T
             typedef boundary_point_index<char32_t const *> u32cboundary_point_index;///< convenience typedef
             #endif
 

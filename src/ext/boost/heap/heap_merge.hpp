@@ -9,9 +9,17 @@
 #ifndef BOOST_HEAP_MERGE_HPP
 #define BOOST_HEAP_MERGE_HPP
 
+#include <algorithm>
+
 #include <boost/concept/assert.hpp>
 #include <boost/heap/heap_concepts.hpp>
+#include <boost/type_traits/conditional.hpp>
 #include <boost/type_traits/is_same.hpp>
+
+#ifdef BOOST_HAS_PRAGMA_ONCE
+#pragma once
+#endif
+
 
 namespace boost  {
 namespace heap   {
@@ -34,7 +42,7 @@ struct heap_merge_emulate
         }
     };
 
-    typedef typename boost::mpl::if_c<Heap1::has_reserve,
+    typedef typename boost::conditional<Heap1::has_reserve,
                                       reserver,
                                       dummy_reserver>::type space_reserver;
 
@@ -56,8 +64,8 @@ struct heap_merge_emulate
             rhs.pop();
         }
 
-        lhs.set_stability_count(std::max(lhs.get_stability_count(),
-                                         rhs.get_stability_count()));
+        lhs.set_stability_count((std::max)(lhs.get_stability_count(),
+                                           rhs.get_stability_count()));
         rhs.set_stability_count(0);
     }
 
@@ -78,7 +86,7 @@ template <typename Heap>
 struct heap_merge_same
 {
     static const bool is_mergable = Heap::is_mergable;
-    typedef typename boost::mpl::if_c<is_mergable,
+    typedef typename boost::conditional<is_mergable,
                                       heap_merge_same_mergable<Heap>,
                                       heap_merge_emulate<Heap, Heap>
                                      >::type heap_merger;
@@ -110,7 +118,7 @@ void heap_merge(Heap1 & lhs, Heap2 & rhs)
 
     const bool same_heaps = boost::is_same<Heap1, Heap2>::value;
 
-    typedef typename boost::mpl::if_c<same_heaps,
+    typedef typename boost::conditional<same_heaps,
                                       detail::heap_merge_same<Heap1>,
                                       detail::heap_merge_emulate<Heap1, Heap2>
                                      >::type heap_merger;
