@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: piecewise_linear_distribution.hpp 71018 2011-04-05 21:27:52Z steven_watanabe $
+ * $Id$
  */
 
 #ifndef BOOST_RANDOM_PIECEWISE_LINEAR_DISTRIBUTION_HPP_INCLUDED
@@ -24,7 +24,7 @@
 #include <boost/random/detail/operators.hpp>
 #include <boost/random/detail/vector_io.hpp>
 
-#ifndef BOOST_NO_INITIALIZER_LISTS
+#ifndef BOOST_NO_CXX11_HDR_INITIALIZER_LIST
 #include <initializer_list>
 #endif
 
@@ -89,7 +89,7 @@ public:
                 }
             }
         }
-#ifndef BOOST_NO_INITIALIZER_LISTS
+#ifndef BOOST_NO_CXX11_HDR_INITIALIZER_LIST
         /**
          * Constructs a @c param_type object from an initializer_list
          * containing the interval boundaries and a unary function
@@ -278,7 +278,7 @@ public:
             init();
         }
     }
-#ifndef BOOST_NO_INITIALIZER_LISTS
+#ifndef BOOST_NO_CXX11_HDR_INITIALIZER_LIST
     /**
      * Constructs a piecewise_linear_distribution from an
      * initializer_list containing the interval boundaries
@@ -487,6 +487,7 @@ private:
     void init(const std::vector<RealType>& intervals_arg,
               const std::vector<RealType>& weights_arg)
     {
+        using std::abs;
         std::vector<RealType> bin_weights;
         bin_weights.reserve((intervals_arg.size() - 1) * 2);
         for(std::size_t i = 0; i < intervals_arg.size() - 1; ++i) {
@@ -494,7 +495,7 @@ private:
             RealType w1 = weights_arg[i];
             RealType w2 = weights_arg[i + 1];
             bin_weights.push_back((std::min)(w1, w2) * width);
-            bin_weights.push_back(std::abs(w1 - w2) * width / 2);
+            bin_weights.push_back(abs(w1 - w2) * width / 2);
         }
         typedef discrete_distribution<std::size_t, RealType> bins_type;
         typename bins_type::param_type bins_param(bin_weights);

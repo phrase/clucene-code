@@ -2,7 +2,7 @@
 // detail/signal_set_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2012 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -20,16 +20,23 @@
 #include <cstddef>
 #include <signal.h>
 #include <boost/asio/error.hpp>
-#include <boost/asio/io_service.hpp>
+#include <boost/asio/execution_context.hpp>
 #include <boost/asio/detail/handler_alloc_helpers.hpp>
+#include <boost/asio/detail/memory.hpp>
 #include <boost/asio/detail/op_queue.hpp>
 #include <boost/asio/detail/signal_handler.hpp>
 #include <boost/asio/detail/signal_op.hpp>
 #include <boost/asio/detail/socket_types.hpp>
 
-#if !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
+#if defined(BOOST_ASIO_HAS_IOCP)
+# include <boost/asio/detail/win_iocp_io_context.hpp>
+#else // defined(BOOST_ASIO_HAS_IOCP)
+# include <boost/asio/detail/scheduler.hpp>
+#endif // defined(BOOST_ASIO_HAS_IOCP)
+
+#if !defined(BOOST_ASIO_WINDOWS) && !defined(__CYGWIN__)
 # include <boost/asio/detail/reactor.hpp>
-#endif // !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
+#endif // !defined(BOOST_ASIO_WINDOWS) && !defined(__CYGWIN__)
 
 #include <boost/asio/detail/push_options.hpp>
 
@@ -45,9 +52,10 @@ enum { max_signal_number = 128 };
 
 extern BOOST_ASIO_DECL struct signal_state* get_signal_state();
 
-extern "C" BOOST_ASIO_DECL void asio_signal_handler(int signal_number);
+extern "C" BOOST_ASIO_DECL void boost_asio_signal_handler(int signal_number);
 
-class signal_set_service
+class signal_set_service :
+  public execution_context_service_base<signal_set_service>
 {
 public:
   // Type used for tracking an individual signal registration.
@@ -108,17 +116,17 @@ public:
   };
 
   // Constructor.
-  BOOST_ASIO_DECL signal_set_service(boost::asio::io_service& io_service);
+  BOOST_ASIO_DECL signal_set_service(execution_context& context);
 
   // Destructor.
   BOOST_ASIO_DECL ~signal_set_service();
 
   // Destroy all user-defined handler objects owned by the service.
-  BOOST_ASIO_DECL void shutdown_service();
+  BOOST_ASIO_DECL void shutdown();
 
   // Perform fork-related housekeeping.
-  BOOST_ASIO_DECL void fork_service(
-      boost::asio::io_service::fork_event fork_ev);
+  BOOST_ASIO_DECL void notify_fork(
+      boost::asio::execution_context::fork_event fork_ev);
 
   // Construct a new signal_set implementation.
   BOOST_ASIO_DECL void construct(implementation_type& impl);
@@ -143,17 +151,18 @@ public:
       boost::system::error_code& ec);
 
   // Start an asynchronous operation to wait for a signal to be delivered.
-  template <typename Handler>
-  void async_wait(implementation_type& impl, Handler handler)
+  template <typename Handler, typename IoExecutor>
+  void async_wait(implementation_type& impl,
+      Handler& handler, const IoExecutor& io_ex)
   {
     // Allocate and construct an operation to wrap the handler.
-    typedef signal_handler<Handler> op;
-    typename op::ptr p = { boost::addressof(handler),
-      boost_asio_handler_alloc_helpers::allocate(
-        sizeof(op), handler), 0 };
-    p.p = new (p.v) op(handler);
+    typedef signal_handler<Handler, IoExecutor> op;
+    typename op::ptr p = { boost::asio::detail::addressof(handler),
+      op::ptr::allocate(handler), 0 };
+    p.p = new (p.v) op(handler, io_ex);
 
-    BOOST_ASIO_HANDLER_CREATION((p.p, "signal_set", &impl, "async_wait"));
+    BOOST_ASIO_HANDLER_CREATION((scheduler_.context(),
+          *p.p, "signal_set", &impl, 0, "async_wait"));
 
     start_wait_op(impl, p.p);
     p.v = p.p = 0;
@@ -178,10 +187,17 @@ private:
   // Helper function to start a wait operation.
   BOOST_ASIO_DECL void start_wait_op(implementation_type& impl, signal_op* op);
 
-  // The io_service instance used for dispatching handlers.
-  io_service_impl& io_service_;
+  // The scheduler used for dispatching handlers.
+#if defined(BOOST_ASIO_HAS_IOCP)
+  typedef class win_iocp_io_context scheduler_impl;
+#else
+  typedef class scheduler scheduler_impl;
+#endif
+  scheduler_impl& scheduler_;
 
-#if !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
+#if !defined(BOOST_ASIO_WINDOWS) \
+  && !defined(BOOST_ASIO_WINDOWS_RUNTIME) \
+  && !defined(__CYGWIN__)
   // The type used for registering for pipe reactor notifications.
   class pipe_read_op;
 
@@ -190,7 +206,9 @@ private:
 
   // The per-descriptor reactor data used for the pipe.
   reactor::per_descriptor_data reactor_data_;
-#endif // !defined(BOOST_WINDOWS) && !defined(__CYGWIN__)
+#endif // !defined(BOOST_ASIO_WINDOWS)
+       //   && !defined(BOOST_ASIO_WINDOWS_RUNTIME)
+       //   && !defined(__CYGWIN__)
 
   // A mapping from signal number to the registered signal sets.
   registration* registrations_[max_signal_number];

@@ -248,8 +248,8 @@ namespace boost {
 
     template <class Graph>
     struct choose_graph_copy {
-      typedef typename Graph::traversal_category Trv;
-      typedef typename Graph::directed_category Dr;
+      typedef typename graph_traits<Graph>::traversal_category Trv;
+      typedef typename graph_traits<Graph>::directed_category Dr;
       enum { algo = 
              (is_convertible<Trv, vertex_list_graph_tag>::value
               && is_convertible<Trv, edge_list_graph_tag>::value)
@@ -280,7 +280,7 @@ namespace boost {
       typedef choose_copier_parameter type;
     };
     template <>
-    struct choose_edge_copy<detail::error_property_not_found> {
+    struct choose_edge_copy<param_not_found> {
       typedef choose_default_edge_copier type;
     };
     template <class Param, class G1, class G2>
@@ -314,7 +314,7 @@ namespace boost {
       typedef choose_copier_parameter type;
     };
     template <>
-    struct choose_vertex_copy<detail::error_property_not_found> {
+    struct choose_vertex_copy<param_not_found> {
       typedef choose_default_vertex_copier type;
     };
     template <class Param, class G1, class G2>

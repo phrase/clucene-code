@@ -1,4 +1,4 @@
-// // boost heap: d-ary heap as containter adaptor
+// // boost heap: d-ary heap as container adaptor
 //
 // Copyright (C) 2010 Tim Blechmann
 //
@@ -10,6 +10,7 @@
 #define BOOST_HEAP_D_ARY_HEAP_HPP
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include <boost/assert.hpp>
@@ -19,6 +20,11 @@
 #include <boost/heap/detail/ordered_adaptor_iterator.hpp>
 #include <boost/heap/detail/stable_heap.hpp>
 #include <boost/heap/detail/mutable_heap.hpp>
+
+#ifdef BOOST_HAS_PRAGMA_ONCE
+#pragma once
+#endif
+
 
 #ifndef BOOST_DOXYGEN_INVOKED
 #ifdef BOOST_HEAP_SANITYCHECKS
@@ -32,16 +38,11 @@ namespace boost  {
 namespace heap   {
 namespace detail {
 
-template <typename T>
 struct nop_index_updater
 {
-    void operator()(T &, std::size_t) const
+    template <typename T>
+    static void run(T &, std::size_t)
     {}
-
-    template <typename U>
-    struct rebind {
-        typedef nop_index_updater<U> other;
-    };
 };
 
 typedef parameter::parameters<boost::parameter::required<tag::arity>,
@@ -65,11 +66,15 @@ class d_ary_heap:
     typedef typename heap_base_maker::type super_t;
     typedef typename super_t::internal_type internal_type;
 
+#ifdef BOOST_NO_CXX11_ALLOCATOR
     typedef typename heap_base_maker::allocator_argument::template rebind<internal_type>::other internal_type_allocator;
+#else
+    typedef typename std::allocator_traits<typename heap_base_maker::allocator_argument>::template rebind_alloc<internal_type> internal_type_allocator;
+#endif
     typedef std::vector<internal_type, internal_type_allocator> container_type;
     typedef typename container_type::const_iterator container_iterator;
 
-    typedef typename IndexUpdater::template rebind<internal_type>::other index_updater;
+    typedef IndexUpdater index_updater;
 
     container_type q_;
 
@@ -159,7 +164,7 @@ public:
         super_t(rhs), q_(rhs.q_)
     {}
 
-#ifdef BOOST_HAS_RVALUE_REFS
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
     d_ary_heap(d_ary_heap && rhs):
         super_t(std::move(rhs)), q_(std::move(rhs.q_))
     {}
@@ -217,7 +222,7 @@ public:
         siftup(q_.size() - 1);
     }
 
-#if defined(BOOST_HAS_RVALUE_REFS) && !defined(BOOST_NO_VARIADIC_TEMPLATES)
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES) && !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
     template <class... Args>
     void emplace(Args&&... args)
     {
@@ -279,7 +284,7 @@ private:
     void reset_index(size_type index, size_type new_index)
     {
         BOOST_HEAP_ASSERT(index < q_.size());
-        index_updater()(q_[index], new_index);
+        index_updater::run(q_[index], new_index);
     }
 
     void siftdown(size_type index)
@@ -352,10 +357,8 @@ private:
 
     size_type last_child_index(size_type index) const
     {
-        typedef typename container_type::const_iterator container_iterator;
         const size_t first_index = first_child_index(index);
-
-        const size_type last_index = std::min(first_index + D - 1, size() - 1);
+        const size_type last_index = (std::min)(first_index + D - 1, size() - 1);
 
         return last_index;
     }
@@ -422,9 +425,9 @@ struct select_dary_heap
 {
     static const bool is_mutable = extract_mutable<BoundArgs>::value;
 
-    typedef typename mpl::if_c< is_mutable,
-                                priority_queue_mutable_wrapper<d_ary_heap<T, BoundArgs, nop_index_updater<T> > >,
-                                d_ary_heap<T, BoundArgs, nop_index_updater<T> >
+    typedef typename boost::conditional< is_mutable,
+                                priority_queue_mutable_wrapper<d_ary_heap<T, BoundArgs, nop_index_updater > >,
+                                d_ary_heap<T, BoundArgs, nop_index_updater >
                               >::type type;
 };
 
@@ -528,7 +531,7 @@ public:
         super_t(rhs)
     {}
 
-#ifdef BOOST_HAS_RVALUE_REFS
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
     /// \copydoc boost::heap::priority_queue::priority_queue(priority_queue &&)
     d_ary_heap(d_ary_heap && rhs):
         super_t(std::move(rhs))
@@ -586,15 +589,15 @@ public:
     }
 
     /// \copydoc boost::heap::priority_queue::push
-    typename mpl::if_c<is_mutable, handle_type, void>::type push(value_type const & v)
+    typename boost::conditional<is_mutable, handle_type, void>::type push(value_type const & v)
     {
         return super_t::push(v);
     }
 
-#if defined(BOOST_HAS_RVALUE_REFS) && !defined(BOOST_NO_VARIADIC_TEMPLATES)
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES) && !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
     /// \copydoc boost::heap::priority_queue::emplace
     template <class... Args>
-    typename mpl::if_c<is_mutable, handle_type, void>::type emplace(Args&&... args)
+    typename boost::conditional<is_mutable, handle_type, void>::type emplace(Args&&... args)
     {
         return super_t::emplace(std::forward<Args>(args)...);
     }
@@ -753,7 +756,7 @@ public:
     static handle_type s_handle_from_iterator(iterator const & it)
     {
         BOOST_STATIC_ASSERT(is_mutable);
-        return super_t::handle_type(it);
+        return super_t::s_handle_from_iterator(it);
     }
 
     /// \copydoc boost::heap::priority_queue::pop
@@ -769,13 +772,25 @@ public:
     }
 
     /// \copydoc boost::heap::priority_queue::begin
-    iterator begin(void) const
+    const_iterator begin(void) const
+    {
+        return super_t::begin();
+    }
+
+    /// \copydoc boost::heap::priority_queue::begin
+    iterator begin(void)
     {
         return super_t::begin();
     }
 
     /// \copydoc boost::heap::priority_queue::end
-    iterator end(void) const
+    iterator end(void)
+    {
+        return super_t::end();
+    }
+
+    /// \copydoc boost::heap::priority_queue::end
+    const_iterator end(void) const
     {
         return super_t::end();
     }

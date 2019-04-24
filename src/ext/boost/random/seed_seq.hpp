@@ -7,7 +7,7 @@
  *
  * See http://www.boost.org for most recent version including documentation.
  *
- * $Id: seed_seq.hpp 74867 2011-10-09 23:13:31Z steven_watanabe $
+ * $Id$
  *
  */
 
@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <iterator>
 
-#ifndef BOOST_NO_INITIALIZER_LISTS
+#ifndef BOOST_NO_CXX11_HDR_INITIALIZER_LIST
 #include <initializer_list>
 #endif
 
@@ -42,7 +42,7 @@ public:
 
     /** Initializes a seed_seq to hold an empty sequence. */
     seed_seq() {}
-#ifndef BOOST_NO_INITIALIZER_LISTS
+#ifndef BOOST_NO_CXX11_HDR_INITIALIZER_LIST
     /** Initializes the sequence from an initializer_list. */
     template<class T>
     seed_seq(const std::initializer_list<T>& il) : v(il.begin(), il.end()) {}
@@ -79,25 +79,25 @@ public:
         std::size_t m = (std::max)(s+1, n);
         value_type mask = 0xffffffffu;
         for(std::size_t k = 0; k < m; ++k) {
-            value_type r1 =
-                *(first + k%n) ^ *(first + (k+p)%n) ^ *(first + (k+n-1)%n);
+            value_type r1 = static_cast<value_type>
+                (*(first + k%n) ^ *(first + (k+p)%n) ^ *(first + (k+n-1)%n));
             r1 = r1 ^ (r1 >> 27);
             r1 = (r1 * 1664525u) & mask;
-            value_type r2 = r1 +
+            value_type r2 = static_cast<value_type>(r1 +
                 ((k == 0) ? s :
                  (k <= s) ? k % n + v[k - 1] :
-                 (k % n));
+                 (k % n)));
             *(first + (k+p)%n) = (*(first + (k+p)%n) + r1) & mask;
             *(first + (k+q)%n) = (*(first + (k+q)%n) + r2) & mask;
             *(first + k%n) = r2;
         }
         for(std::size_t k = m; k < m + n; ++k) {
-            value_type r3 =
-                (*(first + k%n) + *(first + (k+p)%n) + *(first + (k+n-1)%n))
-                & mask;
+            value_type r3 = static_cast<value_type>
+                ((*(first + k%n) + *(first + (k+p)%n) + *(first + (k+n-1)%n))
+                & mask);
             r3 = r3 ^ (r3 >> 27);
             r3 = (r3 * 1566083941u) & mask;
-            value_type r4 = r3 - k%m;
+            value_type r4 = static_cast<value_type>(r3 - k%n);
             *(first + (k+p)%n) ^= r3;
             *(first + (k+q)%n) ^= r4;
             *(first + k%n) = r4;

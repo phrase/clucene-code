@@ -18,6 +18,7 @@
 #include <boost/spirit/home/qi/detail/attributes.hpp>
 #include <boost/spirit/home/support/container.hpp>
 #include <boost/fusion/include/copy.hpp>
+#include <boost/fusion/adapted/struct/detail/extension.hpp>
 #include <boost/ref.hpp>
 #include <boost/range/iterator_range.hpp>
 
@@ -28,11 +29,25 @@ namespace boost { namespace spirit { namespace traits
     //  accept spirit's unused_type; all no-ops. Compiler optimization will
     //  easily strip these away.
     ///////////////////////////////////////////////////////////////////////////
+    namespace detail
+    {
+        template <typename T>
+        struct is_iter_range : mpl::false_ {};
+
+        template <typename I>
+        struct is_iter_range<boost::iterator_range<I> > : mpl::true_ {};
+
+        template <typename C>
+        struct is_container_of_ranges
+          : is_iter_range<typename C::value_type> {};
+    }
+
     template <typename Attribute, typename Iterator, typename Enable>
     struct assign_to_attribute_from_iterators
     {
+        // Common case
         static void
-        call(Iterator const& first, Iterator const& last, Attribute& attr)
+        call(Iterator const& first, Iterator const& last, Attribute& attr, mpl::false_)
         {
             if (traits::is_empty(attr))
                 attr = Attribute(first, last);
@@ -40,6 +55,21 @@ namespace boost { namespace spirit { namespace traits
                 for (Iterator i = first; i != last; ++i)
                     push_back(attr, *i);
             }
+        }
+
+        // If Attribute is a container with value_type==iterator_range<T> just push the
+        // iterator_range into it
+        static void
+        call(Iterator const& first, Iterator const& last, Attribute& attr, mpl::true_)
+        {
+            typename Attribute::value_type rng(first, last);
+            push_back(attr, rng);
+        }
+
+        static void
+        call(Iterator const& first, Iterator const& last, Attribute& attr)
+        {
+            call(first, last, attr, detail::is_container_of_ranges<Attribute>());
         }
     };
 
@@ -171,6 +201,16 @@ namespace boost { namespace spirit { namespace traits
         call(boost::optional<T> const& val, Attribute& attr)
         {
             assign_to(val.get(), attr);
+        }
+    };
+
+    template <typename Attribute, int N, bool Const, typename T>
+    struct assign_to_attribute_from_value<fusion::extension::adt_attribute_proxy<Attribute, N, Const>, T>
+    {
+        static void
+        call(T const& val, typename fusion::extension::adt_attribute_proxy<Attribute, N, Const>& attr)
+        {
+            attr = val;
         }
     };
 

@@ -51,17 +51,8 @@ namespace boost
             int k = itrunc(l2);
             if(k == 0)
                k = 1;
-            T pois;
-            if(k == 0)
-            {
                // Starting Poisson weight:
-               pois = exp(-l2);
-            }
-            else
-            {
-               // Starting Poisson weight:
-               pois = gamma_p_derivative(T(k+1), l2, pol);
-            }
+            T pois = gamma_p_derivative(T(k+1), l2, pol);
             if(pois == 0)
                return init_val;
             // recurance term:
@@ -524,7 +515,11 @@ namespace boost
          T non_central_beta_pdf(T a, T b, T lam, T x, T y, const Policy& pol)
          {
             BOOST_MATH_STD_USING
-               using namespace boost::math;
+            //
+            // Special cases:
+            //
+            if((x == 0) || (y == 0))
+               return 0;
             //
             // Variables come first:
             //

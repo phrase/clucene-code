@@ -8,6 +8,9 @@
 
 #include <boost/throw_exception.hpp>
 
+// forward declaration
+namespace boost { template<class T> class optional; }
+
 namespace boost { namespace program_options { 
 
     extern BOOST_PROGRAM_OPTIONS_DECL std::string arg;
@@ -16,16 +19,17 @@ namespace boost { namespace program_options {
     std::string
     typed_value<T, charT>::name() const
     {
+        std::string const& var = (m_value_name.empty() ? arg : m_value_name);
         if (!m_implicit_value.empty() && !m_implicit_value_as_text.empty()) {
-            std::string msg = "[=arg(=" + m_implicit_value_as_text + ")]";
+            std::string msg = "[=" + var + "(=" + m_implicit_value_as_text + ")]";
             if (!m_default_value.empty() && !m_default_value_as_text.empty())
                 msg += " (=" + m_default_value_as_text + ")";
             return msg;
         }
         else if (!m_default_value.empty() && !m_default_value_as_text.empty()) {
-            return arg + " (=" + m_default_value_as_text + ")";
+            return var + " (=" + m_default_value_as_text + ")";
         } else {
-            return arg;
+            return var;
         }
     }
 
@@ -104,12 +108,9 @@ namespace boost { namespace program_options {
                        int);
 #endif
     // For some reason, this declaration, which is require by the standard,
-    // cause gcc 3.2 to not generate code to specialization defined in
+    // cause msvc 7.1 to not generate code to specialization defined in
     // value_semantic.cpp
-#if ! ( ( BOOST_WORKAROUND(__GNUC__, <= 3) &&\
-          BOOST_WORKAROUND(__GNUC_MINOR__, < 3) ) || \
-        ( BOOST_WORKAROUND(BOOST_MSVC, == 1310) ) \
-      ) 
+#if ! ( BOOST_WORKAROUND(BOOST_MSVC, == 1310) )
     BOOST_PROGRAM_OPTIONS_DECL void validate(boost::any& v, 
                        const std::vector<std::string>& xs,
                        std::string*,
@@ -152,6 +153,20 @@ namespace boost { namespace program_options {
                 boost::throw_exception(invalid_option_value(s[i]));
             }
         }
+    }
+
+    /** Validates optional arguments. */
+    template<class T, class charT>
+    void validate(boost::any& v,
+                  const std::vector<std::basic_string<charT> >& s,
+                  boost::optional<T>*,
+                  int)
+    {
+        validators::check_first_occurrence(v);
+        validators::get_single_string(s);
+        boost::any a;
+        validate(a, s, (T*)0, 0);
+        v = boost::any(boost::optional<T>(boost::any_cast<T>(a)));
     }
 
     template<class T, class charT>

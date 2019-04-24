@@ -10,6 +10,7 @@
 #define BOOST_HEAP_PAIRING_HEAP_HPP
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include <boost/assert.hpp>
@@ -19,6 +20,12 @@
 #include <boost/heap/policies.hpp>
 #include <boost/heap/detail/stable_heap.hpp>
 #include <boost/heap/detail/tree_iterator.hpp>
+#include <boost/type_traits/integral_constant.hpp>
+
+#ifdef BOOST_HAS_PRAGMA_ONCE
+#pragma once
+#endif
+
 
 #ifndef BOOST_DOXYGEN_INVOKED
 #ifdef BOOST_HEAP_SANITYCHECKS
@@ -44,7 +51,7 @@ struct make_pairing_heap_base
 {
     static const bool constant_time_size = parameter::binding<Parspec,
                                                               tag::constant_time_size,
-                                                              boost::mpl::true_
+                                                              boost::true_type
                                                              >::type::value;
     typedef typename detail::make_heap_base<T, Parspec, constant_time_size>::type base_type;
     typedef typename detail::make_heap_base<T, Parspec, constant_time_size>::allocator_argument allocator_argument;
@@ -52,7 +59,11 @@ struct make_pairing_heap_base
 
     typedef heap_node<typename base_type::internal_type, false> node_type;
 
+#ifdef BOOST_NO_CXX11_ALLOCATOR
     typedef typename allocator_argument::template rebind<node_type>::other allocator_type;
+#else
+    typedef typename std::allocator_traits<allocator_argument>::template rebind_alloc<node_type> allocator_type;
+#endif
 
     struct type:
         base_type,
@@ -62,7 +73,11 @@ struct make_pairing_heap_base
             base_type(arg)
         {}
 
-#ifdef BOOST_HAS_RVALUE_REFS
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
+        type(type const & rhs):
+            base_type(rhs), allocator_type(rhs)
+        {}
+
         type(type && rhs):
             base_type(std::move(static_cast<base_type&>(rhs))),
             allocator_type(std::move(static_cast<allocator_type&>(rhs)))
@@ -95,7 +110,7 @@ struct make_pairing_heap_base
  * the complexity analysis is yet unsolved. For details, consult:
  *
  * Pettie, Seth (2005), "Towards a final analysis of pairing heaps",
- * Proc. 46th Annual IEEE Symposium on Foundations of Computer Science, pp. 174–183
+ * Proc. 46th Annual IEEE Symposium on Foundations of Computer Science, pp. 174-183
  *
  * The template parameter T is the type to be managed by the container.
  * The user can specify additional options and if no options are provided default options are used.
@@ -148,8 +163,14 @@ private:
         typedef typename base_maker::compare_argument value_compare;
         typedef typename base_maker::allocator_type allocator_type;
 
+#ifdef BOOST_NO_CXX11_ALLOCATOR
         typedef typename allocator_type::pointer node_pointer;
         typedef typename allocator_type::const_pointer const_node_pointer;
+#else
+        typedef std::allocator_traits<allocator_type> allocator_traits;
+        typedef typename allocator_traits::pointer node_pointer;
+        typedef typename allocator_traits::const_pointer const_node_pointer;
+#endif
 
         typedef detail::heap_node_list node_list_type;
         typedef typename node_list_type::iterator node_list_iterator;
@@ -203,6 +224,9 @@ public:
     typedef typename implementation_defined::difference_type difference_type;
     typedef typename implementation_defined::value_compare value_compare;
     typedef typename implementation_defined::allocator_type allocator_type;
+#ifndef BOOST_NO_CXX11_ALLOCATOR
+    typedef typename implementation_defined::allocator_traits allocator_traits;
+#endif
     typedef typename implementation_defined::reference reference;
     typedef typename implementation_defined::const_reference const_reference;
     typedef typename implementation_defined::pointer pointer;
@@ -236,7 +260,7 @@ public:
         size_holder::set_size(rhs.get_size());
     }
 
-#ifdef BOOST_HAS_RVALUE_REFS
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
     /// \copydoc boost::heap::priority_queue::priority_queue(priority_queue &&)
     pairing_heap(pairing_heap && rhs):
         super_t(std::move(rhs)), root(rhs.root)
@@ -292,7 +316,12 @@ public:
     /// \copydoc boost::heap::priority_queue::max_size
     size_type max_size(void) const
     {
+#ifdef BOOST_NO_CXX11_ALLOCATOR
         return allocator_type::max_size();
+#else
+        const allocator_type& alloc = *this;
+        return allocator_traits::max_size(alloc);
+#endif
     }
 
     /// \copydoc boost::heap::priority_queue::clear
@@ -302,8 +331,14 @@ public:
             return;
 
         root->template clear_subtree<allocator_type>(*this);
+#ifdef BOOST_NO_CXX11_ALLOCATOR
         root->~node();
         allocator_type::deallocate(root, 1);
+#else
+        allocator_type& alloc = *this;
+        allocator_traits::destroy(alloc, root);
+        allocator_traits::deallocate(alloc, root, 1);
+#endif
         root = NULL;
         size_holder::set_size(0);
     }
@@ -344,15 +379,19 @@ public:
     {
         size_holder::increment();
 
+#ifdef BOOST_NO_CXX11_ALLOCATOR
         node_pointer n = allocator_type::allocate(1);
-
         new(n) node(super_t::make_node(v));
-
+#else
+        allocator_type& alloc = *this;
+        node_pointer n = allocator_traits::allocate(alloc, 1);
+        allocator_traits::construct(alloc, n, super_t::make_node(v));
+#endif
         merge_node(n);
         return handle_type(n);
     }
 
-#if defined(BOOST_HAS_RVALUE_REFS) && !defined(BOOST_NO_VARIADIC_TEMPLATES)
+#if !defined(BOOST_NO_CXX11_RVALUE_REFERENCES) && !defined(BOOST_NO_CXX11_VARIADIC_TEMPLATES)
     /**
      * \b Effects: Adds a new element to the priority queue. The element is directly constructed in-place. Returns handle to element.
      *
@@ -368,10 +407,14 @@ public:
     {
         size_holder::increment();
 
+#ifdef BOOST_NO_CXX11_ALLOCATOR
         node_pointer n = allocator_type::allocate(1);
-
-        new(n) node(super_t::make_node(std::forward<T>(args)...));
-
+        new(n) node(super_t::make_node(std::forward<Args>(args)...));
+#else
+        allocator_type& alloc = *this;
+        node_pointer n = allocator_traits::allocate(alloc, 1);
+        allocator_traits::construct(alloc, n, super_t::make_node(std::forward<Args>(args)...));
+#endif
         merge_node(n);
         return handle_type(n);
     }
@@ -517,8 +560,14 @@ public:
         }
 
         size_holder::decrement();
+#ifdef BOOST_NO_CXX11_ALLOCATOR
         n->~node();
         allocator_type::deallocate(n, 1);
+#else
+        allocator_type& alloc = *this;
+        allocator_traits::destroy(alloc, n);
+        allocator_traits::deallocate(alloc, n, 1);
+#endif
     }
 
     /// \copydoc boost::heap::priority_queue::begin
@@ -530,7 +579,7 @@ public:
     /// \copydoc boost::heap::priority_queue::end
     iterator end(void) const
     {
-        return iterator();
+        return iterator(super_t::value_comp());
     }
 
     /// \copydoc boost::heap::fibonacci_heap::ordered_begin
@@ -549,7 +598,8 @@ public:
     /// \copydoc boost::heap::d_ary_heap_mutable::s_handle_from_iterator
     static handle_type s_handle_from_iterator(iterator const & it)
     {
-        return super_t::s_handle_from_iterator(&*it);
+        node * ptr = const_cast<node *>(it.get_node());
+        return handle_type(ptr);
     }
 
     /**
@@ -573,7 +623,7 @@ public:
         rhs.set_size(0);
         rhs.root = NULL;
 
-        super_t::set_stability_count(std::max(super_t::get_stability_count(),
+        super_t::set_stability_count((std::max)(super_t::get_stability_count(),
                                      rhs.get_stability_count()));
         rhs.set_stability_count(0);
     }
@@ -650,7 +700,7 @@ private:
 
     node_pointer merge_node_list(node_child_list & children)
     {
-        assert(!children.empty());
+        BOOST_HEAP_ASSERT(!children.empty());
         node_pointer merged = merge_first_pair(children);
         if (children.empty())
             return merged;
@@ -668,7 +718,7 @@ private:
 
     node_pointer merge_first_pair(node_child_list & children)
     {
-        assert(!children.empty());
+        BOOST_HEAP_ASSERT(!children.empty());
         node_pointer first_child = static_cast<node_pointer>(&children.front());
         children.pop_front();
         if (children.empty())

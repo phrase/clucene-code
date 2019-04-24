@@ -4,6 +4,11 @@
 // Copyright (c) 2012 Bruno Lalande, Paris, France.
 // Copyright (c) 2012 Mateusz Loskot, London, UK.
 
+// This file was modified by Oracle on 2018.
+// Modifications copyright (c) 2018, Oracle and/or its affiliates.
+
+// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
+
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -13,7 +18,10 @@
 
 #include <boost/config.hpp>
 #include <boost/mpl/if.hpp>
-#include <boost/type_traits.hpp>
+#include <boost/static_assert.hpp>
+#include <boost/type_traits/is_floating_point.hpp>
+#include <boost/type_traits/is_fundamental.hpp>
+#include <boost/type_traits/is_void.hpp>
 
 #include <boost/geometry/util/select_coordinate_type.hpp>
 #include <boost/geometry/util/select_most_precise.hpp>
@@ -34,7 +42,7 @@ struct default_integral
     typedef boost::long_long_type type;
 #else
     typedef int type;
-#endif    
+#endif
 };
 
 /*!
@@ -65,7 +73,7 @@ struct calculation_type
                 DefaultIntegralCalculationType
             >::type::value
         ));
-    
+
 
     typedef typename boost::mpl::if_
         <
@@ -153,12 +161,12 @@ struct ternary
         <
             typename select_most_precise
                 <
-                    typename coordinate_type<Geometry1>::type, 
+                    typename coordinate_type<Geometry1>::type,
                     typename select_coordinate_type
                         <
                             Geometry2,
                             Geometry3
-                        >::type 
+                        >::type
                 >::type,
             CalculationType,
             DefaultFloatingPointCalculationType,

@@ -1,6 +1,6 @@
 /*=============================================================================
     Copyright (c) 2001-2011 Joel de Guzman
-    Copyright (c) 2001-2011 Hartmut Kaiser
+    Copyright (c) 2001-2012 Hartmut Kaiser
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -28,10 +28,9 @@
 #include <boost/fusion/include/for_each.hpp>
 #include <boost/fusion/include/is_view.hpp>
 #include <boost/fusion/include/mpl.hpp>
-#include <boost/foreach.hpp>
-#include <boost/utility/value_init.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/type_traits/is_convertible.hpp>
+#include <boost/type_traits/is_reference.hpp>
 #include <boost/mpl/eval_if.hpp>
 #include <boost/mpl/end.hpp>
 #include <boost/mpl/find_if.hpp>
@@ -46,6 +45,7 @@
 #include <boost/variant.hpp>
 #include <boost/range/iterator_range.hpp>
 #include <boost/config.hpp>
+#include <iterator> // for std::iterator_traits, std::distance
 #include <vector>
 #include <utility>
 #include <ios>
@@ -202,6 +202,19 @@ namespace boost { namespace spirit { namespace traits
     struct is_weak_substitute<T, optional<Expected> >
       : is_weak_substitute<T, Expected> {};
 
+#if !defined(BOOST_VARIANT_DO_NOT_USE_VARIADIC_TEMPLATES)
+    template <typename T, typename Expected>
+    struct is_weak_substitute<boost::variant<T>, Expected>
+      : is_weak_substitute<T, Expected>
+    {};
+
+    template <typename T0, typename T1, typename ...TN, typename Expected>
+    struct is_weak_substitute<boost::variant<T0, T1, TN...>,
+            Expected>
+      : mpl::bool_<is_weak_substitute<T0, Expected>::type::value &&
+            is_weak_substitute<boost::variant<T1, TN...>, Expected>::type::value>
+    {};
+#else
 #define BOOST_SPIRIT_IS_WEAK_SUBSTITUTE(z, N, _)                              \
     is_weak_substitute<BOOST_PP_CAT(T, N), Expected>::type::value &&          \
     /***/
@@ -220,6 +233,7 @@ namespace boost { namespace spirit { namespace traits
     {};
 
 #undef BOOST_SPIRIT_IS_WEAK_SUBSTITUTE
+#endif
 
     template <typename T>
     struct is_weak_substitute<T, T
@@ -265,11 +279,6 @@ namespace boost { namespace spirit { namespace traits
       : mpl::false_
     {};
 
-    template <typename T, typename Domain>
-    struct not_is_variant<boost::optional<T>, Domain>
-      : not_is_variant<T, Domain>
-    {};
-
     // we treat every type as if it where the variant (as this meta function is
     // invoked for variant types only)
     template <typename T>
@@ -280,6 +289,11 @@ namespace boost { namespace spirit { namespace traits
     template <typename T>
     struct variant_type<boost::optional<T> >
       : variant_type<T>
+    {};
+
+    template <typename T, typename Domain>
+    struct not_is_variant_or_variant_in_optional
+      : not_is_variant<typename variant_type<T>::type, Domain>
     {};
 
     ///////////////////////////////////////////////////////////////////////////
@@ -325,7 +339,7 @@ namespace boost { namespace spirit { namespace traits
 
     template <typename Variant, typename Expected>
     struct compute_compatible_component_variant<Variant, Expected, mpl::false_
-      , typename enable_if<detail::has_types<Variant> >::type>
+      , typename enable_if<detail::has_types<typename variant_type<Variant>::type> >::type>
     {
         typedef typename traits::variant_type<Variant>::type variant_type;
         typedef typename variant_type::types types;
@@ -358,7 +372,7 @@ namespace boost { namespace spirit { namespace traits
     template <typename Expected, typename Attribute, typename Domain>
     struct compute_compatible_component
       : compute_compatible_component_variant<Attribute, Expected
-          , typename spirit::traits::not_is_variant<Attribute, Domain>::type> {};
+          , typename not_is_variant_or_variant_in_optional<Attribute, Domain>::type> {};
 
     template <typename Expected, typename Domain>
     struct compute_compatible_component<Expected, unused_type, Domain>
@@ -516,19 +530,42 @@ namespace boost { namespace spirit { namespace traits
         {
             if (!val)
                 return 0;
-            return val.get();
+            return traits::size(val.get());
+        }
+    };
+
+    namespace detail
+    {
+        struct attribute_size_visitor : static_visitor<std::size_t>
+        {
+            template <typename T>
+            std::size_t operator()(T const& val) const
+            {
+                return spirit::traits::size(val);
+            }
+        };
+    }
+
+    template <BOOST_VARIANT_ENUM_PARAMS(typename T)>
+    struct attribute_size<variant<BOOST_VARIANT_ENUM_PARAMS(T)> >
+    {
+        typedef std::size_t type;
+
+        static type call(variant<BOOST_VARIANT_ENUM_PARAMS(T)> const& val)
+        {
+            return apply_visitor(detail::attribute_size_visitor(), val);
         }
     };
 
     template <typename Iterator>
     struct attribute_size<iterator_range<Iterator> >
     {
-        typedef typename boost::detail::iterator_traits<Iterator>::
+        typedef typename std::iterator_traits<Iterator>::
             difference_type type;
 
         static type call(iterator_range<Iterator> const& r)
         {
-            return boost::detail::distance(r.begin(), r.end());
+            return std::distance(r.begin(), r.end());
         }
     };
 
@@ -748,7 +785,7 @@ namespace boost { namespace spirit { namespace traits
             };
 
             // never called, but needed for decltype-based result_of (C++0x)
-#ifndef BOOST_NO_RVALUE_REFERENCES
+#ifndef BOOST_NO_CXX11_RVALUE_REFERENCES
             template <typename Element>
             typename result<element_attribute(Element)>::type
             operator()(Element&&) const;
@@ -887,6 +924,23 @@ namespace boost { namespace spirit { namespace traits
         type;
     };
 
+    namespace detail {
+        // Domain-agnostic class template partial specializations and
+        // type agnostic domain partial specializations are ambious.
+        // To resolve the ambiguity type agnostic domain partial
+        // specializations are dispatched via intermediate type.
+        template <typename Exposed, typename Transformed, typename Domain>
+        struct transform_attribute_base;
+
+        template <typename Attribute>
+        struct synthesize_attribute
+        {
+            typedef Attribute type;
+            static Attribute pre(unused_type) { return Attribute(); }
+            static void post(unused_type, Attribute const&) {}
+            static void fail(unused_type) {}
+        };
+    }
     ///////////////////////////////////////////////////////////////////////////
     //  transform_attribute
     //
@@ -894,90 +948,31 @@ namespace boost { namespace spirit { namespace traits
     //  attributes. This template can be used as a customization point, where
     //  the user is able specify specific transformation rules for any attribute
     //  type.
+    //
+    //  Note: the transformations involving unused_type are internal details
+    //  and may be subject to change at any time.
+    //
     ///////////////////////////////////////////////////////////////////////////
     template <typename Exposed, typename Transformed, typename Domain
       , typename Enable/* = void*/>
-    struct transform_attribute;
-
-    ///////////////////////////////////////////////////////////////////////////
-    template <typename Domain, typename Transformed, typename Exposed>
-    typename spirit::result_of::pre_transform<Exposed, Transformed, Domain>::type
-    pre_transform(Exposed& attr BOOST_PROTO_DISABLE_IF_IS_CONST(Exposed))
+    struct transform_attribute
+      : detail::transform_attribute_base<Exposed, Transformed, Domain>
     {
-        return transform_attribute<Exposed, Transformed, Domain>::pre(attr);
-    }
-
-    template <typename Domain, typename Transformed, typename Exposed>
-    typename spirit::result_of::pre_transform<Exposed const, Transformed, Domain>::type
-    pre_transform(Exposed const& attr)
-    {
-        return transform_attribute<Exposed const, Transformed, Domain>::pre(attr);
-    }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // make_attribute
-    //
-    // All parsers and generators have specific attribute types.
-    // Spirit parsers and generators are passed an attribute; these are either
-    // references to the expected type, or an unused_type -- to flag that we do
-    // not care about the attribute. For semantic actions, however, we need to
-    // have a real value to pass to the semantic action. If the client did not
-    // provide one, we will have to synthesize the value. This class takes care
-    // of that. *Note that this behavior has changed. From Boost 1.47, semantic
-    // actions always take in the passed attribute as-is if the PP constant:
-    // BOOST_SPIRIT_ACTIONS_ALLOW_ATTR_COMPAT is defined.
-    ///////////////////////////////////////////////////////////////////////////
-    template <typename Attribute, typename ActualAttribute>
-    struct make_attribute
-    {
-        typedef typename remove_const<Attribute>::type attribute_type;
-        typedef typename
-            mpl::if_<
-                is_same<typename remove_const<ActualAttribute>::type, unused_type>
-              , attribute_type
-              , ActualAttribute&>::type
-        type;
-
-        typedef typename
-            mpl::if_<
-                is_same<typename remove_const<ActualAttribute>::type, unused_type>
-              , attribute_type
-              , ActualAttribute>::type
-        value_type;
-
-        static Attribute call(unused_type)
-        {
-             // synthesize the attribute/parameter
-            return boost::get(value_initialized<attribute_type>());
-        }
-
-        template <typename T>
-        static T& call(T& value)
-        {
-            return value; // just pass the one provided
-        }
+        BOOST_STATIC_ASSERT_MSG(!is_reference<Exposed>::value,
+            "Exposed cannot be a reference type");
+        BOOST_STATIC_ASSERT_MSG(!is_reference<Transformed>::value,
+            "Transformed cannot be a reference type");
     };
 
-    template <typename Attribute, typename ActualAttribute>
-    struct make_attribute<Attribute&, ActualAttribute>
-      : make_attribute<Attribute, ActualAttribute>
+    template <typename Transformed, typename Domain>
+    struct transform_attribute<unused_type, Transformed, Domain>
+      : detail::synthesize_attribute<Transformed>
     {};
 
-    template <typename Attribute, typename ActualAttribute>
-    struct make_attribute<Attribute const&, ActualAttribute>
-      : make_attribute<Attribute const, ActualAttribute>
+    template <typename Transformed, typename Domain>
+    struct transform_attribute<unused_type const, Transformed, Domain>
+      : detail::synthesize_attribute<Transformed>
     {};
-
-    template <typename ActualAttribute>
-    struct make_attribute<unused_type, ActualAttribute>
-    {
-        typedef unused_type type;
-        typedef unused_type value_type;
-        static unused_type call(unused_type)
-        {
-            return unused;
-        }
-    };
 
     ///////////////////////////////////////////////////////////////////////////
     // swap_impl
@@ -995,8 +990,7 @@ namespace boost { namespace spirit { namespace traits
     template <typename T>
     void swap_impl(T& a, T& b)
     {
-        using namespace std;
-        swap(a, b);
+        boost::swap(a, b);
     }
 
     template <typename A>
@@ -1023,12 +1017,13 @@ namespace boost { namespace spirit { namespace traits
         typedef T type;
     };
 
+#if !defined(BOOST_FUSION_HAS_VARIADIC_VECTOR)
     template <typename T>
     struct strip_single_element_vector<fusion::vector1<T> >
     {
         typedef T type;
     };
-
+#endif
     template <typename T>
     struct strip_single_element_vector<fusion::vector<T> >
     {
@@ -1116,7 +1111,7 @@ namespace boost { namespace spirit { namespace traits
         static void call(boost::optional<T>& val)
         {
             if (val)
-                val = none_t();   // leave optional uninitialized
+                val = none;   // leave optional uninitialized
         }
     };
 
@@ -1158,8 +1153,8 @@ namespace boost { namespace spirit { namespace traits
         template <typename Out>
         struct print_fusion_sequence
         {
-            print_fusion_sequence(Out& out)
-              : out(out), is_first(true) {}
+            print_fusion_sequence(Out& out_)
+              : out(out_), is_first(true) {}
 
             typedef void result_type;
 
@@ -1181,7 +1176,7 @@ namespace boost { namespace spirit { namespace traits
         template <typename Out>
         struct print_visitor : static_visitor<>
         {
-            print_visitor(Out& out) : out(out) {}
+            print_visitor(Out& out_) : out(out_) {}
 
             template <typename T>
             void operator()(T const& val) const
@@ -1344,15 +1339,5 @@ namespace boost { namespace spirit { namespace traits
         token_printer_debug<T>::print(out, val);
     }
 }}}
-
-///////////////////////////////////////////////////////////////////////////////
-namespace boost { namespace spirit { namespace result_of
-{
-    template <typename Exposed, typename Transformed, typename Domain>
-    struct pre_transform
-      : traits::transform_attribute<Exposed, Transformed, Domain>
-    {};
-}}}
-
 
 #endif

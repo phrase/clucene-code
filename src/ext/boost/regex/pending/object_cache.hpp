@@ -19,12 +19,12 @@
 #ifndef BOOST_REGEX_OBJECT_CACHE_HPP
 #define BOOST_REGEX_OBJECT_CACHE_HPP
 
+#include <boost/config.hpp>
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <list>
 #include <stdexcept>
 #include <string>
-#include <boost/config.hpp>
-#include <boost/shared_ptr.hpp>
 #ifdef BOOST_HAS_THREADS
 #include <boost/regex/pending/static_mutex.hpp>
 #endif
@@ -151,7 +151,7 @@ boost::shared_ptr<Object const> object_cache<Key, Object>::do_get(const Key& k, 
             --s;
          }
          else
-            --pos;
+            ++pos;
       }
       BOOST_ASSERT(s_data.index[k]->first.get() == result.get());
       BOOST_ASSERT(&(s_data.index.find(k)->first) == s_data.cont.back().second);
