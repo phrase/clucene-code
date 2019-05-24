@@ -551,7 +551,7 @@ const char* FieldsReader::FieldForMerge::getObjectName() const{
 void FieldsReader::uncompress(const CL_NS(util)::ValueArray<uint8_t>& input, CL_NS(util)::ValueArray<uint8_t>& output){
   stringstream out;
   string err;
-  if ( ! Misc::inflate(input.values, input.length, out, err) ){
+  if ( ! Misc::inflatee(input.values, input.length, out, err) ){
     _CLTHROWA(CL_ERR_IO, err.c_str());
   }
 

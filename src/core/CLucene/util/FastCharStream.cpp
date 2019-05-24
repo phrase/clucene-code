@@ -5,7 +5,7 @@
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
 #include "CLucene/_ApiHeader.h"
-#include "_FastCharStream.h"
+#include "CLucene/util/_FastCharStream.h"
 
 #include "CLucene/util/CLStreams.h"
 

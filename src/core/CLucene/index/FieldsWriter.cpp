@@ -253,7 +253,7 @@ void FieldsWriter::addRawDocuments(CL_NS(store)::IndexInput* stream, const int32
 void FieldsWriter::compress(const CL_NS(util)::ValueArray<uint8_t>& input, CL_NS(util)::ValueArray<uint8_t>& output){
   stringstream out;
   string err;
-  if ( ! Misc::deflate(input.values, input.length, out, err) ){
+  if ( ! Misc::deflatee(input.values, input.length, out, err) ){
     _CLTHROWA(CL_ERR_IO, err.c_str());
   }
 

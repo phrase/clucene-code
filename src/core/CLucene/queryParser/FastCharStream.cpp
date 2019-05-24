@@ -4,9 +4,7 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
-#include "CLucene/_ApiHeader.h"
-#include "_CharStream.h"
-#include "_FastCharStream.h"
+#include "CLucene/queryParser/_FastCharStream.h"
 #include "CLucene/util/CLStreams.h"
 
 CL_NS_DEF(queryParser)

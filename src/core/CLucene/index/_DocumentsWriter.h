@@ -7,6 +7,7 @@
 #ifndef _lucene_index_DocumentsWriter_
 #define _lucene_index_DocumentsWriter_
 
+#include "CLucene/_ApiHeader.h"
 #include "CLucene/store/IndexInput.h"
 #include "CLucene/config/_threads.h"
 #include "CLucene/util/Array.h"
@@ -464,7 +465,7 @@ private:
 
 	    const char* getObjectName() const;
       static const char* getClassName();
-      int32_t compareTo(lucene::util::NamedObject *);
+      int32_t compareTo(CL_NS(util)::NamedObject *);
       friend class ThreadState;
       friend class FieldMergeState;
     };

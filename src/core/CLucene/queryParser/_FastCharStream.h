@@ -7,11 +7,12 @@
 #ifndef _lucene_queryParser_FastCharStream_
 #define _lucene_queryParser_FastCharStream_
 
+#include "_CharStream.h"
+
 CL_CLASS_DEF(util,Reader)
 
 CL_NS_DEF(queryParser)
 
-class CharStream;
 
 /** An efficient implementation of JavaCC's CharStream interface.  <p>Note that
  * this does not do line-number counting, but instead keeps track of the
