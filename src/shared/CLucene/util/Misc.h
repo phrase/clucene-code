@@ -9,6 +9,8 @@
 
 #include <vector>
 
+#include "CLucene/_ApiHeader.h"
+
 CL_NS_DEF(util)
   /** A class containing various functions.
   */
@@ -67,7 +69,9 @@ CL_NS_DEF(util)
 
   static std::string toString(const int32_t value);
   static std::string toString(const int64_t value);
+#if !defined(_CL_DISABLE_MULTITHREADING)
   static std::string toString(const _LUCENE_THREADID_TYPE value);
+#endif
   static std::string toString(const bool value);
   static std::string toString(const float_t value);
   static std::string toString(const TCHAR* s, int32_t len=-1);
@@ -94,12 +98,12 @@ CL_NS_DEF(util)
     /** uncompress the source stream into the dest stream.
     * Default CHUNK size is 1k
     */
-    static bool inflate(const uint8_t* source, size_t sourcelen, std::ostream& dest, std::string& err, int CHUNK=-1);
+    static bool inflatee(const uint8_t* source, size_t sourcelen, std::ostream& dest, std::string& err, int CHUNK=-1);
     /** compress the source stream into the dest stream.
     * Default CHUNK size is 1k
     * Default level is Z_BEST_COMPRESSION
     */
-    static bool deflate(const uint8_t* source, size_t sourcelen, std::ostream& dest, std::string& err, int CHUNK=-1, int level=-1);
+    static bool deflatee(const uint8_t* source, size_t sourcelen, std::ostream& dest, std::string& err, int CHUNK=-1, int level=-1);
   };
 
 CL_NS_END

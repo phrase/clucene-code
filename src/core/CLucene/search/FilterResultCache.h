@@ -7,6 +7,8 @@
 #ifndef _lucene_search_FilterResultCache_
 #define _lucene_search_FilterResultCache_
 
+#include "CLucene/_ApiHeader.h"
+
 CL_CLASS_DEF(index,IndexReader)
 
 CL_NS_DEF(search)
@@ -31,6 +33,8 @@ public:
 			_CLDELETE( result );
 	}	
 };
+
+class BitSetHolder;
 
 /**
  * Wraps another filter's result and caches it.  The purpose is to allow

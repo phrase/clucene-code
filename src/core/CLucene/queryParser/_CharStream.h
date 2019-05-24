@@ -7,6 +7,8 @@
 #ifndef _lucene_queryParser_CharStream_
 #define _lucene_queryParser_CharStream_
 
+#include "CLucene/_ApiHeader.h"
+
 CL_NS_DEF(queryParser)
 
 /**

@@ -4,7 +4,7 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or 
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
-#include "CLucene/_ApiHeader.h"
+#include "FilterResultCache.h"
 #include "CachingWrapperFilter.h"
 #include "CLucene/index/IndexReader.h"
 
@@ -14,18 +14,18 @@ CL_NS_USE(util)
 
 
 template<class T>
-FilterResultCache::FilterResultCache( bool bDeleteResults )
+FilterResultCache<T>::FilterResultCache( bool bDeleteResults )
 {
     this->bDeleteResults = bDeleteResults;
 }
 
 template<class T>
-FilterResultCache::~FilterResultCache()
+FilterResultCache<T>::~FilterResultCache()
 {
 }
 
 template<class T>
-T* FilterResultCache::getResult( CL_NS(index)::IndexReader* reader )
+T* FilterResultCache<T>::getResult( CL_NS(index)::IndexReader* reader )
 {
 	SCOPED_LOCK_MUTEX( cache_LOCK )
 	ResultHolder<T> * cached = cache.get( reader );
@@ -39,7 +39,7 @@ T* FilterResultCache::getResult( CL_NS(index)::IndexReader* reader )
 }
 
 template<class T>
-void FilterResultCache::closeCallback( CL_NS(index)::IndexReader* reader, void* )
+void FilterResultCache<T>::closeCallback( CL_NS(index)::IndexReader* reader, void* )
 {
 	SCOPED_LOCK_MUTEX( cache_LOCK )
 	cache.remove( reader );

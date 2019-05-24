@@ -7,6 +7,8 @@
 #ifndef _lucene_util_CLStreams_
 #define _lucene_util_CLStreams_
 
+#include "CLucene/_ApiHeader.h"
+
 CL_NS_DEF(util)
 
 template <typename T>

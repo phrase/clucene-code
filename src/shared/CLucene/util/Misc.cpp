@@ -4,8 +4,7 @@
 * Distributable under the terms of either the Apache License (Version 2.0) or
 * the GNU Lesser General Public License, as specified in the COPYING file.
 ------------------------------------------------------------------------------*/
-#include "CLucene/_ApiHeader.h"
-#include "Misc.h"
+#include "CLucene/util/Misc.h"
 #include <assert.h>
 #include <iostream>
 #include <map>
@@ -466,6 +465,7 @@ bool Misc::listFiles(const char* directory, std::vector<std::string>& files, boo
 std::string Misc::toString(const bool value){
   return value ? "true" : "false";
 }
+#if !defined(_CL_DISABLE_MULTITHREADING)
 std::string Misc::toString(_LUCENE_THREADID_TYPE value){
   static int32_t nextindex = 0;
   static std::map<_LUCENE_THREADID_TYPE, int32_t> ids;
@@ -474,6 +474,7 @@ std::string Misc::toString(_LUCENE_THREADID_TYPE value){
   }
   return toString(ids[value]);
 }
+#endif
 std::string Misc::toString(const int32_t value){
   char buf[20];
   TCHAR tbuf[20];
@@ -522,7 +523,7 @@ void Misc::zerr(int ret, string& err)
    level is supplied, Z_VERSION_ERROR if the version of zlib.h and the
    version of the library linked do not match, or Z_ERRNO if there is
    an error reading or writing the files. */
-bool Misc::deflate(const uint8_t* in, size_t inlen, std::ostream& dest, string& err, int CHUNK, int level)
+bool Misc::deflatee(const uint8_t* in, size_t inlen, std::ostream& dest, string& err, int CHUNK, int level)
 {
   int ret, flush;
   unsigned have;
@@ -582,7 +583,7 @@ bool Misc::deflate(const uint8_t* in, size_t inlen, std::ostream& dest, string& 
    invalid or incomplete, Z_VERSION_ERROR if the version of zlib.h and
    the version of the library linked do not match, or Z_ERRNO if there
    is an error reading or writing the files. */
-bool Misc::inflate(const uint8_t* in, size_t inlen, std::ostream& dest, string& err, int CHUNK)
+bool Misc::inflatee(const uint8_t* in, size_t inlen, std::ostream& dest, string& err, int CHUNK)
 {
   int ret;
   unsigned have;

@@ -582,7 +582,7 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
   void FSDirectory::close(){
     SCOPED_LOCK_MUTEX(DIRECTORIES_LOCK)
     {
-	    THIS_LOCK.lock();
+        SCOPED_LOCK_MUTEX(THIS_LOCK)
 
 	    CND_PRECONDITION(directory[0]!=0,"directory is not open");
 
@@ -595,7 +595,6 @@ void FSDirectory::FSIndexInput::readInternal(uint8_t* b, const int32_t len) {
 	            return;
 	        }
 	    }
-	    THIS_LOCK.unlock();  
 	  }
    }
 
