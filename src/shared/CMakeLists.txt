@@ -103,13 +103,13 @@ CHECK_OPTIONAL_FUNCTIONS( wcsupr wcscasecmp wcsicmp wcstoll wprintf lltow
 )
 
 #make decisions about which functions to use...
-CHOOSE_FUNCTION(fileHandleStat "fstati64;_fstati64;fstat64;fstat;_fstat")
+CHOOSE_FUNCTION(fileHandleStat "fstat;fstati64;_fstati64;fstat64;_fstat")
 IF ( _CL_HAVE_FUNCTION_FSTATI64 OR _CL_HAVE_FUNCTION__FSTATI64 OR _CL_HAVE_FUNCTION_FSTAT64 )
     SET ( USE_STAT64 1 )
 ENDIF ( _CL_HAVE_FUNCTION_FSTATI64 OR _CL_HAVE_FUNCTION__FSTATI64 OR _CL_HAVE_FUNCTION_FSTAT64 )
 
 IF ( USE_STAT64 )
-    CHOOSE_FUNCTION(fileStat "stati64;_stati64;stat64;stat;_stat")
+    CHOOSE_FUNCTION(fileStat "stat;stati64;_stati64;stat64;_stat")
     CHOOSE_FUNCTION(fileSize "filelengthi64;_filelengthi64;filelength;_filelength" "#define fileSize CL_NS(util)::Misc::filelength")
     CHOOSE_FUNCTION(fileSeek "lseeki64;_lseeki64;lseek64;lseek;_lseek")
     CHOOSE_MISC(TYPE_CL_STAT_T
