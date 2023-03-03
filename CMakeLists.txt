@@ -29,7 +29,7 @@ if(WIN32)
 endif(WIN32)
 
 # inform MacOS to build universal binaries
-CMAKE_OSX_ARCHITECTURES=arm64;x86_64
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 
 # include specific modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
