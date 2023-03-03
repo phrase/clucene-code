@@ -27,7 +27,6 @@ MACRO(CHOOSE_FUNCTION name options)
 					#already have it, ignore this...
 					SET (FUNCTION_${NAME} "/* undef ${name} ${option} */" )
 				ELSE ( option STREQUAL ${name} )
-                    MESSAGE(INFO "XXX: #define ${name} ${option}")
 					SET (FUNCTION_${NAME} "#define ${name} ${option}")
 				ENDIF ( option STREQUAL ${name} )
     	    ENDIF ( _CL_HAVE_FUNCTION_${OPTION} )
