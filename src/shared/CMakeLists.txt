@@ -103,18 +103,16 @@ CHECK_OPTIONAL_FUNCTIONS( wcsupr wcscasecmp wcsicmp wcstoll wprintf lltow
 )
 
 #make decisions about which functions to use...
+IF ( CMAKE_SYSTEM_NAME STREQUAL "Darwin" )
+    # 64 version is deprecated since 10.6 and creates build problems on Mac 13 (M1)
+    CHOOSE_FUNCTION(fileHandleStat "fstat;_fstat")
+ELSE ( CMAKE_SYSTEM_NAME STREQUAL "Darwin" )
+    CHOOSE_FUNCTION(fileHandleStat "fstati64;_fstati64;fstat64;fstat;_fstat")
+ENDIF ( CMAKE_SYSTEM_NAME STREQUAL "Darwin" )
 
 IF ( _CL_HAVE_FUNCTION_FSTATI64 OR _CL_HAVE_FUNCTION__FSTATI64 OR _CL_HAVE_FUNCTION_FSTAT64 )
     SET ( USE_STAT64 1 )
 ENDIF ( _CL_HAVE_FUNCTION_FSTATI64 OR _CL_HAVE_FUNCTION__FSTATI64 OR _CL_HAVE_FUNCTION_FSTAT64 )
-
-IF ( CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    # 64 version is deprecated since 10.6 and creates build problems on Mac 13 (M1)
-    CHOOSE_FUNCTION(fileHandleStat "fstat;_fstat" )
-    SET ( USE_STAT64 0 )
-ELSE ( CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    CHOOSE_FUNCTION(fileHandleStat "fstati64;_fstati64;fstat64;fstat;_fstat" )
-ENDIF ( CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
 IF ( USE_STAT64 )
     CHOOSE_FUNCTION(fileStat "stati64;_stati64;stat64;stat;_stat")
